@@ -102,8 +102,9 @@
     .style-button:hover { color: var(--accent); }
     .style-button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 
-    .hero { margin: 0 auto; max-width: 1240px; padding: 95px 32px 100px; position: relative; }
+    .hero { margin: 0 auto; max-width: 1240px; padding: 54px 32px 34px; position: relative; }
     .hero-grid { align-items: end; display: grid; gap: 68px; grid-template-columns: minmax(0, 1.4fr) minmax(290px, .6fr); }
+    .mobile-hero { display: none; }
     .eyebrow, .section-kicker { color: var(--accent); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
     .hero h1 { font-family: var(--display); font-size: clamp(56px, 9vw, 124px); font-weight: 500; letter-spacing: -.075em; line-height: .91; margin: 22px 0 34px; max-width: 780px; }
     .hero h1 em { color: var(--accent); font-style: normal; }
@@ -127,11 +128,11 @@
     .hero-aside p { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
     .portrait-wrap { margin-top: 25px; width: 168px; }
     .portrait-frame { width: 100%; }
-    .portrait { aspect-ratio: 1; border-radius: 50%; display: block; filter: saturate(.82); height: auto; object-fit: cover; object-position: center top; width: 100%; }
+    .portrait { aspect-ratio: 1; border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 10px 24px rgba(24, 33, 31, .14); display: block; filter: saturate(.9); height: auto; object-fit: cover; object-position: center top; padding: 4px; width: 100%; }
     .portrait-note { color: var(--muted); font-family: var(--mono); font-size: 9px; margin: 0 0 0 13px; }
     .linkedin-icon { fill: currentColor; height: 14px; width: 14px; }
 
-    .stats-band { background: var(--surface-strong); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); }
+    .stats-band { background: var(--surface-strong); border-top: 1px solid var(--line); }
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 auto; max-width: 1240px; }
     .stat { border-right: 1px solid var(--line); padding: 30px 32px; }
     .stat:first-child { border-left: 1px solid var(--line); }
@@ -139,7 +140,7 @@
     .stat-number-wide { font-size: 30px; letter-spacing: -.07em; white-space: nowrap; }
     .stat-label { color: var(--muted); display: block; font-size: 12px; margin-top: 8px; }
 
-    .content { margin: 0 auto; max-width: 1240px; padding: 116px 32px; }
+    .content { margin: 0 auto; max-width: 1240px; padding: 76px 32px; }
     .section-heading { align-items: baseline; display: flex; gap: 25px; margin-bottom: 46px; }
     .section-heading h2 { font-family: var(--display); font-size: clamp(38px, 5vw, 68px); font-weight: 500; letter-spacing: -.06em; line-height: .95; margin: 0; }
     .section-heading p { color: var(--muted); font-size: 13px; margin: 0; max-width: 270px; }
@@ -191,14 +192,14 @@
       --radius: 8px;
       --shadow: none;
     }
-    body[data-style="systems"] .hero { padding-top: 120px; }
+    body[data-style="systems"] .hero { padding-top: 72px; }
     body[data-style="systems"] .hero::before { background: linear-gradient(90deg, transparent 49.9%, rgba(197, 243, 107, .08) 50%, transparent 50.1%), linear-gradient(rgba(197, 243, 107, .08) 1px, transparent 1px); background-size: 100% 100%, 100% 70px; content: ""; inset: 0; pointer-events: none; position: absolute; }
     body[data-style="systems"] .hero h1 { font-size: clamp(52px, 8vw, 112px); font-weight: 600; letter-spacing: -.085em; max-width: 850px; }
     body[data-style="systems"] .hero h1 em { color: var(--accent); }
     body[data-style="systems"] .hero-intro { font-size: 18px; max-width: 585px; }
     body[data-style="systems"] .hero-principle { font-family: var(--display); font-weight: 600; }
     body[data-style="systems"] .hero-aside { border-left-color: var(--accent); }
-    body[data-style="systems"] .portrait { border-radius: var(--radius); filter: grayscale(1) contrast(1.12); }
+    body[data-style="systems"] .portrait { filter: grayscale(1) contrast(1.12); }
     body[data-style="systems"] .stat-number { font-family: var(--display); font-weight: 600; }
     body[data-style="systems"] .role { padding: 30px 0; }
     body[data-style="systems"] .role-title { font-family: var(--display); font-size: 20px; }
@@ -238,13 +239,13 @@
     body[data-style="atelier"] .site-nav { padding-top: 36px; }
     body[data-style="atelier"] .wordmark { font-size: 17px; font-weight: 500; letter-spacing: -.055em; }
     body[data-style="atelier"] .wordmark span { font-weight: 700; }
-    body[data-style="atelier"] .hero { padding-top: 117px; }
+    body[data-style="atelier"] .hero { padding-top: 68px; }
     body[data-style="atelier"] .hero h1 { font-family: var(--body); font-size: clamp(52px, 8vw, 104px); font-weight: 400; letter-spacing: -.085em; line-height: .91; }
     body[data-style="atelier"] .hero h1 em { font-weight: 600; }
     body[data-style="atelier"] .hero-intro { font-size: 19px; max-width: 570px; }
     body[data-style="atelier"] .hero-principle { font-weight: 500; }
     body[data-style="atelier"] .portrait-wrap { width: 184px; }
-    body[data-style="atelier"] .portrait { border-radius: 4px; filter: sepia(.16) saturate(.7); }
+    body[data-style="atelier"] .portrait { filter: sepia(.16) saturate(.7); }
     body[data-style="atelier"] .stats-band { background: transparent; border-top: 0; }
     body[data-style="atelier"] .stats { gap: 12px; }
     body[data-style="atelier"] .stat, body[data-style="atelier"] .stat:first-child { background: var(--surface); border: 0; padding: 28px; }
@@ -303,14 +304,18 @@
     body[data-mobile="true"] .nav-links a:not(.nav-contact) { display: none; }
     body[data-mobile="true"] .nav-contact { font-size: 0; }
     body[data-mobile="true"] .nav-contact span { font-size: 13px; }
-    body[data-mobile="true"] .hero-grid { display: block; }
-    body[data-mobile="true"] .hero h1 { font-size: 64px; margin: 16px 0 20px; }
-    body[data-mobile="true"] .hero-intro { font-size: 17px; }
+    body[data-mobile="true"] .hero-grid { display: none; }
+    body[data-mobile="true"] .mobile-hero { display: block; }
+    body[data-mobile="true"] .hero h1, body[data-mobile="true"] .mobile-hero h1 { font-size: 64px; margin: 14px 0 22px; }
+    body[data-mobile="true"] .hero-intro, body[data-mobile="true"] .mobile-hero .hero-intro { font-size: 17px; }
     body[data-mobile="true"] .hero-actions { gap: 10px; margin-top: 26px; }
     body[data-mobile="true"] .button { font-size: 12px; padding: 11px 13px; }
-    body[data-mobile="true"] .hero-aside { border-left: 0; margin-top: 38px; padding-left: 0; text-align: center; }
-    body[data-mobile="true"] .hero-aside p { margin-bottom: 18px; text-align: left; }
-    body[data-mobile="true"] .portrait-wrap { margin: 20px auto 0; width: 190px; }
+    body[data-mobile="true"] .hero-aside { border-left: 0; margin-top: 0; padding-left: 0; text-align: center; }
+    body[data-mobile="true"] .hero-aside p { margin: 24px 0 0; text-align: left; }
+    body[data-mobile="true"] .portrait-wrap, body[data-mobile="true"] .mobile-hero .portrait-wrap { margin: 22px auto 0; width: 190px; }
+    body[data-mobile="true"] .mobile-hero-bio { color: var(--muted); font-size: 15px; line-height: 1.5; margin: 22px 0 0; }
+    body[data-mobile="true"] .mobile-hero .hero-principle { margin: 24px 0 0; }
+    body[data-mobile="true"] .mobile-hero .hero-actions { margin-top: 28px; }
     body[data-mobile="true"] .portrait-note { margin: 8px 0 0; text-align: center; }
     body[data-mobile="true"] .stats { grid-template-columns: repeat(2, 1fr); padding: 10px 20px; }
     body[data-mobile="true"] .stat, body[data-mobile="true"] .stat:first-child { border: 0; padding: 20px 10px; }
@@ -345,7 +350,7 @@
 <body data-style="atelier" data-theme="light">
   <div class="site-shell">
     <nav class="site-nav" aria-label="Main navigation">
-      <a class="wordmark" href="#top">N<span>/</span>C</a>
+       <a class="wordmark" href="#top">Nick <span>Caplan</span></a>
       <div class="nav-links">
         <a href="#experience">Experience</a>
         <a href="#approach">Approach</a>
@@ -361,30 +366,37 @@
           <div>
             <div class="eyebrow">Senior engineering leadership / London</div>
             <h1>Make good work<br><em>repeatable.</em></h1>
-            <p class="hero-intro">I’m Nick, a Senior Engineering Leader who helps teams turn ambitious product goals into calm, reliable delivery.</p>
-            <p class="hero-principle">Leadership starts with communication.</p>
+            <p class="hero-intro">I’m Nick, a Senior Engineering Leader who turns ambitious, complex product goals into calm, reliable delivery across teams, platforms and organisational boundaries.</p>
+            <p class="hero-principle">Clear thinking. Calm delivery. Better systems.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#experience">Explore my work <span aria-hidden="true">↓</span></a>
               <a class="button" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer"><svg class="linkedin-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.68H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.26 2.37 4.26 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM3.56 20.45h3.56V9H3.56v11.45Z"/></svg> Connect on LinkedIn <span aria-hidden="true">↗</span></a>
             </div>
           </div>
           <aside class="hero-aside">
-            <p>Strategic, results-driven and collaborative. I work at the intersection of people, systems and execution - currently leading Product Account Lifecycle at NatWest Boxed.</p>
+            <p>Strategic, results-driven and collaborative. I work at the intersection of people, systems and execution - currently leading engineering teams responsible for how customers, products and accounts move through a modern banking platform.</p>
             <div class="portrait-wrap">
               <div class="portrait-frame">
-                <img class="portrait" src="https://ca.slack-edge.com/E011GCXCPMY-U05U7AW717C-b1a0ea04cda2-192" alt="Portrait of Nick Caplan">
+                <img class="portrait" src="assets/images/profile-picture.jpeg" alt="Portrait of Nick Caplan, Senior Engineering Leader" width="300" height="300" loading="eager">
               </div>
             </div>
           </aside>
         </div>
-      </section>
-
-      <section class="stats-band" aria-label="Career highlights">
-        <div class="stats">
-          <div class="stat"><span class="stat-number stat-number-wide">1/mo → 15+/wk</span><span class="stat-label">release cadence scaled</span></div>
-          <div class="stat"><span class="stat-number">100k+</span><span class="stat-label">monthly visitors supported</span></div>
-          <div class="stat"><span class="stat-number">25+</span><span class="stat-label">microservices overseen</span></div>
-          <div class="stat"><span class="stat-number">16yr</span><span class="stat-label">building software systems</span></div>
+        <div class="mobile-hero">
+          <div class="eyebrow">Senior engineering leadership / London</div>
+          <h1>Make good work<br><em>repeatable.</em></h1>
+          <div class="portrait-wrap">
+            <div class="portrait-frame">
+              <img class="portrait" src="assets/images/profile-picture.jpeg" alt="Portrait of Nick Caplan, Senior Engineering Leader" width="300" height="300" loading="eager">
+            </div>
+          </div>
+          <p class="hero-intro">I’m Nick, a Senior Engineering Leader who turns ambitious, complex product goals into calm, reliable delivery across teams, platforms and organisational boundaries.</p>
+          <p class="mobile-hero-bio">Strategic, results-driven and collaborative. I work at the intersection of people, systems and execution - currently leading engineering teams responsible for how customers, products and accounts move through a modern banking platform.</p>
+          <p class="hero-principle">Clear thinking. Calm delivery. Better systems.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#experience">Explore my work <span aria-hidden="true">↓</span></a>
+            <a class="button" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer"><svg class="linkedin-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.68H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.26 2.37 4.26 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM3.56 20.45h3.56V9H3.56v11.45Z"/></svg> Connect on LinkedIn <span aria-hidden="true">↗</span></a>
+          </div>
         </div>
       </section>
 
@@ -398,8 +410,8 @@
             <div class="role-meta"><strong>2023 — now</strong>Senior Engineering Leader</div>
             <div>
               <h3 class="role-title">NatWest Boxed · Senior Engineering Leader</h3>
-              <p class="role-company">Product Account Lifecycle and Fincrime Onboarding</p>
-              <p class="role-summary">Leading the Product Account Lifecycle squad and two Fincrime Onboarding squads.</p>
+              <p class="role-company">Core banking platforms, customer onboarding and account services</p>
+              <p class="role-summary">Leading engineering teams that build the systems used to create, manage and change customer accounts and products.</p>
               <ul class="role-highlights">
                 <li><strong>Strategic turnaround</strong>Stepped into a new domain with zero handover, removing senior leadership escalations through trust and practical operating improvements.</li>
                 <li><strong>Cross-divisional delivery</strong>Orchestrated a high-profile customer integration between NatWest Main Bank and NatWest Boxed.</li>
