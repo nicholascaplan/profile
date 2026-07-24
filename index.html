@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Nick Caplan - Senior Engineering Leader. Building resilient teams, platforms and delivery systems.">
+  <title>Nick Caplan | Senior Engineering Leader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f0e8;
+      --surface: #fbfaf6;
+      --surface-strong: #e8e1d5;
+      --ink: #18211f;
+      --muted: #6d7570;
+      --line: rgba(24, 33, 31, .16);
+      --accent: #dd5e3c;
+      --accent-2: #b6ce74;
+      --display: "Fraunces", Georgia, serif;
+      --body: "DM Sans", Arial, sans-serif;
+      --mono: "DM Mono", monospace;
+      --radius: 24px;
+      --shadow: 0 22px 60px rgba(33, 37, 31, .12);
+      --ease: cubic-bezier(.2, .8, .2, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: var(--body);
+      line-height: 1.55;
+      transition: background .45s var(--ease), color .45s var(--ease);
+    }
+    a { color: inherit; text-decoration: none; }
+    button { color: inherit; font: inherit; }
+    ::selection { background: var(--accent); color: var(--surface); }
+
+    .site-shell { min-height: 100vh; overflow: hidden; }
+    .site-nav {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin: 0 auto;
+      max-width: 1240px;
+      padding: 28px 32px;
+      position: relative;
+      z-index: 3;
+    }
+    .wordmark { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+    .wordmark span { color: var(--accent); }
+    .nav-links { align-items: center; display: flex; gap: 28px; }
+    .nav-links a { color: var(--muted); font-size: 13px; transition: color .2s ease; }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-contact {
+      border-bottom: 1px solid var(--ink);
+      color: var(--ink) !important;
+      padding-bottom: 3px;
+    }
+
+    .style-picker {
+      align-items: center;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .05);
+      display: flex;
+      gap: 3px;
+      left: 50%;
+      padding: 4px;
+      position: fixed;
+      top: 18px;
+      transform: translateX(-50%);
+      z-index: 10;
+      backdrop-filter: blur(16px);
+    }
+    .theme-toggle {
+      align-items: center;
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 11px;
+      gap: 8px;
+      padding: 8px 11px;
+      transition: background .25s ease, border-color .25s ease, color .25s ease;
+    }
+    .theme-toggle:hover { background: var(--surface); border-color: var(--accent); color: var(--accent); }
+    .theme-icon { font-size: 13px; line-height: 1; }
+    .mobile-toggle { align-items: center; background: transparent; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; display: inline-flex; justify-content: center; line-height: 1; padding: 8px 10px; transition: background .25s ease, border-color .25s ease, color .25s ease; }
+    .mobile-icon { fill: none; height: 14px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 14px; }
+    .mobile-toggle:hover, .mobile-toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+    .mobile-toggle:focus-visible, .theme-toggle:focus-visible, .style-button:focus-visible, .button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .style-picker { display: none; }
+    .style-picker-label { color: var(--muted); font-family: var(--mono); font-size: 9px; letter-spacing: .1em; padding: 0 9px; text-transform: uppercase; }
+    .style-button { background: transparent; border: 0; border-radius: 999px; cursor: pointer; font-size: 11px; padding: 8px 11px; transition: background .25s ease, color .25s ease; }
+    .style-button:hover { color: var(--accent); }
+    .style-button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+    .hero { margin: 0 auto; max-width: 1240px; padding: 95px 32px 100px; position: relative; }
+    .hero-grid { align-items: end; display: grid; gap: 68px; grid-template-columns: minmax(0, 1.4fr) minmax(290px, .6fr); }
+    .eyebrow, .section-kicker { color: var(--accent); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+    .hero h1 { font-family: var(--display); font-size: clamp(56px, 9vw, 124px); font-weight: 500; letter-spacing: -.075em; line-height: .91; margin: 22px 0 34px; max-width: 780px; }
+    .hero h1 em { color: var(--accent); font-style: normal; }
+    .hero-intro { color: var(--muted); font-size: clamp(18px, 2vw, 23px); letter-spacing: -.02em; line-height: 1.35; margin: 0; max-width: 655px; }
+    .hero-principle { color: var(--accent); font-family: var(--display); font-size: clamp(22px, 3vw, 32px); letter-spacing: -.045em; line-height: 1.05; margin: 27px 0 0; max-width: 420px; }
+    .hero-actions { align-items: center; display: flex; gap: 18px; margin-top: 36px; }
+    .button {
+      align-items: center;
+      border: 1px solid var(--ink);
+      border-radius: 100px;
+      display: inline-flex;
+      font-size: 13px;
+      gap: 10px;
+      padding: 13px 19px;
+      transition: background .25s ease, color .25s ease, transform .25s var(--ease);
+    }
+    .button:hover { background: var(--ink); color: var(--bg); transform: translateY(-3px); }
+    .button-primary { background: var(--accent); border-color: var(--accent); color: #fffaf2; }
+    .button-primary:hover { background: var(--ink); border-color: var(--ink); }
+    .hero-aside { border-left: 1px solid var(--line); padding-left: 30px; }
+    .hero-aside p { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+    .portrait-wrap { margin-top: 25px; width: 168px; }
+    .portrait-frame { width: 100%; }
+    .portrait { aspect-ratio: 1; border-radius: 50%; display: block; filter: saturate(.82); height: auto; object-fit: cover; object-position: center top; width: 100%; }
+    .portrait-note { color: var(--muted); font-family: var(--mono); font-size: 9px; margin: 0 0 0 13px; }
+    .linkedin-icon { fill: currentColor; height: 14px; width: 14px; }
+
+    .stats-band { background: var(--surface-strong); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 auto; max-width: 1240px; }
+    .stat { border-right: 1px solid var(--line); padding: 30px 32px; }
+    .stat:first-child { border-left: 1px solid var(--line); }
+    .stat-number { display: block; font-family: var(--display); font-size: 40px; letter-spacing: -.06em; line-height: 1; }
+    .stat-number-wide { font-size: 30px; letter-spacing: -.07em; white-space: nowrap; }
+    .stat-label { color: var(--muted); display: block; font-size: 12px; margin-top: 8px; }
+
+    .content { margin: 0 auto; max-width: 1240px; padding: 116px 32px; }
+    .section-heading { align-items: baseline; display: flex; gap: 25px; margin-bottom: 46px; }
+    .section-heading h2 { font-family: var(--display); font-size: clamp(38px, 5vw, 68px); font-weight: 500; letter-spacing: -.06em; line-height: .95; margin: 0; }
+    .section-heading p { color: var(--muted); font-size: 13px; margin: 0; max-width: 270px; }
+    .experience-list { border-top: 1px solid var(--line); }
+    .role { display: grid; gap: 40px; grid-template-columns: 190px 1fr; padding: 36px 0 40px; }
+    .role + .role { border-top: 1px solid var(--line); }
+    .role-meta { color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .04em; line-height: 1.7; text-transform: uppercase; }
+    .role-meta strong { color: var(--accent); display: block; font-weight: 500; margin-bottom: 5px; }
+    .role-title { font-size: 21px; font-weight: 600; letter-spacing: -.035em; margin: 0; }
+    .role-company { color: var(--muted); font-size: 14px; margin: 3px 0 17px; }
+    .role-summary { color: var(--muted); font-size: 14px; margin: 0; max-width: 745px; }
+    .role-highlights { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); list-style: none; margin: 25px 0 0; max-width: 820px; padding: 0; }
+    .role-highlights li { border-left: 2px solid var(--accent-2); color: var(--ink); font-size: 13px; line-height: 1.45; padding-left: 13px; }
+    .role-highlights strong { display: block; font-size: 11px; margin-bottom: 4px; }
+
+    .lower-grid { display: grid; gap: 90px; grid-template-columns: 1.15fr .85fr; margin-top: 120px; }
+    .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+    .tag { border: 1px solid var(--line); border-radius: 100px; color: var(--muted); font-family: var(--mono); font-size: 10px; padding: 8px 12px; }
+    .principles { border-top: 1px solid var(--line); margin-top: 28px; }
+    .principle { border-bottom: 1px solid var(--line); padding: 17px 0 19px; }
+    .principle strong { display: block; font-family: var(--display); font-size: 20px; font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
+    .principle p { color: var(--muted); font-size: 13px; margin: 8px 0 0; max-width: 510px; }
+    .details-list { border-top: 1px solid var(--line); margin: 22px 0 0; }
+    .detail { border-bottom: 1px solid var(--line); display: grid; gap: 20px; grid-template-columns: 100px 1fr; padding: 17px 0; }
+    .detail-label { color: var(--accent); font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
+    .detail p { font-size: 13px; margin: 0; }
+    .community { color: var(--muted); font-size: 13px; margin: 22px 0 0; max-width: 600px; }
+
+    .footer { background: var(--ink); color: var(--bg); padding: 74px 32px 32px; }
+    .footer-inner { margin: 0 auto; max-width: 1240px; }
+    .footer h2 { font-family: var(--display); font-size: clamp(42px, 7vw, 92px); font-weight: 500; letter-spacing: -.07em; line-height: .92; margin: 0 0 42px; max-width: 700px; }
+    .footer h2 em { color: var(--accent); font-style: normal; }
+    .footer-links { display: flex; gap: 25px; margin-bottom: 80px; }
+    .footer-links a { border-bottom: 1px solid rgba(244, 240, 232, .4); font-size: 13px; padding-bottom: 4px; }
+    .footer-bottom { border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: flex; font-family: var(--mono); font-size: 9px; justify-content: space-between; padding-top: 18px; text-transform: uppercase; }
+
+    /* Option 02 - midnight product system */
+    body[data-style="systems"] {
+      --bg: #10131a;
+      --surface: #171b24;
+      --surface-strong: #1d2330;
+      --ink: #edf1ed;
+      --muted: #929ba8;
+      --line: rgba(237, 241, 237, .15);
+      --accent: #c5f36b;
+      --accent-2: #78b6ff;
+      --display: "Space Grotesk", Arial, sans-serif;
+      --body: "DM Sans", Arial, sans-serif;
+      --radius: 8px;
+      --shadow: none;
+    }
+    body[data-style="systems"] .hero { padding-top: 120px; }
+    body[data-style="systems"] .hero::before { background: linear-gradient(90deg, transparent 49.9%, rgba(197, 243, 107, .08) 50%, transparent 50.1%), linear-gradient(rgba(197, 243, 107, .08) 1px, transparent 1px); background-size: 100% 100%, 100% 70px; content: ""; inset: 0; pointer-events: none; position: absolute; }
+    body[data-style="systems"] .hero h1 { font-size: clamp(52px, 8vw, 112px); font-weight: 600; letter-spacing: -.085em; max-width: 850px; }
+    body[data-style="systems"] .hero h1 em { color: var(--accent); }
+    body[data-style="systems"] .hero-intro { font-size: 18px; max-width: 585px; }
+    body[data-style="systems"] .hero-principle { font-family: var(--display); font-weight: 600; }
+    body[data-style="systems"] .hero-aside { border-left-color: var(--accent); }
+    body[data-style="systems"] .portrait { border-radius: var(--radius); filter: grayscale(1) contrast(1.12); }
+    body[data-style="systems"] .stat-number { font-family: var(--display); font-weight: 600; }
+    body[data-style="systems"] .role { padding: 30px 0; }
+    body[data-style="systems"] .role-title { font-family: var(--display); font-size: 20px; }
+    body[data-style="systems"] .role-highlights li { border-left-color: var(--accent); }
+    body[data-style="systems"] .tag { border-radius: 5px; }
+    body[data-style="systems"] .footer { background: var(--accent); color: #10131a; }
+    body[data-style="systems"] .footer h2 em { color: #547d23; }
+    body[data-style="systems"] .footer-links a { border-color: rgba(16, 19, 26, .5); }
+    body[data-style="systems"] .footer-bottom { border-color: rgba(16, 19, 26, .22); color: rgba(16, 19, 26, .6); }
+
+    /* Option 03 - warm, restrained portfolio */
+    body[data-style="atelier"] {
+      --bg: #eee9e2;
+      --surface: #f7f4ef;
+      --surface-strong: #e2d9d0;
+      --ink: #28332c;
+      --muted: #6d756e;
+      --line: rgba(40, 51, 44, .17);
+      --accent: #b45e3f;
+      --accent-2: #9cae6c;
+      --display: "DM Sans", Arial, sans-serif;
+      --body: "DM Sans", Arial, sans-serif;
+      --mono: "DM Mono", monospace;
+      --radius: 4px;
+    }
+    body[data-style="atelier"][data-theme="dark"] {
+      --bg: #18211d;
+      --surface: #212b25;
+      --surface-strong: #29362e;
+      --ink: #edf0e8;
+      --muted: #a1aaa0;
+      --line: rgba(237, 240, 232, .17);
+      --accent: #e0805f;
+      --accent-2: #bdcf80;
+      --shadow: none;
+    }
+    body[data-style="atelier"] .site-nav { padding-top: 36px; }
+    body[data-style="atelier"] .wordmark { font-size: 17px; font-weight: 500; letter-spacing: -.055em; }
+    body[data-style="atelier"] .wordmark span { font-weight: 700; }
+    body[data-style="atelier"] .hero { padding-top: 117px; }
+    body[data-style="atelier"] .hero h1 { font-family: var(--body); font-size: clamp(52px, 8vw, 104px); font-weight: 400; letter-spacing: -.085em; line-height: .91; }
+    body[data-style="atelier"] .hero h1 em { font-weight: 600; }
+    body[data-style="atelier"] .hero-intro { font-size: 19px; max-width: 570px; }
+    body[data-style="atelier"] .hero-principle { font-weight: 500; }
+    body[data-style="atelier"] .portrait-wrap { width: 184px; }
+    body[data-style="atelier"] .portrait { border-radius: 4px; filter: sepia(.16) saturate(.7); }
+    body[data-style="atelier"] .stats-band { background: transparent; border-top: 0; }
+    body[data-style="atelier"] .stats { gap: 12px; }
+    body[data-style="atelier"] .stat, body[data-style="atelier"] .stat:first-child { background: var(--surface); border: 0; padding: 28px; }
+    body[data-style="atelier"] .stat:first-child { border-radius: 4px 0 0 4px; }
+    body[data-style="atelier"] .stat:last-child { border-radius: 0 4px 4px 0; }
+    body[data-style="atelier"] .section-heading h2, body[data-style="atelier"] .footer h2 { font-weight: 400; }
+    body[data-style="atelier"] .role { gap: 70px; grid-template-columns: 160px 1fr; }
+    body[data-style="atelier"] .role-highlights { grid-template-columns: 1fr; }
+    body[data-style="atelier"] .role-highlights li { border-left: 0; border-top: 1px solid var(--line); padding: 11px 0 0; }
+    body[data-style="atelier"] .footer { background: var(--accent); }
+    body[data-style="atelier"] .footer h2 em { color: #f7f4ef; }
+    body[data-style="atelier"][data-theme="dark"] .footer { background: #bdcf80; color: #18211d; }
+    body[data-style="atelier"][data-theme="dark"] .footer h2 em { color: #557044; }
+    body[data-style="atelier"][data-theme="dark"] .footer-links a { border-color: rgba(24, 33, 29, .5); }
+    body[data-style="atelier"][data-theme="dark"] .footer-bottom { border-color: rgba(24, 33, 29, .22); color: rgba(24, 33, 29, .6); }
+
+    @media (max-width: 760px) {
+      .style-picker { max-width: calc(100vw - 28px); top: 12px; width: max-content; }
+      .style-picker-label { display: none; }
+      .style-button { font-size: 10px; padding: 8px 9px; }
+      .site-nav { padding: 22px 20px; }
+      .nav-links { gap: 13px; }
+      .nav-links a:not(.nav-contact) { display: none; }
+      .hero { padding: 82px 20px 68px; }
+      .hero-grid { display: block; }
+      .hero h1 { font-size: clamp(54px, 17vw, 88px); margin: 20px 0 26px; }
+      .hero-intro { font-size: 17px; }
+      .hero-aside { border-left: 0; margin-top: 60px; padding-left: 0; }
+      .portrait-wrap { width: 130px; }
+      .stats { grid-template-columns: repeat(2, 1fr); padding: 10px 20px; }
+      .stat, .stat:first-child { border: 0; padding: 20px 10px; }
+      .stat-number { font-size: 32px; }
+      .stat-number-wide { font-size: 24px; }
+      .content { padding: 75px 20px; }
+      .section-heading { align-items: start; display: block; margin-bottom: 30px; }
+      .section-heading h2 { margin-bottom: 14px; }
+      .role { display: block; padding: 27px 0 32px; }
+      .role-meta { margin-bottom: 22px; }
+      .role-title { font-size: 19px; }
+      .role-highlights { grid-template-columns: 1fr; }
+      .lower-grid { display: block; margin-top: 72px; }
+      .lower-grid > section + section { margin-top: 65px; }
+      .footer { padding: 60px 20px 24px; }
+      .footer-links { flex-wrap: wrap; margin-bottom: 60px; }
+      .footer-bottom { display: block; line-height: 2; }
+      .footer-bottom span { display: block; }
+      body[data-style="atelier"] .role { display: block; }
+      body[data-style="atelier"] .stats { gap: 8px; padding: 10px 20px; }
+      body[data-style="atelier"] .stat, body[data-style="atelier"] .stat:first-child { border-radius: 4px; }
+    }
+    body[data-mobile="true"] .hero { padding: 54px 20px 42px; }
+    body[data-mobile="true"] { background: #d8d2c8; }
+    body[data-mobile="true"] .site-shell { background: var(--bg); box-shadow: 0 0 45px rgba(24, 33, 31, .16); margin: 0 auto; max-width: 430px; min-height: 100vh; }
+    body[data-mobile="true"] .site-nav { padding: 22px 20px; }
+    body[data-mobile="true"] .nav-links { gap: 13px; }
+    body[data-mobile="true"] .nav-links a:not(.nav-contact) { display: none; }
+    body[data-mobile="true"] .nav-contact { font-size: 0; }
+    body[data-mobile="true"] .nav-contact span { font-size: 13px; }
+    body[data-mobile="true"] .hero-grid { display: block; }
+    body[data-mobile="true"] .hero h1 { font-size: 64px; margin: 16px 0 20px; }
+    body[data-mobile="true"] .hero-intro { font-size: 17px; }
+    body[data-mobile="true"] .hero-actions { gap: 10px; margin-top: 26px; }
+    body[data-mobile="true"] .button { font-size: 12px; padding: 11px 13px; }
+    body[data-mobile="true"] .hero-aside { border-left: 0; margin-top: 38px; padding-left: 0; text-align: center; }
+    body[data-mobile="true"] .hero-aside p { margin-bottom: 18px; text-align: left; }
+    body[data-mobile="true"] .portrait-wrap { margin: 20px auto 0; width: 190px; }
+    body[data-mobile="true"] .portrait-note { margin: 8px 0 0; text-align: center; }
+    body[data-mobile="true"] .stats { grid-template-columns: repeat(2, 1fr); padding: 10px 20px; }
+    body[data-mobile="true"] .stat, body[data-mobile="true"] .stat:first-child { border: 0; padding: 20px 10px; }
+    body[data-mobile="true"] .stat-number { font-size: 32px; }
+    body[data-mobile="true"] .stat-number-wide { font-size: 24px; }
+    body[data-mobile="true"] .content { padding: 54px 20px; }
+    body[data-mobile="true"] .section-heading { align-items: start; display: block; margin-bottom: 30px; }
+    body[data-mobile="true"] .section-heading h2 { margin-bottom: 14px; }
+    body[data-mobile="true"] .role { display: block; padding: 27px 0 32px; }
+    body[data-mobile="true"] .role-meta { margin-bottom: 22px; }
+    body[data-mobile="true"] .role-title { font-size: 19px; }
+    body[data-mobile="true"] .role-highlights { grid-template-columns: 1fr; }
+    body[data-mobile="true"] .lower-grid { display: block; margin-top: 54px; }
+    body[data-mobile="true"] .lower-grid > section + section { margin-top: 48px; }
+    body[data-mobile="true"] .footer { padding: 48px 20px 24px; }
+    body[data-mobile="true"] .footer h2 { font-size: 48px; line-height: .95; }
+    body[data-mobile="true"] .footer-links { flex-wrap: wrap; margin-bottom: 60px; }
+    body[data-mobile="true"] .footer-bottom { display: block; line-height: 2; }
+    body[data-mobile="true"] .footer-bottom span { display: block; }
+    body[data-mobile="true"][data-style="atelier"] .role { display: block; }
+    body[data-mobile="true"][data-style="atelier"] .stats { gap: 8px; padding: 10px 20px; }
+    body[data-mobile="true"][data-style="atelier"] .stat, body[data-mobile="true"][data-style="atelier"] .stat:first-child { border-radius: 4px; }
+    @media (max-width: 430px) {
+      body[data-mobile="true"] { background: var(--bg); }
+      body[data-mobile="true"] .site-shell { box-shadow: none; max-width: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body data-style="atelier" data-theme="light">
+  <div class="site-shell">
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="wordmark" href="#top">N<span>/</span>C</a>
+      <div class="nav-links">
+        <a href="#experience">Experience</a>
+        <a href="#approach">Approach</a>
+        <a class="nav-contact" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
+        <button class="mobile-toggle" type="button" aria-label="Switch to mobile mode" aria-pressed="false" title="Switch to mobile mode"><svg class="mobile-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 18h4"/></svg></button>
+        <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark mode</span></button>
+      </div>
+    </nav>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">Senior engineering leadership / London</div>
+            <h1>Make good work<br><em>repeatable.</em></h1>
+            <p class="hero-intro">I’m Nick, a Senior Engineering Leader who helps teams turn ambitious product goals into calm, reliable delivery.</p>
+            <p class="hero-principle">Leadership starts with communication.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#experience">Explore my work <span aria-hidden="true">↓</span></a>
+              <a class="button" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer"><svg class="linkedin-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.68H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.26 2.37 4.26 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM3.56 20.45h3.56V9H3.56v11.45Z"/></svg> Connect on LinkedIn <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+          <aside class="hero-aside">
+            <p>Strategic, results-driven and collaborative. I work at the intersection of people, systems and execution - currently leading Product Account Lifecycle at NatWest Boxed.</p>
+            <div class="portrait-wrap">
+              <div class="portrait-frame">
+                <img class="portrait" src="https://ca.slack-edge.com/E011GCXCPMY-U05U7AW717C-b1a0ea04cda2-192" alt="Portrait of Nick Caplan">
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="stats-band" aria-label="Career highlights">
+        <div class="stats">
+          <div class="stat"><span class="stat-number stat-number-wide">1/mo → 15+/wk</span><span class="stat-label">release cadence scaled</span></div>
+          <div class="stat"><span class="stat-number">100k+</span><span class="stat-label">monthly visitors supported</span></div>
+          <div class="stat"><span class="stat-number">25+</span><span class="stat-label">microservices overseen</span></div>
+          <div class="stat"><span class="stat-number">16yr</span><span class="stat-label">building software systems</span></div>
+        </div>
+      </section>
+
+      <section class="content" id="experience">
+        <div class="section-heading">
+          <h2>Selected experience</h2>
+          <p>A career spent making complex platforms more capable, and the teams behind them more confident.</p>
+        </div>
+        <div class="experience-list">
+          <article class="role">
+            <div class="role-meta"><strong>2023 — now</strong>Senior Engineering Leader</div>
+            <div>
+              <h3 class="role-title">NatWest Boxed · Senior Engineering Leader</h3>
+              <p class="role-company">Product Account Lifecycle and Fincrime Onboarding</p>
+              <p class="role-summary">Leading the Product Account Lifecycle squad and two Fincrime Onboarding squads.</p>
+              <ul class="role-highlights">
+                <li><strong>Strategic turnaround</strong>Stepped into a new domain with zero handover, removing senior leadership escalations through trust and practical operating improvements.</li>
+                <li><strong>Cross-divisional delivery</strong>Orchestrated a high-profile customer integration between NatWest Main Bank and NatWest Boxed.</li>
+                <li><strong>Operational excellence</strong>Led Genie-wide Pod Security Standards compliance and launched an automated Zendesk-to-Jira defect process.</li>
+                <li><strong>Capability building</strong>Rolled out coaching and mentoring structures that make growth part of the delivery system.</li>
+              </ul>
+            </div>
+          </article>
+          <article class="role">
+            <div class="role-meta"><strong>2020 — 2023</strong>Engineering Manager<br>&amp; Technical Lead</div>
+            <div>
+              <h3 class="role-title">Oddschecker</h3>
+              <p class="role-company">US Web platform · London</p>
+              <p class="role-summary">Provided technical and people leadership for a high-traffic platform squad of 12 engineers and 25+ microservices.</p>
+              <ul class="role-highlights">
+                <li><strong>Delivery acceleration</strong>Increased average release frequency from 1 / month to 15+ production deployments / week.</li>
+                <li><strong>Platform growth</strong>Scaled architectural capability from 2 to 23 US states for a site with 100,000+ monthly visitors.</li>
+                <li><strong>Resilience by design</strong>Established monitoring across all services and co-founded the division’s 24/7 incident response.</li>
+              </ul>
+            </div>
+          </article>
+          <article class="role">
+            <div class="role-meta"><strong>2019 — 2020</strong>Technical Lead</div>
+            <div>
+              <h3 class="role-title">Moogsoft</h3>
+              <p class="role-company">AIOps Enterprise platform · London</p>
+              <p class="role-summary">Led backend architecture and engineering delivery for an enterprise AIOps platform, including a complete API and workflow redesign for Topologies.</p>
+            </div>
+          </article>
+          <article class="role">
+            <div class="role-meta"><strong>2010 — 2019</strong>Senior Engineer<br>Technical &amp; Product Architect</div>
+            <div>
+              <h3 class="role-title">Alfa</h3>
+              <p class="role-company">Enterprise web platform · London</p>
+              <p class="role-summary">Progressed through successive leadership roles, owning architecture, test frameworks and delivery of core modules for a global enterprise platform.</p>
+              <ul class="role-highlights">
+                <li><strong>Test automation</strong>Designed the integration test framework adopted globally by software testing and solution consulting teams.</li>
+                <li><strong>Agile leadership</strong>Directed cross-functional Scrum teams delivering high-value integrations for enterprise clients.</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+
+        <div class="lower-grid" id="approach">
+          <section>
+            <div class="section-kicker">How I lead</div>
+            <div class="principles">
+              <div class="principle"><strong>Leadership starts with communication.</strong><p>I make the complex clear, create alignment early, and build the trust that lets teams move with confidence.</p></div>
+              <div class="principle"><strong>AI should make good engineers better.</strong><p>I am a practical advocate for AI-assisted engineering: using it thoughtfully to accelerate learning, sharpen ideas and remove repetitive work.</p></div>
+              <div class="principle"><strong>I still love writing code.</strong><p>Hands-on technical work keeps my leadership grounded. I enjoy exploring systems, solving hard problems and staying close to the craft.</p></div>
+            </div>
+            <div class="section-kicker" style="margin-top: 52px;">The toolkit</div>
+            <div class="tag-cloud">
+              <span class="tag">Engineering strategy</span><span class="tag">Organisational design</span><span class="tag">Platform architecture</span><span class="tag">Team health</span><span class="tag">Java</span><span class="tag">JavaScript</span><span class="tag">Python</span><span class="tag">SQL</span><span class="tag">Microservices</span><span class="tag">Event-driven systems</span><span class="tag">DevSecOps</span><span class="tag">CI/CD</span><span class="tag">High availability</span><span class="tag">Incident response</span>
+            </div>
+          </section>
+          <section>
+            <div class="section-kicker">Beyond the job title</div>
+            <p class="community">I care about the communities around the work too: I’ve led communications for 600 parents, volunteered in reading intervention, managed IT for a music school, and chaired the board of an Ofsted-rated Outstanding pre-school.</p>
+            <div class="details-list">
+              <div class="detail"><span class="detail-label">Education</span><p>MA Greek &amp; Latin, University of Oxford<br>1st Class BA Jt Hons Classics, University of Nottingham</p></div>
+              <div class="detail"><span class="detail-label">Certification</span><p>Certified Scrum Master, Level 1</p></div>
+              <div class="detail"><span class="detail-label">Base</span><p>London, United Kingdom</p></div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="section-kicker">Have a good problem?</div>
+         <h2>Let’s Make It <em>Happen.</em></h2>
+        <div class="footer-links">
+          <a href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer"><svg class="linkedin-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.68H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.26 2.37 4.26 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0-4.14ZM3.56 20.45h3.56V9H3.56v11.45Z"/></svg> LinkedIn ↗</a>
+        </div>
+        <div class="footer-bottom"><span>Nick Caplan / Senior Engineering Leader</span><span>Designed for the web / 2026</span></div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const themeToggle = document.querySelector('.theme-toggle');
+    const mobileToggle = document.querySelector('.mobile-toggle');
+    const themeLabel = themeToggle.querySelector('.theme-label');
+    const themeIcon = themeToggle.querySelector('.theme-icon');
+    const storedTheme = window.localStorage.getItem('nick-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    function setTheme(theme) {
+      const isDark = theme === 'dark';
+      document.body.dataset.theme = theme;
+      themeToggle.setAttribute('aria-pressed', String(isDark));
+      themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      themeLabel.textContent = isDark ? 'Light mode' : 'Dark mode';
+      themeIcon.textContent = isDark ? '☀' : '☾';
+      window.localStorage.setItem('nick-theme', theme);
+    }
+
+    setTheme(storedTheme || (prefersDark ? 'dark' : 'light'));
+    themeToggle.addEventListener('click', () => {
+      setTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+
+    function setMobileMode(isMobile) {
+      document.body.dataset.mobile = String(isMobile);
+      mobileToggle.setAttribute('aria-pressed', String(isMobile));
+      mobileToggle.setAttribute('aria-label', isMobile ? 'Switch to desktop mode' : 'Switch to mobile mode');
+      mobileToggle.title = isMobile ? 'Switch to desktop mode' : 'Switch to mobile mode';
+      window.localStorage.setItem('nick-mobile', String(isMobile));
+    }
+
+    setMobileMode(window.localStorage.getItem('nick-mobile') === 'true');
+    mobileToggle.addEventListener('click', () => {
+      setMobileMode(document.body.dataset.mobile !== 'true');
+    });
+  </script>
+</body>
+</html>
