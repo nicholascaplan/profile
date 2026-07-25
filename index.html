@@ -96,13 +96,15 @@
       border-radius: 999px;
       cursor: pointer;
       display: inline-flex;
-      font-size: 11px;
-      gap: 8px;
-      padding: 8px 11px;
+      height: 38px;
+      justify-content: center;
+      padding: 8px;
+      width: 38px;
       transition: background .25s ease, border-color .25s ease, color .25s ease;
     }
     .theme-toggle:hover { background: var(--surface); border-color: var(--accent); color: var(--accent); }
-    .theme-icon { font-size: 13px; line-height: 1; }
+    .theme-icon { font-size: 17px; line-height: 1; }
+    .theme-label { display: none; }
     .mobile-toggle { align-items: center; background: transparent; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; display: inline-flex; justify-content: center; line-height: 1; padding: 8px 10px; transition: background .25s ease, border-color .25s ease, color .25s ease; }
     .mobile-icon { fill: none; height: 14px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 14px; }
     .mobile-toggle:hover, .mobile-toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
@@ -144,8 +146,7 @@
     .portrait-frame { width: 100%; }
     .portrait { aspect-ratio: 1; border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 10px 24px rgba(24, 33, 31, .14); display: block; filter: saturate(.9); height: auto; object-fit: cover; object-position: center top; padding: 4px; width: 100%; }
     .portrait-note { color: var(--muted); font-family: var(--mono); font-size: 9px; margin: 0 0 0 13px; }
-    .linkedin-icon { fill: currentColor; height: 17px; width: 17px; }
-    .footer-links .linkedin-icon { display: inline-block; height: 17px; width: 17px; }
+    .linkedin-icon { display: none; }
     .mail-icon { fill: none; height: 17px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 17px; }
     .button > span[aria-hidden="true"] { font-size: 17px; line-height: 1; }
 
@@ -184,7 +185,7 @@
     .detail-label { color: var(--accent); font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
     .detail p { font-size: 13px; margin: 0; }
     .community { color: var(--muted); font-size: 13px; margin: 22px 0 0; max-width: 600px; }
-    .contact-section { border-top: 1px solid var(--line); margin-top: 104px; padding-top: 76px; }
+    .contact-section { margin-top: 104px; padding-top: 76px; }
     .contact-grid { display: grid; gap: 70px; grid-template-columns: .8fr 1.2fr; }
     .contact-copy h2 { font-family: var(--display); font-size: clamp(38px, 5vw, 68px); font-weight: 500; letter-spacing: -.06em; line-height: .95; margin: 0; }
     .contact-copy p { color: var(--muted); font-size: 14px; margin: 20px 0 0; max-width: 340px; }
@@ -200,11 +201,11 @@
     body[data-style="atelier"][data-theme="dark"] .form-field textarea:focus { border-color: var(--accent); }
     .contact-form .button { justify-self: start; }
 
-    .footer { background: var(--ink); color: var(--bg); padding: 74px 32px 32px; }
+    .footer { background: var(--ink); color: var(--bg); padding: 54px 32px 24px; }
     .footer-inner { margin: 0 auto; max-width: 1240px; }
     .footer h2 { font-family: var(--display); font-size: clamp(42px, 7vw, 92px); font-weight: 500; letter-spacing: -.07em; line-height: .92; margin: 0 0 42px; max-width: 700px; }
     .footer h2 em { color: var(--accent); font-style: normal; }
-    .footer-links { display: flex; gap: 25px; margin-bottom: 80px; }
+    .footer-links { display: none; }
     .footer-links a { border-bottom: 1px solid rgba(244, 240, 232, .4); font-size: 13px; padding-bottom: 4px; }
     .footer-bottom { border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: flex; font-family: var(--mono); font-size: 9px; justify-content: space-between; padding-top: 18px; text-transform: uppercase; }
 
@@ -329,14 +330,13 @@
       body[data-style="atelier"] .stats { gap: 8px; padding: 10px 20px; }
       body[data-style="atelier"] .stat, body[data-style="atelier"] .stat:first-child { border-radius: 4px; }
     }
-    body[data-mobile="true"] .hero { padding: 54px 20px 20px; }
+    body[data-mobile="true"] .hero { padding: 24px 20px 20px; }
     body[data-mobile="true"] { background: #d8d2c8; }
     body[data-mobile="true"] .site-shell { background: var(--bg); box-shadow: 0 0 45px rgba(24, 33, 31, .16); margin: 0 auto; max-width: 430px; min-height: 100vh; }
     body[data-mobile="true"] .site-nav { padding: 22px 20px; }
     body[data-mobile="true"] .nav-links { gap: 13px; }
     body[data-mobile="true"] .nav-links a:not(.nav-contact) { display: none; }
-    body[data-mobile="true"] .nav-contact { font-size: 0; }
-    body[data-mobile="true"] .nav-contact span { font-size: 13px; }
+    body[data-mobile="true"] .nav-contact { align-items: center; display: inline-flex; gap: 7px; }
     body[data-mobile="true"] .hero-grid { display: none; }
     body[data-mobile="true"] .mobile-hero { column-gap: 14px; display: grid; grid-template-columns: minmax(0, 1fr) 120px; }
     body[data-mobile="true"] .mobile-hero > .eyebrow { grid-column: 1 / -1; }
@@ -372,13 +372,14 @@
     body[data-mobile="true"] .role-meta { margin-bottom: 22px; }
     body[data-mobile="true"] .role-title { font-size: 19px; }
     body[data-mobile="true"] .role-highlights { grid-template-columns: 1fr; }
-    body[data-mobile="true"] .lower-grid { display: block; margin-top: 54px; }
-    body[data-mobile="true"] .lower-grid > section + section { margin-top: 48px; }
-    body[data-mobile="true"] .contact-section { margin-top: 54px; padding-top: 42px; }
+    body[data-mobile="true"] .lower-grid { display: block; margin-top: 28px; }
+    body[data-mobile="true"] .lower-grid > section + section { margin-top: 36px; }
+    body[data-mobile="true"] .contact-section { margin-top: 32px; padding-top: 24px; }
     body[data-mobile="true"] .contact-grid { display: block; }
     body[data-mobile="true"] .contact-form { margin-top: 28px; }
-    body[data-mobile="true"] .footer { padding: 48px 20px 24px; }
+    body[data-mobile="true"] .footer { padding: 28px 20px 18px; }
     body[data-mobile="true"] .footer h2 { font-size: 48px; line-height: .95; }
+    body[data-mobile="true"] .footer h2 { margin-bottom: 18px; }
     body[data-mobile="true"] .footer-links { flex-wrap: wrap; margin-bottom: 60px; }
     body[data-mobile="true"] .footer-bottom { display: block; line-height: 2; }
     body[data-mobile="true"] .footer-bottom span { display: block; }
@@ -402,7 +403,7 @@
         <a href="#experience">Experience</a>
         <a href="#approach">Approach</a>
         <a href="#contact">Contact</a>
-        <a class="nav-contact" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
+         <a class="nav-contact" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
         <button class="mobile-toggle" type="button" aria-label="Switch to mobile mode" aria-pressed="false" title="Switch to mobile mode"><svg class="mobile-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 18h4"/></svg></button>
         <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark mode</span></button>
       </div>
@@ -558,10 +559,6 @@
       <div class="footer-inner">
         <div class="section-kicker">Have a good problem?</div>
          <h2>Let’s Make It <em>Happen.</em></h2>
-        <div class="footer-links">
-          <a href="#contact">Contact me ↗</a>
-          <a href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer"><svg class="linkedin-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.68H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.26 2.37 4.26 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0-4.14ZM3.56 20.45h3.56V9H3.56v11.45Z"/></svg> LinkedIn ↗</a>
-        </div>
         <div class="footer-bottom"><span>Nick Caplan / Senior Engineering Leader</span><span>Designed for the web / 2026</span></div>
       </div>
     </footer>
@@ -599,7 +596,7 @@
     }
 
     const storedMobile = window.localStorage.getItem('nick-mobile');
-    setMobileMode(storedMobile === 'true' || window.matchMedia('(max-width: 1280px)').matches);
+    setMobileMode(storedMobile === null ? window.matchMedia('(max-width: 1280px)').matches : storedMobile === 'true');
     mobileToggle.addEventListener('click', () => {
       setMobileMode(document.body.dataset.mobile !== 'true');
     });
