@@ -594,7 +594,8 @@
       window.localStorage.setItem('nick-mobile', String(isMobile));
     }
 
-    setMobileMode(window.localStorage.getItem('nick-mobile') === 'true');
+    const storedMobile = window.localStorage.getItem('nick-mobile');
+    setMobileMode(storedMobile === 'true' || window.matchMedia('(max-width: 1280px)').matches);
     mobileToggle.addEventListener('click', () => {
       setMobileMode(document.body.dataset.mobile !== 'true');
     });
