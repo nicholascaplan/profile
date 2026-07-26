@@ -107,7 +107,10 @@
     .theme-label { display: none; }
     .mobile-toggle { align-items: center; background: transparent; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; display: inline-flex; justify-content: center; line-height: 1; padding: 8px 10px; transition: background .25s ease, border-color .25s ease, color .25s ease; }
     .mobile-icon { fill: none; height: 14px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 14px; }
-    .mobile-toggle:hover, .mobile-toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+     .mobile-toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+     @media (hover: hover) {
+       .mobile-toggle:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+     }
     .mobile-toggle:focus-visible, .theme-toggle:focus-visible, .style-button:focus-visible, .button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     .style-picker { display: none; }
     .style-picker-label { color: var(--muted); font-family: var(--mono); font-size: 9px; letter-spacing: .1em; padding: 0 9px; text-transform: uppercase; }
@@ -116,7 +119,7 @@
     .style-button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 
     .hero { margin: 0 auto; max-width: 1240px; padding: 54px 32px 34px; position: relative; }
-    .hero-grid { align-items: end; display: grid; gap: 68px; grid-template-columns: minmax(0, 1.4fr) minmax(290px, .6fr); }
+     .hero-grid { align-items: start; display: grid; gap: 68px; grid-template-columns: minmax(0, 1.4fr) minmax(290px, .6fr); }
     .mobile-hero { display: none; }
     .eyebrow, .section-kicker { color: var(--accent); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
     .hero h1 { font-family: var(--display); font-size: clamp(56px, 9vw, 124px); font-weight: 500; letter-spacing: -.075em; line-height: .91; margin: 22px 0 34px; max-width: 780px; }
@@ -140,9 +143,10 @@
     .button:hover { background: var(--ink); color: var(--bg); transform: translateY(-3px); }
     .button-primary { background: var(--accent); border-color: var(--accent); color: #fffaf2; }
     .button-primary:hover { background: var(--ink); border-color: var(--ink); }
-    .hero-aside { border-left: 1px solid var(--line); padding-left: 30px; }
-    .hero-aside p { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
-    .portrait-wrap { margin-top: 25px; width: 168px; }
+     .hero-aside { border-left: 1px solid var(--line); display: flex; flex-direction: column; padding-left: 30px; }
+     .hero-aside p { color: var(--muted); font-size: 14px; margin: 0 0 8px; }
+      .portrait-wrap { margin-top: 0; width: 230px; }
+     .hero-aside .portrait-wrap { margin-bottom: 24px; order: -1; }
     .portrait-frame { width: 100%; }
     .portrait { aspect-ratio: 1; border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 10px 24px rgba(24, 33, 31, .14); display: block; filter: saturate(.9); height: auto; object-fit: cover; object-position: center top; padding: 4px; width: 100%; }
     .portrait-note { color: var(--muted); font-family: var(--mono); font-size: 9px; margin: 0 0 0 13px; }
@@ -173,7 +177,7 @@
     .role-highlights li { border-left: 2px solid var(--accent-2); color: var(--ink); font-size: 13px; line-height: 1.45; padding-left: 13px; }
     .role-highlights strong { display: block; font-size: 11px; margin-bottom: 4px; }
 
-    .lower-grid { display: grid; gap: 90px; grid-template-columns: 1.15fr .85fr; margin-top: 120px; }
+     .lower-grid { display: grid; gap: 90px; grid-template-columns: 1.15fr .85fr; margin-top: 120px; }
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
     .tag { border: 1px solid var(--line); border-radius: 100px; color: var(--muted); font-family: var(--mono); font-size: 10px; padding: 8px 12px; }
     .principles { border-top: 1px solid var(--line); margin-top: 28px; }
@@ -184,8 +188,8 @@
     .detail { border-bottom: 1px solid var(--line); display: grid; gap: 20px; grid-template-columns: 100px 1fr; padding: 17px 0; }
     .detail-label { color: var(--accent); font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
     .detail p { font-size: 13px; margin: 0; }
-    .community { color: var(--muted); font-size: 13px; margin: 22px 0 0; max-width: 600px; }
-    .contact-section { margin-top: 104px; padding-top: 76px; }
+     .community { color: var(--muted); font-size: 13px; margin: 22px 0 0; max-width: 600px; }
+     .contact-section { margin-top: 40px; padding-top: 32px; }
     .contact-grid { display: grid; gap: 70px; grid-template-columns: .8fr 1.2fr; }
     .contact-copy h2 { font-family: var(--display); font-size: clamp(38px, 5vw, 68px); font-weight: 500; letter-spacing: -.06em; line-height: .95; margin: 0; }
     .contact-copy p { color: var(--muted); font-size: 14px; margin: 20px 0 0; max-width: 340px; }
@@ -199,15 +203,23 @@
     body[data-style="atelier"][data-theme="dark"] .form-field textarea { background: #2c3931; border-color: rgba(237, 240, 232, .34); color: #edf0e8; }
     body[data-style="atelier"][data-theme="dark"] .form-field input:focus,
     body[data-style="atelier"][data-theme="dark"] .form-field textarea:focus { border-color: var(--accent); }
-    .contact-form .button { justify-self: start; }
+     .contact-form .button { justify-self: start; }
+
+     @media (min-width: 1281px) {
+       .lower-grid { grid-template-columns: 1fr .42fr; }
+       .tag-cloud { gap: 6px; max-width: none; }
+       .tag { font-size: 9px; padding: 7px 9px; }
+     }
 
     .footer { background: var(--ink); color: var(--bg); padding: 54px 32px 24px; }
     .footer-inner { margin: 0 auto; max-width: 1240px; }
     .footer h2 { font-family: var(--display); font-size: clamp(42px, 7vw, 92px); font-weight: 500; letter-spacing: -.07em; line-height: .92; margin: 0 0 42px; max-width: 700px; }
     .footer h2 em { color: var(--accent); font-style: normal; }
     .footer-links { display: none; }
-    .footer-links a { border-bottom: 1px solid rgba(244, 240, 232, .4); font-size: 13px; padding-bottom: 4px; }
-    .footer-bottom { border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: flex; font-family: var(--mono); font-size: 9px; justify-content: space-between; padding-top: 18px; text-transform: uppercase; }
+     .footer-links a { border-bottom: 1px solid rgba(244, 240, 232, .4); font-size: 13px; padding-bottom: 4px; }
+     .footer-bottom { border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: flex; font-family: var(--mono); font-size: 9px; justify-content: space-between; padding-top: 18px; text-transform: uppercase; }
+     .github-link { align-items: center; display: inline-flex; gap: 7px; }
+     .github-icon { display: block; fill: currentColor; height: 15px; width: 15px; }
 
     /* Option 02 - midnight product system */
     body[data-style="systems"] {
@@ -276,7 +288,7 @@
     body[data-style="atelier"] .hero h1 em { font-weight: 600; }
     body[data-style="atelier"] .hero-intro { font-size: 19px; max-width: 570px; }
     body[data-style="atelier"] .hero-principle { font-weight: 500; }
-    body[data-style="atelier"] .portrait-wrap { width: 184px; }
+     body[data-style="atelier"] .portrait-wrap { width: 230px; }
     body[data-style="atelier"] .portrait { filter: sepia(.16) saturate(.7); }
     body[data-style="atelier"] .stats { gap: 12px; }
     body[data-style="atelier"] .stat, body[data-style="atelier"] .stat:first-child { background: var(--surface); border: 0; padding: 28px; }
@@ -325,7 +337,7 @@
       .footer { padding: 60px 20px 24px; }
       .footer-links { flex-wrap: wrap; margin-bottom: 60px; }
       .footer-bottom { display: block; line-height: 2; }
-      .footer-bottom span { display: block; }
+     .footer-bottom span { display: block; }
       body[data-style="atelier"] .role { display: block; }
       body[data-style="atelier"] .stats { gap: 8px; padding: 10px 20px; }
       body[data-style="atelier"] .stat, body[data-style="atelier"] .stat:first-child { border-radius: 4px; }
@@ -338,16 +350,17 @@
     body[data-mobile="true"] .nav-links a:not(.nav-contact) { display: none; }
     body[data-mobile="true"] .nav-contact { align-items: center; display: inline-flex; gap: 7px; }
     body[data-mobile="true"] .hero-grid { display: none; }
-    body[data-mobile="true"] .mobile-hero { column-gap: 14px; display: grid; grid-template-columns: minmax(0, 1fr) 120px; }
+     body[data-mobile="true"] .mobile-hero { column-gap: 14px; display: grid; grid-template-columns: minmax(0, 1fr) 150px; }
     body[data-mobile="true"] .mobile-hero > .eyebrow { grid-column: 1 / -1; }
     body[data-mobile="true"] .mobile-hero > h1 { align-self: start; grid-column: 1; }
     body[data-mobile="true"] .hero h1, body[data-mobile="true"] .mobile-hero h1 { font-size: 56px; margin: 14px 0 22px; }
     body[data-mobile="true"] .hero-intro, body[data-mobile="true"] .mobile-hero .hero-intro { font-size: 17px; }
     body[data-mobile="true"] .hero-actions { gap: 10px; margin-top: 26px; }
     body[data-mobile="true"] .button { font-size: 12px; padding: 11px 13px; }
-    body[data-mobile="true"] .hero-aside { align-items: center; border-left: 0; margin-top: 0; padding-left: 0; text-align: center; }
+     body[data-mobile="true"] .hero-aside { align-items: center; border-left: 0; margin-top: 0; padding-left: 0; text-align: center; }
+     body[data-mobile="true"] .hero-aside { display: block; }
     body[data-mobile="true"] .hero-aside p { margin: 24px 0 0; text-align: left; }
-    body[data-mobile="true"] .hero-aside .portrait-wrap, body[data-mobile="true"] .mobile-hero .portrait-wrap { margin: 18px auto 0; width: 120px; }
+     body[data-mobile="true"] .hero-aside .portrait-wrap, body[data-mobile="true"] .mobile-hero .portrait-wrap { margin: 32px auto 0; max-width: 150px; width: 100%; }
     body[data-mobile="true"] .mobile-hero > .portrait-wrap { align-self: start; grid-column: 2; grid-row: 2; }
     body[data-mobile="true"] .hero-aside .portrait-wrap { align-self: center; }
     body[data-mobile="true"] .mobile-hero-bio { color: var(--muted); font-size: 15px; line-height: 1.5; margin: 22px 0 0; }
@@ -355,7 +368,6 @@
     body[data-mobile="true"] .mobile-hero .hero-actions { margin-top: 28px; }
     body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
-    body[data-mobile="true"] .hero-actions .button:last-child { grid-column: 1 / -1; }
     body[data-mobile="true"] .mobile-hero > .hero-intro,
     body[data-mobile="true"] .mobile-hero > .mobile-hero-bio,
     body[data-mobile="true"] .mobile-hero > .hero-principle,
@@ -381,8 +393,10 @@
     body[data-mobile="true"] .footer h2 { font-size: 48px; line-height: .95; }
     body[data-mobile="true"] .footer h2 { margin-bottom: 18px; }
     body[data-mobile="true"] .footer-links { flex-wrap: wrap; margin-bottom: 60px; }
-    body[data-mobile="true"] .footer-bottom { display: block; line-height: 2; }
-    body[data-mobile="true"] .footer-bottom span { display: block; }
+     body[data-mobile="true"] .footer-bottom { display: block; line-height: 2; }
+     body[data-mobile="true"] .footer-bottom span { display: block; }
+     body[data-mobile="true"] .footer-bottom span:first-child,
+     body[data-mobile="true"] .footer-bottom span:last-child { display: none; }
     body[data-mobile="true"][data-style="atelier"] .role { display: block; }
     body[data-mobile="true"][data-style="atelier"] .stats { gap: 8px; padding: 10px 20px; }
     body[data-mobile="true"][data-style="atelier"] .stat, body[data-mobile="true"][data-style="atelier"] .stat:first-child { border-radius: 4px; }
@@ -414,13 +428,12 @@
         <div class="hero-grid">
           <div>
             <div class="eyebrow">Senior engineering leadership / London</div>
-            <h1>Make good work<br><em>repeatable.</em></h1>
-            <p class="hero-intro">I’m Nick, a Senior Engineering Leader who turns ambitious, complex product goals into calm, reliable delivery across teams, platforms and organisational boundaries.</p>
+             <h1>Calm, reliable delivery<br>for <em>complex platforms.</em></h1>
+             <p class="hero-intro">I’m Nick, a Senior Engineering Leader turning ambitious product mandates into predictable execution across teams and enterprise architecture.</p>
             <p class="hero-principle">Clear thinking. Calm delivery. Better systems.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#experience">Explore my work <span aria-hidden="true">↓</span></a>
               <a class="button" href="#contact">Get in touch <svg class="mail-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></a>
-              <a class="button" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer"><svg class="linkedin-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.68H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.26 2.37 4.26 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM3.56 20.45h3.56V9H3.56v11.45Z"/></svg> Connect on LinkedIn <span aria-hidden="true">↗</span></a>
             </div>
           </div>
           <aside class="hero-aside">
@@ -434,19 +447,18 @@
         </div>
         <div class="mobile-hero">
           <div class="eyebrow">Senior engineering leadership / London</div>
-          <h1>Make good work<br><em>repeatable.</em></h1>
+           <h1>Calm, reliable delivery<br>for <em>complex platforms.</em></h1>
           <div class="portrait-wrap">
             <div class="portrait-frame">
               <img class="portrait" src="assets/images/profile-picture.jpeg" alt="Portrait of Nick Caplan, Senior Engineering Leader" width="300" height="300" loading="eager">
             </div>
           </div>
-          <p class="hero-intro">I’m Nick, a Senior Engineering Leader who turns ambitious, complex product goals into calm, reliable delivery across teams, platforms and organisational boundaries.</p>
+           <p class="hero-intro">I’m Nick, a Senior Engineering Leader turning ambitious product mandates into predictable execution across teams and enterprise architecture.</p>
           <p class="mobile-hero-bio">Strategic, results-driven and collaborative. I work at the intersection of people, systems and execution - currently leading engineering teams responsible for how customers, products and accounts move through a modern banking platform.</p>
           <p class="hero-principle">Clear thinking. Calm delivery. Better systems.</p>
           <div class="hero-actions">
             <a class="button button-primary" href="#experience">Explore my work <span aria-hidden="true">↓</span></a>
             <a class="button" href="#contact">Get in touch <svg class="mail-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></a>
-            <a class="button" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer"><svg class="linkedin-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.68H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.26 2.37 4.26 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM3.56 20.45h3.56V9H3.56v11.45Z"/></svg> Connect on LinkedIn <span aria-hidden="true">↗</span></a>
           </div>
         </div>
       </section>
@@ -464,7 +476,7 @@
               <p class="role-company">Core banking platforms, customer onboarding and account services</p>
               <p class="role-summary">Leading engineering teams that build the systems used to create, manage and change customer accounts and products.</p>
               <ul class="role-highlights">
-                <li><strong>Strategic turnaround</strong>Stepped into a new domain with zero handover, removing senior leadership escalations through trust and practical operating improvements.</li>
+                 <li><strong>Operational governance</strong>Rapidly stabilised delivery across a greenfield banking domain with zero initial handover, restoring senior stakeholder alignment and eliminating delivery bottlenecks across 3 squads.</li>
                 <li><strong>Cross-divisional delivery</strong>Orchestrated a high-profile customer integration between NatWest Main Bank and NatWest Boxed.</li>
                 <li><strong>Operational excellence</strong>Led Genie-wide Pod Security Standards compliance and launched an automated Zendesk-to-Jira defect process.</li>
                 <li><strong>Capability building</strong>Rolled out coaching and mentoring structures that make growth part of the delivery system.</li>
@@ -479,7 +491,7 @@
               <p class="role-summary">Provided technical and people leadership for a high-traffic platform squad of 12 engineers and 25+ microservices.</p>
               <ul class="role-highlights">
                 <li><strong>Delivery acceleration</strong>Increased average release frequency from 1 / month to 15+ production deployments / week.</li>
-                <li><strong>Platform growth</strong>Scaled architectural capability from 2 to 23 US states for a site with 100,000+ monthly visitors.</li>
+                 <li><strong>Regulated platform architecture</strong>Scaled platform architecture across 23 US state jurisdictions, engineering real-time data pipelines under strict regulatory compliance.</li>
                 <li><strong>Resilience by design</strong>Established monitoring across all services and co-founded the division’s 24/7 incident response.</li>
               </ul>
             </div>
@@ -559,7 +571,7 @@
       <div class="footer-inner">
         <div class="section-kicker">Have a good problem?</div>
          <h2>Let’s Make It <em>Happen.</em></h2>
-        <div class="footer-bottom"><span>Nick Caplan / Senior Engineering Leader</span><span>Designed for the web / 2026</span></div>
+         <div class="footer-bottom"><span>Nick Caplan / Senior Engineering Leader</span><span><a class="github-link" href="https://github.com/nicholascaplan/profile" target="_blank" rel="noreferrer">Curious how this page works? Explore the source on GitHub <svg class="github-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.26c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.83 1.23 1.83 1.23 1.07 1.83 2.8 1.3 3.48 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.94 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.76.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.64-5.49 5.93.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z"/></svg></a></span><span>Designed for the web / 2026</span></div>
       </div>
     </footer>
   </div>
