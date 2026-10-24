@@ -5,7 +5,7 @@ Current status (24 October 2026): the portfolio-first redesign (option C7) is on
 
 Current status (24 October 2026): the local-only preview change and all three defect fixes have merged. Deployed layouts now also follow breakpoint changes without reloading, while local preview choices remain fixed until toggled. The coverage branch has been rebased onto those changes, retaining its Playwright workflow; the three regression checks below now run as ordinary desired-state assertions, with no expected-failure markers. Earlier entries below record the decisions and intermediate states.
 
-Personal profile page for Nick Caplan, live at [nicholascaplan.github.io/profile](https://nicholascaplan.github.io/profile/). Deployed from `main` by GitHub Pages (`.github/workflows/pages.yml`).
+Personal profile page for Nick Caplan, live at [nickcaplan.github.io/websites-by-nick](https://nickcaplan.github.io/websites-by-nick/). Deployed from `main` by GitHub Pages (`.github/workflows/pages.yml`).
 
 ## How the site is built
 
