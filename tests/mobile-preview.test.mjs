@@ -81,7 +81,7 @@ function runPage({ hostname, viewportWidth, stored = {} }) {
 }
 
 const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', ''];
-const DEPLOYED_HOSTNAMES = ['nicholascaplan.github.io', 'www.example.com'];
+const DEPLOYED_HOSTNAMES = ['nickcaplan.github.io', 'www.example.com'];
 
 test('local hosts keep the mobile preview toggle', () => {
   for (const hostname of LOCAL_HOSTNAMES) {
@@ -106,15 +106,15 @@ test('local hosts honour the stored mobile choice over the viewport', () => {
 });
 
 test('deployed hosts ignore the stored mobile choice and follow the viewport', () => {
-  const wide = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 1440, stored: { 'nick-mobile': 'true' } });
+  const wide = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 1440, stored: { 'nick-mobile': 'true' } });
   assert.equal(wide.body.dataset.mobile, 'false', 'stored mobile=true must be ignored on a wide deployed viewport');
 
-  const narrow = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 390, stored: { 'nick-mobile': 'false' } });
+  const narrow = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 390, stored: { 'nick-mobile': 'false' } });
   assert.equal(narrow.body.dataset.mobile, 'true', 'stored mobile=false must be ignored on a narrow deployed viewport');
 });
 
 test('deployed hosts do not persist a mobile choice', () => {
-  const { store } = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 390 });
+  const { store } = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 390 });
   assert.equal('nick-mobile' in store, false, 'no nick-mobile value should be written off local hosts');
 });
 
@@ -151,7 +151,7 @@ test('local preview choices remain unchanged on resize and can still be toggled'
 });
 
 test('theme still defaults to light and persists when toggled', () => {
-  const { body, themeToggle, store } = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 1440 });
+  const { body, themeToggle, store } = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 1440 });
   assert.equal(body.dataset.theme, 'light');
   themeToggle.listeners.click();
   assert.equal(body.dataset.theme, 'dark');

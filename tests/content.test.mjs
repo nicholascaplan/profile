@@ -96,7 +96,7 @@ for (const page of pages) {
     assert.ok(metas.length >= 2, 'og:image and twitter:image present');
     for (const tag of metas) {
       const content = attr(tag, 'content');
-      const localPath = content.replace('https://nicholascaplan.github.io/profile/', '');
+      const localPath = content.replace('https://nickcaplan.github.io/websites-by-nick/', '');
       assert.ok(existsSync(join(root, localPath)), `${localPath} exists in the repo`);
     }
   });

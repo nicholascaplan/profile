@@ -48,7 +48,7 @@ function runPage({ prefersDark = false, stored = {} }) {
     },
   };
   const window = {
-    location: { hostname: 'nicholascaplan.github.io' },
+    location: { hostname: 'nickcaplan.github.io' },
     localStorage: {
       getItem: (key) => (key in store ? store[key] : null),
       setItem: (key, value) => { store[key] = String(value); },
