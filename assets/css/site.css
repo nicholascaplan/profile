@@ -36,16 +36,18 @@ button { color: inherit; font: inherit; }
 .site-nav {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   margin: 0 auto;
   max-width: 1240px;
   padding: 28px 32px;
   position: relative;
+  row-gap: 18px;
   z-index: 3;
 }
 .wordmark { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
 .wordmark span { color: var(--accent); }
-.nav-links { align-items: center; display: flex; gap: 28px; }
+.nav-links { align-items: center; display: flex; flex-wrap: wrap; gap: 28px; row-gap: 10px; }
 .nav-links a { color: var(--muted); font-size: 13px; transition: color .2s ease; }
 .nav-links a:hover { color: var(--accent); }
 .nav-links a[aria-current="page"] { color: var(--ink); }
@@ -80,10 +82,10 @@ button { color: inherit; font: inherit; }
   border-radius: 999px;
   cursor: pointer;
   display: inline-flex;
-  height: 38px;
   justify-content: center;
+  min-height: 38px;
+  min-width: 38px;
   padding: 8px;
-  width: 38px;
   transition: background .25s ease, border-color .25s ease, color .25s ease;
 }
 .theme-toggle:hover { background: var(--surface); border-color: var(--accent); color: var(--accent); }
@@ -112,10 +114,10 @@ button { color: inherit; font: inherit; }
   display: inline-flex;
   font-size: 13px;
   gap: 10px;
-  height: 58px;
   justify-content: center;
-  padding: 13px 19px;
+  height: 58px;
   min-width: 184px;
+  padding: 13px 19px;
   transition: background .25s ease, color .25s ease, transform .25s var(--ease);
 }
 .button:hover { background: var(--ink); color: var(--bg); transform: translateY(-3px); }
@@ -147,7 +149,7 @@ button { color: inherit; font: inherit; }
 .shot { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
 .shotbar { align-items: center; background: #10131a; display: flex; gap: 8px; padding: 10px 14px; }
 .shotbar .t { color: #edf1ed; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.shotbar .pill { background: #3d4a41; border-radius: 99px; color: #d8e0d8; flex: none; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; margin-left: auto; padding: 3px 9px; white-space: nowrap; }
+.shotbar .pill { background: #3d4a41; border-radius: 99px; color: #d8e0d8; flex: none; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; margin-left: auto; padding: 3px 9px; }
 .shot-img { display: block; height: 340px; object-fit: cover; object-position: top; width: 100%; }
 .shot-mob { display: none; }
 .thumbs { display: flex; gap: 12px; margin-top: 12px; }
@@ -180,7 +182,7 @@ button { color: inherit; font: inherit; }
 
 /* Subpage hero (experience / contact). */
 .page-hero { margin: 0 auto; max-width: 1240px; padding: 54px 32px 20px; }
-.page-hero h1 { font-family: var(--display); font-size: clamp(42px, 6vw, 72px); font-weight: 500; letter-spacing: -.06em; line-height: .95; margin: 18px 0 20px; }
+.page-hero h1 { font-family: var(--display); font-size: clamp(42px, 6vw, 72px); font-weight: 500; letter-spacing: -.06em; line-height: .95; margin: 18px 0 20px; overflow-wrap: break-word; }
 .page-hero h1 em { color: var(--accent); font-style: normal; }
 .page-hero .intro { color: var(--muted); font-size: clamp(17px, 2vw, 21px); letter-spacing: -.02em; line-height: 1.4; margin: 0; max-width: 620px; }
 
@@ -236,7 +238,7 @@ body[data-style="atelier"][data-theme="dark"] .form-field textarea:focus { borde
 
 .footer { background: var(--ink); color: var(--bg); padding: 54px 32px 24px; }
 .footer-inner { margin: 0 auto; max-width: 1240px; }
-.footer h2 { font-family: var(--display); font-size: clamp(42px, 7vw, 92px); font-weight: 500; letter-spacing: -.07em; line-height: .92; margin: 0 0 42px; max-width: 700px; }
+.footer h2 { font-family: var(--display); font-size: clamp(42px, 7vw, 92px); font-weight: 500; letter-spacing: -.07em; line-height: .92; margin: 0 0 42px; max-width: 700px; overflow-wrap: break-word; }
 .footer h2 em { color: var(--accent); font-style: normal; }
 .footer-links { display: none; }
 .footer-bottom { border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: flex; font-family: var(--mono); font-size: 9px; justify-content: space-between; padding-top: 18px; text-transform: uppercase; }
@@ -420,10 +422,15 @@ body[data-mobile="true"][data-style="atelier"] .role { display: block; }
    only apply when the user has genuinely enlarged their text. Keep the
    headline, buttons, chips and thumbnails readable instead of crushed. */
 @media (max-width: 15rem) {
-  .hero h1 { font-size: min(3.5rem, 13vw); }
+  .hero h1, body[data-mobile="true"] .hero h1 { font-size: min(3.5rem, 13vw); }
   .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .hero-grid .portrait-wrap { width: 160px; }
-  .page-hero h1 { font-size: min(2.8rem, 12vw); }
+  .page-hero h1, body[data-mobile="true"] .page-hero h1 { font-size: min(2.8rem, 12vw); }
+  .footer h2, body[data-mobile="true"] .footer h2 { font-size: min(2.8rem, 12vw); }
+  body[data-mobile="true"] .nav-chips a { line-height: 1.4; }
+  .button { height: auto; min-height: 58px; }
+  .shotbar { flex-wrap: wrap; }
+  .shotbar .pill { max-width: 100%; }
   .nav-chips { flex-wrap: wrap; }
   body[data-mobile="true"] .nav-chips a { flex: 1 1 40%; }
   .thumbs { flex-wrap: wrap; }
