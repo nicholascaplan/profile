@@ -1,5 +1,8 @@
 # Profile site project brief
 
+Current status (24 October 2026): the portfolio-first redesign (option C7) is on the c7-redesign branch. The single page becomes three real URLs - home (websites lead), experience (the CV content) and contact (the form, reframed "Have a website in mind?") - with visible navigation on every screen size and no menu button. Showcase cards show one hero-sized screenshot per site, chosen by labelled thumbnails; on mobile, visible prev/next arrows and a counter step through the same set. Screenshots are static captures, optimised to WebP. Shared CSS and JavaScript move to `assets/css/site.css` and `assets/js/`; the theme and mobile preview behaviour are unchanged. The hero portrait's placement is awaiting Nick's choice between beside the Experience intro and beside the home hero text, and lands separately.
+
+
 Current status (24 October 2026): the local-only preview change and all three defect fixes have merged. Deployed layouts now also follow breakpoint changes without reloading, while local preview choices remain fixed until toggled. The coverage branch has been rebased onto those changes, retaining its Playwright workflow; the three regression checks below now run as ordinary desired-state assertions, with no expected-failure markers. Earlier entries below record the decisions and intermediate states.
 
 Personal profile page for Nick Caplan, live at [nicholascaplan.github.io/profile](https://nicholascaplan.github.io/profile/). Deployed from `main` by GitHub Pages (`.github/workflows/pages.yml`).
