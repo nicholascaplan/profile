@@ -84,7 +84,8 @@ async function openPage({ width, height, dark = false }) {
   await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 500 }, sessionId);
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }] }, sessionId);
   await send('Page.navigate', { url: `${origin}/` }, sessionId);
-  await new Promise((resolve) => setTimeout(resolve, 700));
+  // wait past the 0.45s theme transition so captures show the settled state
+  await new Promise((resolve) => setTimeout(resolve, 1100));
   return sessionId;
 }
 
@@ -93,6 +94,19 @@ async function evaluate(sessionId, expression) {
   if (exceptionDetails) throw new Error(`page evaluation failed: ${JSON.stringify(exceptionDetails.exception)}`);
   return result.value;
 }
+
+const contrastFn = `(() => {
+  const lum = (rgb) => {
+    const c = rgb.match(/\\d+(\\.\\d+)?/g).map(Number).slice(0, 3).map((v) => {
+      v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const bg = getComputedStyle(document.body).backgroundColor;
+  const text = getComputedStyle(document.querySelector('.hero p, main p')).color;
+  const a = lum(bg); const b = lum(text);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+})()`;
 
 async function shot(sessionId, name) {
   mkdirSync(shotsDir, { recursive: true });
@@ -115,7 +129,12 @@ after(async () => {
   server.close();
 });
 
-const withChrome = chromeBin ? test : test.skip;
+// Browser checks must really run in CI; locally they skip with a reason when
+// no Chrome/Chromium binary is installed.
+const chromeMissing = (name) => test(name, () => {
+  assert.fail('Chrome/Chromium is required for the browser checks but no binary was found');
+});
+const withChrome = chromeBin ? test : (process.env.CI ? chromeMissing : test.skip);
 
 // --- checks -----------------------------------------------------------------
 
@@ -134,6 +153,13 @@ withChrome('desktop light: one visible h1, toggle defaults to light mode', async
     assert.equal(state.pressed, 'false');
     assert.equal(state.label, 'Switch to dark mode');
     assert.equal(state.hasMobileToggle, true, 'mobile preview toggle present on a local host');
+    const headlineContrast = await evaluate(s, `(() => {
+      const lum = (rgb) => { const c = rgb.match(/\\d+(\\.\\d+)?/g).map(Number).slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+      const bg = lum(getComputedStyle(document.body).backgroundColor);
+      const fg = lum(getComputedStyle(document.querySelector('.hero h1')).color);
+      return (Math.max(bg, fg) + 0.05) / (Math.min(bg, fg) + 0.05);
+    })()`);
+    assert.ok(headlineContrast >= 4.5, `light theme headline contrast ${headlineContrast.toFixed(2)}:1 meets 4.5:1`);
     await shot(s, 'browser-desktop-light');
   } finally { await closePage(s); }
 });
@@ -149,6 +175,8 @@ withChrome('dark system preference: page opens dark and the toggle shows it', as
     assert.equal(state.theme, 'dark');
     assert.equal(state.pressed, 'true');
     assert.equal(state.label, 'Light mode');
+    const contrast = await evaluate(s, contrastFn);
+    assert.ok(contrast >= 4.5, `dark theme body text contrast ${contrast.toFixed(2)}:1 meets 4.5:1`);
     await shot(s, 'browser-desktop-dark');
   } finally { await closePage(s); }
 });
@@ -160,9 +188,17 @@ withChrome('theme toggle: click switches to dark, reload restores it', async () 
     const after1 = await evaluate(s, `({ theme: document.body.dataset.theme, stored: localStorage.getItem('nick-theme') })`);
     assert.equal(after1.theme, 'dark');
     assert.equal(after1.stored, 'dark');
+    // settle past the 0.45s transition, then verify the rendered colours, not just attributes
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    const rendered = await evaluate(s, `({
+      bg: getComputedStyle(document.body).backgroundColor,
+      contrast: ${contrastFn},
+    })`);
+    assert.equal(rendered.bg, 'rgb(24, 33, 29)', 'dark background is actually painted');
+    assert.ok(rendered.contrast >= 4.5, `dark body text contrast ${rendered.contrast.toFixed(2)}:1 meets 4.5:1`);
     await shot(s, 'browser-desktop-dark-toggled');
     await send('Page.navigate', { url: `${origin}/` }, s);
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
     const after2 = await evaluate(s, `document.body.dataset.theme`);
     assert.equal(after2, 'dark', 'stored choice survives a reload');
   } finally { await closePage(s); }
@@ -218,7 +254,41 @@ withChrome('200% text at a laptop viewport: no horizontal scrolling', async () =
   } finally { await closePage(s); }
 });
 
-test('320px headline and portrait do not overlap', { todo: 'known existing defect on main - fix not yet decided' }, () => {});
+// KNOWN EXISTING DEFECT on main: at 320px the hero headline and portrait overlap.
+// This check measures the real rendered geometry and PASSES while the defect is
+// present. When the overlap is fixed it FAILS on purpose - flip the assertion
+// to assert.equal(overlap, false) as part of the fix.
+withChrome('KNOWN DEFECT: 320px hero headline overlaps the portrait (flip when fixed)', async () => {
+  const s = await openPage({ width: 320, height: 700 });
+  try {
+    // the headline's painted text overflows its grid box, so measure the text
+    // geometry (Range), not the element's bounding box
+    const { overlap, detail } = await evaluate(s, `(() => {
+      const hero = document.querySelector('.mobile-hero');
+      const h1 = hero.querySelector('h1');
+      const range = document.createRange();
+      range.selectNodeContents(h1);
+      const text = range.getBoundingClientRect();
+      const img = hero.querySelector('img.portrait').getBoundingClientRect();
+      const overlap = !(text.right <= img.left || img.right <= text.left || text.bottom <= img.top || img.bottom <= text.top);
+      return { overlap, detail: { text: [Math.round(text.left), Math.round(text.right)], img: [Math.round(img.left), Math.round(img.right)] } };
+    })()`);
+    await shot(s, 'browser-320-known-defect');
+    assert.equal(overlap, true, `320px overlap defect no longer reproduces (${JSON.stringify(detail)}) - flip this check to require no overlap`);
+  } finally { await closePage(s); }
+});
+
+// KNOWN EXISTING DEFECT on main: the muted body text (--muted) on the light
+// theme measures about 3.9:1, below WCAG AA 4.5:1 for normal text. This check
+// PASSES while the defect is present; when the contrast is fixed it FAILS on
+// purpose - flip the assertion to >= 4.5 as part of the fix.
+withChrome('KNOWN DEFECT: light-theme muted body text below 4.5:1 contrast (flip when fixed)', async () => {
+  const s = await openPage({ width: 1440, height: 900 });
+  try {
+    const contrast = await evaluate(s, contrastFn);
+    assert.ok(contrast < 4.5, `muted text contrast now ${contrast.toFixed(2)}:1 - defect appears fixed, flip this check to require >= 4.5:1`);
+  } finally { await closePage(s); }
+});
 
 withChrome('contact form: empty form is invalid, completed form is valid', async () => {
   const s = await openPage({ width: 1440, height: 900 });
