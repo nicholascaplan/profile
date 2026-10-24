@@ -46,11 +46,15 @@ const DESKTOP = { width: 1440, height: 900 };
 // The project lists were measured against real runs, not assumed.
 const KNOWN_DEFECTS = {
   overlap320: {
-    reason: 'pre-existing layout defect on main: the headline text overflows its grid box into the portrait; fix pending product decision',
+    reason: 'pre-existing layout defect on main: the headline text overflows its grid box into the portrait; fix in the defect-fix PR',
+    projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
+  },
+  ctaArrow320: {
+    reason: 'pre-existing layout defect on main: at 320px the hero primary CTA arrow separates from the end of its label; fix in the defect-fix PR',
     projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
   },
   lightMutedContrast: {
-    reason: 'pre-existing design defect on main: muted text measures about 3.9:1 on the light theme; fix pending design decision',
+    reason: 'pre-existing design defect on main: muted text measures about 3.9:1 on the light theme; fix in the defect-fix PR',
     projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
   },
 };
@@ -252,6 +256,45 @@ test('light-theme muted body text has at least 4.5:1 contrast', async ({ page },
   await page.goto('/');
   const contrast = await page.evaluate(heroTextContrast);
   assert.ok(contrast >= 4.5, `muted body text contrast ${contrast.toFixed(2)}:1 is below 4.5:1`);
+});
+
+// Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
+// of its label. Check every visible CTA with a symbol at the narrowest width.
+test('CTA symbols stay with the end of their label at 320px', async ({ page }, testInfo) => {
+  trackKnownDefect(testInfo, KNOWN_DEFECTS.ctaArrow320);
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto('/');
+  await settle(page);
+  const stranded = await page.evaluate(() => {
+    const bad = [];
+    for (const el of document.querySelectorAll('.hero-actions .button, .nav-contact, .contact-form button[type=submit]')) {
+      if (el.offsetParent === null) continue;
+      const sym = el.querySelector('span[aria-hidden="true"], svg');
+      if (!sym) continue;
+      const textNodes = [];
+      (function walk(n) {
+        for (const c of n.childNodes) {
+          if (c.nodeType === 3 && c.textContent.trim()) textNodes.push(c);
+          else if (c.nodeType === 1 && c !== sym && !sym.contains(c)) walk(c);
+        }
+      })(el);
+      if (!textNodes.length) continue;
+      const range = document.createRange();
+      range.selectNodeContents(textNodes[textNodes.length - 1]);
+      const rects = [...range.getClientRects()];
+      if (!rects.length) continue;
+      const lastLine = rects[rects.length - 1];
+      const sr = sym.getBoundingClientRect();
+      const symMid = sr.top + sr.height / 2;
+      const lineMid = lastLine.top + lastLine.height / 2;
+      if (Math.abs(symMid - lineMid) > 4 || sr.left < lastLine.left) {
+        bad.push({ cta: el.textContent.trim().slice(0, 30), symY: Math.round(symMid), lineY: Math.round(lineMid) });
+      }
+    }
+    return bad;
+  });
+  await shot(page, 'browser-320-cta-symbols', testInfo.project.name);
+  assert.equal(stranded.length, 0, `CTA symbols separated from the end of their label at 320px: ${JSON.stringify(stranded)}`);
 });
 
 test('contact form: empty form is invalid, completed form is valid', async ({ page }) => {
