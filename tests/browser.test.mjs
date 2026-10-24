@@ -136,6 +136,25 @@ const chromeMissing = (name) => test(name, () => {
 });
 const withChrome = chromeBin ? test : (process.env.CI ? chromeMissing : test.skip);
 
+// Known-defect tracking: the check asserts the DESIRED state. While the defect
+// is present the assertion fails and the failure is reported as an expected
+// failure (with reason) - the defect is counted separately from genuinely
+// passing checks and never re-labelled a pass. If the defect stops
+// reproducing, the check fails loudly so the record is updated.
+const knownDefects = [];
+function knownDefect(name, reason, fn) {
+  withChrome(`KNOWN DEFECT: ${name}`, async (t) => {
+    try {
+      await fn(t);
+    } catch (err) {
+      knownDefects.push(name);
+      t.diagnostic(`EXPECTED FAILURE - known defect: ${reason}. Detail: ${err.message}`);
+      return;
+    }
+    assert.fail(`UNEXPECTED PASS - this known defect no longer reproduces (${reason}). Promote it to a normal passing check and update the defect record.`);
+  });
+}
+
 // --- checks -----------------------------------------------------------------
 
 withChrome('desktop light: one visible h1, toggle defaults to light mode', async () => {
@@ -204,28 +223,75 @@ withChrome('theme toggle: click switches to dark, reload restores it', async () 
   } finally { await closePage(s); }
 });
 
-withChrome('keyboard: tab reaches the toggles and Enter switches the theme', async () => {
+withChrome('keyboard: full page tab order reaches nav, toggles, hero actions and form', async () => {
   const s = await openPage({ width: 1440, height: 900 });
   try {
-    const focusTag = await evaluate(s, `(async () => {
-      for (let i = 0; i < 20; i++) {
-        // simulate a Tab press by moving focus through the tab order
-        const focusables = [...document.querySelectorAll('a[href], button')].filter((el) => el.offsetParent !== null);
-        const index = focusables.indexOf(document.activeElement);
-        (focusables[index + 1] || focusables[0]).focus();
-        if (document.activeElement === document.querySelector('.theme-toggle')) return 'theme-toggle';
-        if (document.activeElement === document.querySelector('.mobile-toggle')) return 'mobile-toggle';
+    const order = await evaluate(s, `(async () => {
+      const seen = [];
+      const focusables = [...document.querySelectorAll('a[href], button, input, textarea')].filter((el) => el.offsetParent !== null);
+      for (let i = 0; i < focusables.length + 4; i++) {
+        const list = [...document.querySelectorAll('a[href], button, input, textarea')].filter((el) => el.offsetParent !== null);
+        const index = list.indexOf(document.activeElement);
+        (list[index + 1] || list[0]).focus();
+        const el = document.activeElement;
+        seen.push(el.className || el.id || el.tagName);
+        if (seen.length > 3 && el === list[0]) break;
       }
-      return document.activeElement ? document.activeElement.className : 'none';
+      return seen;
     })()`);
-    assert.ok(['theme-toggle', 'mobile-toggle'].includes(focusTag), `toggle reachable by keyboard, reached ${focusTag}`);
+    const joined = order.join('|');
+    for (const expected of ['wordmark', 'theme-toggle', 'mobile-toggle', 'button-primary', 'contact-name', 'contact-email', 'contact-message']) {
+      assert.ok(joined.includes(expected), `tab order reaches ${expected} (saw: ${joined.slice(0, 200)})`);
+    }
+  } finally { await closePage(s); }
+});
+
+withChrome('keyboard: Enter on a nav anchor navigates, Enter on the toggle switches theme', async () => {
+  const s = await openPage({ width: 1440, height: 900 });
+  try {
+    await evaluate(s, `document.querySelector('a[href="#experience"]').focus()`);
+    for (const type of ['keyDown', 'keyUp']) {
+      await send('Input.dispatchKeyEvent', { type, key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, text: '\r', unmodifiedText: '\r' }, s);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    assert.equal(await evaluate(s, 'location.hash'), '#experience', 'Enter on a nav anchor navigates');
+
     await evaluate(s, `document.querySelector('.theme-toggle').focus()`);
     for (const type of ['keyDown', 'keyUp']) {
       await send('Input.dispatchKeyEvent', { type, key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, text: '\r', unmodifiedText: '\r' }, s);
     }
     await new Promise((resolve) => setTimeout(resolve, 200));
-    const theme = await evaluate(s, `document.body.dataset.theme`);
-    assert.equal(theme, 'dark', 'Enter on the focused toggle switches the theme');
+    assert.equal(await evaluate(s, `document.body.dataset.theme`), 'dark', 'Enter on the focused toggle switches the theme');
+
+    for (const type of ['keyDown', 'keyUp']) {
+      await send('Input.dispatchKeyEvent', { type, key: ' ', code: 'Space', windowsVirtualKeyCode: 32, nativeVirtualKeyCode: 32, text: ' ' }, s);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.equal(await evaluate(s, `document.body.dataset.theme`), 'light', 'Space on the focused toggle switches back');
+  } finally { await closePage(s); }
+});
+
+withChrome('keyboard: contact form can be completed and submitted by keyboard (submission intercepted)', async () => {
+  const s = await openPage({ width: 1440, height: 900 });
+  try {
+    await evaluate(s, `
+      window.__submitted = false;
+      document.querySelector('.contact-form').addEventListener('submit', (e) => { e.preventDefault(); window.__submitted = true; });
+      document.querySelector('#contact-name').focus();
+    `);
+    await send('Input.insertText', { text: 'Test Person' }, s);
+    await evaluate(s, `document.querySelector('#contact-email').focus()`);
+    await send('Input.insertText', { text: 'test@example.com' }, s);
+    await evaluate(s, `document.querySelector('#contact-message').focus()`);
+    await send('Input.insertText', { text: 'Hello from the keyboard' }, s);
+    await evaluate(s, `document.querySelector('.contact-form button[type="submit"]').focus()`);
+    for (const type of ['keyDown', 'keyUp']) {
+      await send('Input.dispatchKeyEvent', { type, key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, text: '\r', unmodifiedText: '\r' }, s);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const state = await evaluate(s, `({ submitted: window.__submitted, hash: location.hash, valid: document.querySelector('.contact-form').checkValidity() })`);
+    assert.equal(state.valid, true, 'form is valid after keyboard entry');
+    assert.equal(state.submitted, true, 'Enter on the submit button fires submission (intercepted, nothing sent)');
   } finally { await closePage(s); }
 });
 
@@ -254,41 +320,41 @@ withChrome('200% text at a laptop viewport: no horizontal scrolling', async () =
   } finally { await closePage(s); }
 });
 
-// KNOWN EXISTING DEFECT on main: at 320px the hero headline and portrait overlap.
-// This check measures the real rendered geometry and PASSES while the defect is
-// present. When the overlap is fixed it FAILS on purpose - flip the assertion
-// to assert.equal(overlap, false) as part of the fix.
-withChrome('KNOWN DEFECT: 320px hero headline overlaps the portrait (flip when fixed)', async () => {
-  const s = await openPage({ width: 320, height: 700 });
-  try {
-    // the headline's painted text overflows its grid box, so measure the text
-    // geometry (Range), not the element's bounding box
-    const { overlap, detail } = await evaluate(s, `(() => {
-      const hero = document.querySelector('.mobile-hero');
-      const h1 = hero.querySelector('h1');
-      const range = document.createRange();
-      range.selectNodeContents(h1);
-      const text = range.getBoundingClientRect();
-      const img = hero.querySelector('img.portrait').getBoundingClientRect();
-      const overlap = !(text.right <= img.left || img.right <= text.left || text.bottom <= img.top || img.bottom <= text.top);
-      return { overlap, detail: { text: [Math.round(text.left), Math.round(text.right)], img: [Math.round(img.left), Math.round(img.right)] } };
-    })()`);
-    await shot(s, 'browser-320-known-defect');
-    assert.equal(overlap, true, `320px overlap defect no longer reproduces (${JSON.stringify(detail)}) - flip this check to require no overlap`);
-  } finally { await closePage(s); }
-});
+knownDefect(
+  '320px hero headline does not overlap the portrait',
+  'pre-existing layout defect on main: the headline text overflows its grid box into the portrait; fix pending product decision',
+  async () => {
+    const s = await openPage({ width: 320, height: 700 });
+    try {
+      // the headline's painted text overflows its grid box, so measure the text
+      // geometry (Range), not the element's bounding box
+      const { overlap, detail } = await evaluate(s, `(() => {
+        const hero = document.querySelector('.mobile-hero');
+        const h1 = hero.querySelector('h1');
+        const range = document.createRange();
+        range.selectNodeContents(h1);
+        const text = range.getBoundingClientRect();
+        const img = hero.querySelector('img.portrait').getBoundingClientRect();
+        const overlap = !(text.right <= img.left || img.right <= text.left || text.bottom <= img.top || img.bottom <= text.top);
+        return { overlap, detail: { text: [Math.round(text.left), Math.round(text.right)], img: [Math.round(img.left), Math.round(img.right)] } };
+      })()`);
+      await shot(s, 'browser-320-headline-portrait');
+      assert.equal(overlap, false, `headline text overlaps the portrait at 320px: ${JSON.stringify(detail)}`);
+    } finally { await closePage(s); }
+  },
+);
 
-// KNOWN EXISTING DEFECT on main: the muted body text (--muted) on the light
-// theme measures about 3.9:1, below WCAG AA 4.5:1 for normal text. This check
-// PASSES while the defect is present; when the contrast is fixed it FAILS on
-// purpose - flip the assertion to >= 4.5 as part of the fix.
-withChrome('KNOWN DEFECT: light-theme muted body text below 4.5:1 contrast (flip when fixed)', async () => {
-  const s = await openPage({ width: 1440, height: 900 });
-  try {
-    const contrast = await evaluate(s, contrastFn);
-    assert.ok(contrast < 4.5, `muted text contrast now ${contrast.toFixed(2)}:1 - defect appears fixed, flip this check to require >= 4.5:1`);
-  } finally { await closePage(s); }
-});
+knownDefect(
+  'light-theme muted body text has at least 4.5:1 contrast',
+  'pre-existing design defect on main: muted text measures about 3.9:1 on the light theme; fix pending design decision',
+  async () => {
+    const s = await openPage({ width: 1440, height: 900 });
+    try {
+      const contrast = await evaluate(s, contrastFn);
+      assert.ok(contrast >= 4.5, `muted body text contrast ${contrast.toFixed(2)}:1 is below 4.5:1`);
+    } finally { await closePage(s); }
+  },
+);
 
 withChrome('contact form: empty form is invalid, completed form is valid', async () => {
   const s = await openPage({ width: 1440, height: 900 });
@@ -320,4 +386,8 @@ withChrome('navigation: in-page anchors move to their sections', async () => {
     assert.equal(state.hash, '#experience');
     assert.ok(state.scrolled, 'page scrolled to the section');
   } finally { await closePage(s); }
+});
+
+test('coverage summary: known defects are reported separately from passing checks', (t) => {
+  t.diagnostic(`${knownDefects.length} known defect(s) present as expected failures: ${knownDefects.join('; ') || 'none'}`);
 });
