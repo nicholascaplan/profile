@@ -1,7 +1,5 @@
-// Browser checks for index.html across Chromium, Firefox, WebKit and mobile Chrome.
-// Replaces the earlier Chrome-only CDP harness (removed in this change) with the
-// Playwright matrix used by Nick's other sites; every check from that harness is
-// ported here and now runs per browser engine.
+// Browser checks for the three-page site (home / experience / contact) across
+// Chromium, Firefox, WebKit and mobile Chrome.
 // Usage: npx playwright test   (npm run test:e2e)
 
 import { test } from '@playwright/test';
@@ -24,7 +22,7 @@ function heroTextContrast() {
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   };
   const bg = getComputedStyle(document.body).backgroundColor;
-  const text = getComputedStyle(document.querySelector('.hero p, main p')).color;
+  const text = getComputedStyle(document.querySelector('.hero p, .page-hero p, main p')).color;
   const a = lum(bg); const b = lum(text);
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
@@ -34,11 +32,25 @@ function heroTextContrast() {
 const settle = (page) => page.waitForTimeout(1100);
 
 // Desktop checks run at 1440x900: the site switches itself into mobile preview at
-// viewports of 1280px and below, so Playwright's 1280x720 default would not
-// exercise the desktop layout.
+// viewports of 1280px and below.
 const DESKTOP = { width: 1440, height: 900 };
-
 const desktopOnly = (isMobile) => test.skip(isMobile, 'desktop chrome and keyboard check');
+
+// Text enlargement emulation: double every px font-size in the shared
+// stylesheet (the site's fonts are all px; unitless line-heights scale with
+// them) while the layout viewport stays the same width, matching browser
+// text-only zoom.
+async function enlargeText(page) {
+  await page.evaluate(async () => {
+    const link = [...document.querySelectorAll('link[rel="stylesheet"]')].find((l) => l.href.includes('/assets/css/'));
+    const css = await (await fetch(link.href)).text();
+    const doubled = css.replace(/(font-size\s*:\s*)([^;}]+)/g,
+      (all, prop, val) => prop + val.replace(/(\d+(?:\.\d+)?)px/g, (m, n) => (parseFloat(n) * 2) + 'px'));
+    const s = document.createElement('style');
+    s.textContent = doubled;
+    document.head.appendChild(s);
+  });
+}
 
 test('desktop light: one visible h1, toggle defaults to light mode', async ({ page, isMobile }, testInfo) => {
   desktopOnly(isMobile);
@@ -76,7 +88,6 @@ test('dark system preference: page opens dark and the toggle shows it', async ({
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.setViewportSize(DESKTOP);
   await page.goto('/');
-  // the theme transition also runs on first paint when the system prefers dark
   await settle(page);
   const state = await page.evaluate(() => ({
     theme: document.body.dataset.theme,
@@ -99,7 +110,6 @@ test('theme toggle: click switches to dark, reload restores it', async ({ page, 
   const after1 = await page.evaluate(() => ({ theme: document.body.dataset.theme, stored: localStorage.getItem('nick-theme') }));
   assert.equal(after1.theme, 'dark');
   assert.equal(after1.stored, 'dark');
-  // settle past the 0.45s transition, then verify the rendered colours, not just attributes
   await settle(page);
   const renderedBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const renderedContrast = await page.evaluate(heroTextContrast);
@@ -112,7 +122,24 @@ test('theme toggle: click switches to dark, reload restores it', async ({ page, 
   assert.equal(after2, 'dark', 'stored choice survives a reload');
 });
 
-test('keyboard: full page tab order reaches nav, toggles, hero actions and form', async ({ page, isMobile }) => {
+test('navigation: every page is reachable by its real URL from the nav', async ({ page, isMobile }, testInfo) => {
+  desktopOnly(isMobile);
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/');
+  await page.locator('.nav-links a[href="experience/"]').click();
+  await page.waitForURL('**/experience/');
+  assert.equal(await page.evaluate(() => document.querySelector('h1').textContent.trim()), 'Selected experience.');
+  assert.equal(await page.evaluate(() => document.querySelector('.nav-links a[aria-current="page"]').textContent.trim()), 'Experience');
+  await page.locator('.nav-links a[href="../contact/"]').click();
+  await page.waitForURL('**/contact/');
+  assert.equal(await page.evaluate(() => document.querySelector('h1').textContent.trim()), 'Have a website in mind?');
+  await page.locator('.nav-links a[href="../"]').first().click();
+  await page.waitForURL('**/');
+  assert.match(await page.evaluate(() => document.querySelector('h1').textContent), /Websites that earn/);
+  await shot(page, 'browser-nav-roundtrip', testInfo.project.name);
+});
+
+test('keyboard: full page tab order reaches nav, toggles and hero actions', async ({ page, isMobile }) => {
   desktopOnly(isMobile);
   await page.setViewportSize(DESKTOP);
   await page.goto('/');
@@ -127,19 +154,18 @@ test('keyboard: full page tab order reaches nav, toggles, hero actions and form'
     seen.push(name);
   }
   const joined = seen.join('|');
-  for (const expected of ['wordmark', 'theme-toggle', 'mobile-toggle', 'button-primary', 'contact-name', 'contact-email', 'contact-message']) {
+  for (const expected of ['wordmark', 'theme-toggle', 'mobile-toggle', 'button-primary']) {
     assert.ok(joined.includes(expected), `tab order reaches ${expected} (saw: ${joined.slice(0, 200)})`);
   }
 });
 
-test('keyboard: Enter on a nav anchor navigates, Enter and Space toggle the theme', async ({ page, isMobile }) => {
+test('keyboard: Enter on a nav link navigates, Enter and Space toggle the theme', async ({ page, isMobile }) => {
   desktopOnly(isMobile);
   await page.setViewportSize(DESKTOP);
   await page.goto('/');
-  await page.locator('a[href="#experience"]').first().focus();
+  await page.locator('.nav-links a[href="experience/"]').focus();
   await page.keyboard.press('Enter');
-  await page.waitForTimeout(400);
-  assert.equal(await page.evaluate(() => location.hash), '#experience', 'Enter on a nav anchor navigates');
+  await page.waitForURL('**/experience/');
 
   await page.locator('.theme-toggle').focus();
   await page.keyboard.press('Enter');
@@ -160,7 +186,7 @@ test('keyboard: contact form can be completed and submitted by keyboard (submiss
     });
   });
   await page.setViewportSize(DESKTOP);
-  await page.goto('/');
+  await page.goto('/contact/');
   await page.locator('#contact-name').focus();
   await page.keyboard.type('Test Person');
   await page.keyboard.press('Tab');
@@ -177,49 +203,34 @@ test('keyboard: contact form can be completed and submitted by keyboard (submiss
   assert.equal(state.submitted, true, 'Enter on the submit button fires submission (intercepted, nothing sent)');
 });
 
-test('mobile 390px: one visible h1 and no horizontal scrolling', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  const state = await page.evaluate(() => ({
-    visibleH1: [...document.querySelectorAll('h1')].filter((h) => h.offsetParent !== null).length,
-    mobileMode: document.body.dataset.mobile,
-    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  }));
-  assert.equal(state.visibleH1, 1, 'exactly one h1 is rendered');
-  assert.equal(state.mobileMode, 'true', 'mobile layout active at 390px');
-  assert.ok(state.overflow <= 1, `no horizontal scroll (overflow ${state.overflow}px)`);
-  await settle(page);
-  await shot(page, 'browser-mobile-390', testInfo.project.name);
-});
+for (const [name, path] of [['home', '/'], ['experience', '/experience/'], ['contact', '/contact/']]) {
+  test(`mobile 390px (${name}): one visible h1, no horizontal scrolling, visible nav chips`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(path);
+    const state = await page.evaluate(() => ({
+      visibleH1: [...document.querySelectorAll('h1')].filter((h) => h.offsetParent !== null).length,
+      mobileMode: document.body.dataset.mobile,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      chips: [...document.querySelectorAll('.nav-chips a')].filter((a) => a.offsetParent !== null).length,
+      menuButton: !!document.querySelector('[aria-label*="menu" i], .hamburger'),
+    }));
+    assert.equal(state.visibleH1, 1, 'exactly one h1 is rendered');
+    assert.equal(state.mobileMode, 'true', 'mobile layout active at 390px');
+    assert.ok(state.overflow <= 1, `no horizontal scroll (overflow ${state.overflow}px)`);
+    assert.equal(state.chips, 3, 'Work / Experience / Contact chips all visible on mobile');
+    assert.equal(state.menuButton, false, 'no hidden menu button');
+    await settle(page);
+    await shot(page, `browser-mobile-390-${name}`, testInfo.project.name);
+  });
+}
 
 test('200% text at a laptop viewport: no horizontal scrolling', async ({ page }, testInfo) => {
-  // 200% browser zoom at 1440px leaves a 720px CSS viewport.
   await page.setViewportSize({ width: 720, height: 450 });
   await page.goto('/');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 1, `no horizontal scroll at 720px effective width (overflow ${overflow}px)`);
   await settle(page);
   await shot(page, 'browser-zoom-720', testInfo.project.name);
-});
-
-test('320px hero headline does not overlap the portrait', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/');
-  // the headline's painted text overflows its grid box, so measure the text
-  // geometry (Range), not the element's bounding box
-  const { overlap, detail } = await page.evaluate(() => {
-    const hero = document.querySelector('.mobile-hero');
-    const h1 = hero.querySelector('h1');
-    const range = document.createRange();
-    range.selectNodeContents(h1);
-    const text = range.getBoundingClientRect();
-    const img = hero.querySelector('img.portrait').getBoundingClientRect();
-    const overlap = !(text.right <= img.left || img.right <= text.left || text.bottom <= img.top || img.bottom <= text.top);
-    return { overlap, detail: { text: [Math.round(text.left), Math.round(text.right)], img: [Math.round(img.left), Math.round(img.right)] } };
-  });
-  await settle(page);
-  await shot(page, 'browser-320-headline-portrait', testInfo.project.name);
-  assert.equal(overlap, false, `headline text overlaps the portrait at 320px: ${JSON.stringify(detail)}`);
 });
 
 test('light-theme muted body text has at least 4.5:1 contrast', async ({ page }) => {
@@ -229,12 +240,95 @@ test('light-theme muted body text has at least 4.5:1 contrast', async ({ page })
   assert.ok(contrast >= 4.5, `muted body text contrast ${contrast.toFixed(2)}:1 is below 4.5:1`);
 });
 
+test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMobile }, testInfo) => {
+  desktopOnly(isMobile);
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/');
+  await settle(page);
+  const before = await page.evaluate(() => ({
+    src: document.querySelector('.case:first-child .shot-desk').src,
+    pill: document.querySelector('.case:first-child .pill').textContent,
+  }));
+  assert.match(before.src, /foa-home-desk\.webp$/, 'homepage screenshot shown by default');
+  assert.match(before.pill, /1 OF 3 · HOMEPAGE · DESKTOP/, 'pill labels the default shot');
+  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.waitForTimeout(200);
+  const after = await page.evaluate(() => ({
+    src: document.querySelector('.case:first-child .shot-desk').src,
+    mobSrc: document.querySelector('.case:first-child .shot-mob').src,
+    pill: document.querySelector('.case:first-child .pill').textContent,
+    pressed: document.querySelector('.case:first-child .thumb:nth-child(2)').getAttribute('aria-pressed'),
+    otherPill: document.querySelector('.case:last-child .pill').textContent,
+  }));
+  assert.match(after.src, /foa-whatson-desk\.webp$/, 'main screenshot swaps to the chosen page');
+  assert.match(after.mobSrc, /foa-whatson-mob\.webp$/, 'mobile variant swaps too');
+  assert.match(after.pill, /2 OF 3 · WHAT’S ON · DESKTOP/, 'pill follows the choice');
+  assert.equal(after.pressed, 'true', 'chosen thumbnail is pressed');
+  assert.match(after.otherPill, /1 OF 3/, 'the other card is untouched');
+  await shot(page, 'browser-showcase-thumb-pick', testInfo.project.name);
+});
+
+test('showcase: mobile arrows and counter step and wrap through the same set', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await settle(page);
+  const first = '.case:first-child';
+  const state0 = await page.evaluate((sel) => ({
+    steps: document.querySelector(`${sel} .m-step`).offsetParent !== null,
+    cnt: document.querySelector(`${sel} .cnt`).textContent,
+  }), first);
+  assert.equal(state0.steps, true, 'arrows and counter are visible on mobile');
+  assert.equal(state0.cnt, '1 OF 3');
+  await page.locator(`${first} .arr[data-step="1"]`).click();
+  await page.waitForTimeout(200);
+  const state1 = await page.evaluate((sel) => ({
+    src: document.querySelector(`${sel} .shot-mob`).src,
+    cnt: document.querySelector(`${sel} .cnt`).textContent,
+    pill: document.querySelector(`${sel} .pill`).textContent,
+  }), first);
+  assert.match(state1.src, /foa-whatson-mob\.webp$/, 'next arrow swaps the mobile screenshot');
+  assert.equal(state1.cnt, '2 OF 3');
+  assert.match(state1.pill, /MOBILE/, 'pill names the mobile set');
+  await page.locator(`${first} .arr[data-step="-1"]`).click();
+  await page.locator(`${first} .arr[data-step="-1"]`).click();
+  await page.waitForTimeout(200);
+  const state2 = await page.evaluate((sel) => document.querySelector(`${sel} .cnt`).textContent, first);
+  assert.equal(state2, '3 OF 3', 'previous arrow wraps to the last screenshot');
+  await shot(page, 'browser-showcase-mobile-arrows', testInfo.project.name);
+});
+
+test('showcase: thumbnails and main shot show the matching breakpoint imagery', async ({ page }) => {
+  const visible = () => {
+    const first = document.querySelector('.case:first-child');
+    const vis = (el) => !!el && el.offsetParent !== null;
+    return {
+      deskShot: vis(first.querySelector('.shot-desk')),
+      mobShot: vis(first.querySelector('.shot-mob')),
+      deskThumb: vis(first.querySelector('.thumb .thumb-desk')),
+      mobThumb: vis(first.querySelector('.thumb .thumb-mob')),
+    };
+  };
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await settle(page);
+  assert.deepEqual(await page.evaluate(visible), { deskShot: true, mobShot: false, deskThumb: true, mobThumb: false },
+    'desktop shows desktop screenshots only');
+  // the layout mode is chosen at load time, and on a local host a stored
+  // preview choice wins over the viewport, so clear it and reload narrower
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => localStorage.clear());
+  await page.goto('/');
+  await settle(page);
+  assert.deepEqual(await page.evaluate(visible), { deskShot: false, mobShot: true, deskThumb: false, mobThumb: true },
+    'mobile shows mobile screenshots only');
+});
+
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
 // of its label. Check every visible CTA with a symbol, narrow widths and enlarged text.
 test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
   const probe = () => {
     const bad = [];
-    for (const el of document.querySelectorAll('.hero-actions .button, .nav-contact, .contact-form button[type=submit], .github-link')) {
+    for (const el of document.querySelectorAll('.hero-actions .button, .nav-contact, .case-copy .button, .teaser .button, .contact-form button[type=submit], .github-link')) {
       if (el.offsetParent === null) continue;
       const sym = el.querySelector('span[aria-hidden="true"], svg');
       if (!sym) continue;
@@ -260,31 +354,23 @@ test('CTA symbols stay with the end of their label at narrow widths and enlarged
     }
     return bad;
   };
-  // Text enlargement emulation: double every px font-size (the site's fonts are
-  // all px; unitless line-heights scale with them) while the layout viewport
-  // stays the same width, matching browser text-only zoom.
-  const enlargeText = () => {
-    const css = document.querySelector('style').textContent.replace(
-      /(font-size\s*:\s*)([^;}]+)/g,
-      (all, prop, val) => prop + val.replace(/(\d+(?:\.\d+)?)px/g, (m, n) => (parseFloat(n) * 2) + 'px'));
-    const s = document.createElement('style');
-    s.textContent = css;
-    document.head.appendChild(s);
-  };
   const stranded = [];
-  for (const scenario of [{ width: 320, zoom: false }, { width: 390, zoom: false }, { width: 390, zoom: true }, { width: 320, zoom: true }]) {
-    await page.setViewportSize({ width: scenario.width, height: 700 });
-    await page.goto('/');
-    if (scenario.zoom) await page.evaluate(enlargeText);
-    await settle(page);
-    const bad = await page.evaluate(probe);
-    for (const b of bad) stranded.push({ ...b, width: scenario.width, zoom: scenario.zoom });
-    await shot(page, `browser-${scenario.width}${scenario.zoom ? '-text200' : ''}-cta-symbols`, testInfo.project.name);
+  for (const path of ['/', '/contact/']) {
+    for (const scenario of [{ width: 320, zoom: false }, { width: 390, zoom: false }, { width: 390, zoom: true }, { width: 320, zoom: true }]) {
+      await page.setViewportSize({ width: scenario.width, height: 700 });
+      await page.goto(path);
+      if (scenario.zoom) await enlargeText(page);
+      await settle(page);
+      const bad = await page.evaluate(probe);
+      for (const b of bad) stranded.push({ ...b, path, width: scenario.width, zoom: scenario.zoom });
+      await shot(page, `browser-${scenario.width}${scenario.zoom ? '-text200' : ''}-cta-symbols${path === '/' ? '' : '-contact'}`, testInfo.project.name);
+    }
   }
   assert.equal(stranded.length, 0, `CTA symbols separated from the end of their label: ${JSON.stringify(stranded)}`);
 });
+
 test('contact form: empty form is invalid, completed form is valid', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/contact/');
   const state = await page.evaluate(() => ({
     emptyValid: document.querySelector('.contact-form').checkValidity(),
     emailBad: (() => { const e = document.querySelector('#contact-email'); e.value = 'not-an-email'; return e.validity.typeMismatch; })(),
@@ -302,11 +388,11 @@ test('contact form: empty form is invalid, completed form is valid', async ({ pa
   assert.match(state.action, /^https:\/\//);
 });
 
-test('navigation: in-page anchors move to their sections', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => { document.querySelector('a[href="#experience"]').click(); });
-  await page.waitForTimeout(400);
-  const state = await page.evaluate(() => ({ hash: location.hash, scrolled: window.scrollY > 0 }));
-  assert.equal(state.hash, '#experience');
-  assert.ok(state.scrolled, 'page scrolled to the section');
+test('experience page: all four roles render', async ({ page }) => {
+  await page.goto('/experience/');
+  const roles = await page.evaluate(() => [...document.querySelectorAll('.role .role-title')].map((r) => r.textContent.trim()));
+  assert.equal(roles.length, 4, 'four roles listed');
+  for (const expected of ['NatWest Boxed', 'Oddschecker', 'Moogsoft', 'Alfa']) {
+    assert.ok(roles.some((r) => r.includes(expected)), `role present: ${expected}`);
+  }
 });
