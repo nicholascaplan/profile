@@ -51,24 +51,41 @@ if (isLocalEnvironment) {
 // Tap-to-enlarge lightbox for project screenshots.
 document.querySelectorAll('.case-shot').forEach(cs => {
   const shot = cs.querySelector('.shot');
-  const cue = document.createElement('span');
-  cue.className = 'zoom-cue'; cue.textContent = 'Tap to enlarge';
+  const cue = document.createElement('button');
+  cue.type = 'button';
+  cue.className = 'zoom-cue';
+  cue.textContent = 'Tap to enlarge';
+  cue.setAttribute('aria-haspopup', 'dialog');
   shot.appendChild(cue);
-  const open = () => {
+  const open = (trigger) => {
     const mob = document.body.dataset.mobile === 'true';
     const img = cs.querySelector(mob ? '.shot-mob' : '.shot-desk');
     const ov = document.createElement('div');
-    ov.className = 'shot-zoom'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Enlarged screenshot');
+    ov.className = 'shot-zoom';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-label', 'Enlarged screenshot');
     const im = document.createElement('img');
     im.src = img.currentSrc || img.src; im.alt = img.alt || 'Enlarged screenshot';
     if (!mob) im.className = 'z-desk';
     const x = document.createElement('button');
+    x.type = 'button';
     x.className = 'z-close'; x.textContent = '×'; x.setAttribute('aria-label', 'Close enlarged screenshot');
     ov.append(im, x); document.body.appendChild(ov);
-    const close = () => ov.remove();
+    const close = () => {
+      document.removeEventListener('keydown', keys);
+      ov.remove();
+      if (trigger && typeof trigger.focus === 'function') trigger.focus();
+    };
+    function keys(e) {
+      if (e.key === 'Escape') { close(); return; }
+      if (e.key === 'Tab') { e.preventDefault(); x.focus(); }
+    }
     x.addEventListener('click', close);
     ov.addEventListener('click', e => { if (e.target === ov) close(); });
-    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+    document.addEventListener('keydown', keys);
+    x.focus();
   };
-  cs.querySelectorAll('.shot-img').forEach(i => i.addEventListener('click', open));
+  cue.addEventListener('click', () => open(cue));
+  cs.querySelectorAll('.shot-img').forEach(i => i.addEventListener('click', () => open(i)));
 });
