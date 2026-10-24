@@ -619,7 +619,11 @@
       });
     } else {
       mobileToggle.remove();
-      setMobileMode(window.matchMedia('(max-width: 1280px)').matches);
+      const mobileViewport = window.matchMedia('(max-width: 1280px)');
+      setMobileMode(mobileViewport.matches);
+      mobileViewport.addEventListener('change', (event) => {
+        setMobileMode(event.matches);
+      });
     }
   </script>
 </body>

@@ -34,6 +34,7 @@ function runPage({ hostname, viewportWidth, stored = {} }) {
   themeToggle.querySelector = () => makeElement();
   const mobileToggle = makeElement();
   const store = { ...stored };
+  const mediaQueries = [];
 
   const document = {
     body: { dataset: {} },
@@ -49,15 +50,34 @@ function runPage({ hostname, viewportWidth, stored = {} }) {
       getItem: (key) => (key in store ? store[key] : null),
       setItem: (key, value) => { store[key] = String(value); },
     },
-    matchMedia: (query) => ({
-      matches: query.includes('max-width')
-        ? viewportWidth <= parseInt(query.match(/\d+/)[0], 10)
-        : false,
-    }),
+    matchMedia(query) {
+      const media = {
+        get matches() {
+          return query.includes('max-width')
+            ? viewportWidth <= parseInt(query.match(/\d+/)[0], 10)
+            : false;
+        },
+        listeners: [],
+        addEventListener(type, listener) {
+          if (type === 'change') this.listeners.push(listener);
+        },
+      };
+      mediaQueries.push(media);
+      return media;
+    },
   };
 
   vm.runInNewContext(pageScript, { document, window }, { timeout: 1000 });
-  return { body: document.body, themeToggle, mobileToggle, store };
+  function resize(width) {
+    const previous = mediaQueries.map((media) => media.matches);
+    viewportWidth = width;
+    mediaQueries.forEach((media, index) => {
+      if (media.matches !== previous[index]) {
+        for (const listener of media.listeners) listener({ matches: media.matches });
+      }
+    });
+  }
+  return { body: document.body, themeToggle, mobileToggle, store, resize };
 }
 
 const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', ''];
@@ -96,6 +116,38 @@ test('deployed hosts ignore the stored mobile choice and follow the viewport', (
 test('deployed hosts do not persist a mobile choice', () => {
   const { store } = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 390 });
   assert.equal('nick-mobile' in store, false, 'no nick-mobile value should be written off local hosts');
+});
+
+test('deployed hosts follow breakpoint changes without reloading or persisting a choice', () => {
+  for (const hostname of DEPLOYED_HOSTNAMES) {
+    for (const viewportWidth of [390, 1440]) {
+      const page = runPage({ hostname, viewportWidth, stored: { 'nick-mobile': 'true' } });
+      for (const width of [1281, 1280, 1440, 390]) {
+        page.resize(width);
+        assert.equal(page.body.dataset.mobile, String(width <= 1280), `${hostname} follows a resize to ${width}px`);
+        assert.equal(page.mobileToggle.removed, true);
+        assert.equal(page.store['nick-mobile'], 'true', 'resizing must not overwrite a stored local preview choice');
+      }
+    }
+  }
+});
+
+test('local preview choices remain unchanged on resize and can still be toggled', () => {
+  for (const hostname of LOCAL_HOSTNAMES) {
+    for (const choice of ['true', 'false']) {
+      const page = runPage({ hostname, viewportWidth: 1440, stored: { 'nick-mobile': choice } });
+      page.resize(390);
+      page.resize(1440);
+      assert.equal(page.body.dataset.mobile, choice, 'resize preserves the local preview override');
+      assert.equal(page.store['nick-mobile'], choice);
+      page.mobileToggle.listeners.click();
+      const toggled = String(choice !== 'true');
+      assert.equal(page.body.dataset.mobile, toggled);
+      assert.equal(page.store['nick-mobile'], toggled);
+      page.resize(390);
+      assert.equal(page.body.dataset.mobile, toggled, 'resize preserves the toggled preview choice');
+    }
+  }
 });
 
 test('theme still defaults to light and persists when toggled', () => {
