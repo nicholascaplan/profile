@@ -25,7 +25,7 @@
       --surface: #fbfaf6;
       --surface-strong: #e8e1d5;
       --ink: #18211f;
-      --muted: #6d7570;
+      --muted: #5a6057;
       --line: rgba(24, 33, 31, .16);
       --accent: #dd5e3c;
       --accent-2: #b6ce74;
@@ -260,7 +260,7 @@
       --surface: #f7f4ef;
       --surface-strong: #e2d9d0;
       --ink: #28332c;
-      --muted: #6d756e;
+      --muted: #5a6057;
       --line: rgba(40, 51, 44, .17);
       --accent: #b45e3f;
       --accent-2: #9cae6c;
@@ -362,6 +362,13 @@
     body[data-mobile="true"] .hero-aside p { margin: 24px 0 0; text-align: left; }
      body[data-mobile="true"] .hero-aside .portrait-wrap, body[data-mobile="true"] .mobile-hero .portrait-wrap { margin: 32px auto 0; max-width: 150px; width: 100%; }
     body[data-mobile="true"] .mobile-hero > .portrait-wrap { align-self: start; grid-column: 2; grid-row: 2; }
+
+    /* Very narrow screens: stack the portrait under the headline so the 56px
+       display type never paints over the image. */
+    @media (max-width: 480px) {
+      body[data-mobile="true"] .mobile-hero { grid-template-columns: minmax(0, 1fr); }
+      body[data-mobile="true"] .mobile-hero > .portrait-wrap { grid-column: 1; grid-row: auto; }
+    }
     body[data-mobile="true"] .hero-aside .portrait-wrap { align-self: center; }
     body[data-mobile="true"] .mobile-hero-bio { color: var(--muted); font-size: 15px; line-height: 1.5; margin: 22px 0 0; }
     body[data-mobile="true"] .mobile-hero .hero-principle { margin: 24px 0 0; }
