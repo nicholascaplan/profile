@@ -38,33 +38,6 @@ const settle = (page) => page.waitForTimeout(1100);
 // exercise the desktop layout.
 const DESKTOP = { width: 1440, height: 900 };
 
-// Known-defect tracking: each check below asserts the DESIRED state. While the
-// defect is present on a browser the check is marked test.fail for that project,
-// so Playwright reports it as an expected failure, counted separately from
-// genuinely passing checks, and never re-labelled a pass. If the defect stops
-// reproducing the unexpected pass fails the run loudly so this record is updated.
-// The project lists were measured against real runs, not assumed.
-const KNOWN_DEFECTS = {
-  overlap320: {
-    reason: 'pre-existing layout defect on main: the headline text overflows its grid box into the portrait; fix in the defect-fix PR',
-    projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
-  },
-  ctaSymbols: {
-    reason: "pre-existing layout defect on main: CTA symbols separate from the end of their label - the hero arrow at 320px, and the Get in touch / Send message mail icons and the footer source link's GitHub icon under 200% enlarged text; fix in the defect-fix PR",
-    projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
-  },
-  lightMutedContrast: {
-    reason: 'pre-existing design defect on main: muted text measures about 3.9:1 on the light theme; fix in the defect-fix PR',
-    projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
-  },
-};
-
-function trackKnownDefect(testInfo, defect) {
-  const known = defect.projects.includes(testInfo.project.name);
-  test.fail(known, `KNOWN DEFECT: ${defect.reason}`);
-  if (known) testInfo.annotations.push({ type: 'known-defect', description: defect.reason });
-}
-
 const desktopOnly = (isMobile) => test.skip(isMobile, 'desktop chrome and keyboard check');
 
 test('desktop light: one visible h1, toggle defaults to light mode', async ({ page, isMobile }, testInfo) => {
@@ -230,7 +203,6 @@ test('200% text at a laptop viewport: no horizontal scrolling', async ({ page },
 });
 
 test('320px hero headline does not overlap the portrait', async ({ page }, testInfo) => {
-  trackKnownDefect(testInfo, KNOWN_DEFECTS.overlap320);
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto('/');
   // the headline's painted text overflows its grid box, so measure the text
@@ -250,8 +222,7 @@ test('320px hero headline does not overlap the portrait', async ({ page }, testI
   assert.equal(overlap, false, `headline text overlaps the portrait at 320px: ${JSON.stringify(detail)}`);
 });
 
-test('light-theme muted body text has at least 4.5:1 contrast', async ({ page }, testInfo) => {
-  trackKnownDefect(testInfo, KNOWN_DEFECTS.lightMutedContrast);
+test('light-theme muted body text has at least 4.5:1 contrast', async ({ page }) => {
   await page.setViewportSize(DESKTOP);
   await page.goto('/');
   const contrast = await page.evaluate(heroTextContrast);
@@ -261,7 +232,6 @@ test('light-theme muted body text has at least 4.5:1 contrast', async ({ page },
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
 // of its label. Check every visible CTA with a symbol, narrow widths and enlarged text.
 test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
-  trackKnownDefect(testInfo, KNOWN_DEFECTS.ctaSymbols);
   const probe = () => {
     const bad = [];
     for (const el of document.querySelectorAll('.hero-actions .button, .nav-contact, .contact-form button[type=submit], .github-link')) {
