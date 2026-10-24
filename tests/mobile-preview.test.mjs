@@ -1,0 +1,107 @@
+// Behaviour checks for the theme and mobile preview logic in index.html.
+// Runs the page's inline script against a minimal DOM stub - no dependencies.
+// Usage: node --test
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import vm from 'node:vm';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const html = readFileSync(join(root, 'index.html'), 'utf8');
+const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
+assert.ok(scriptMatch, 'index.html contains an inline script');
+const pageScript = scriptMatch[1];
+
+function makeElement() {
+  return {
+    attributes: {},
+    removed: false,
+    listeners: {},
+    title: '',
+    setAttribute(name, value) { this.attributes[name] = String(value); },
+    addEventListener(type, fn) { this.listeners[type] = fn; },
+    remove() { this.removed = true; },
+  };
+}
+
+// Runs the page script with a chosen hostname, viewport width and stored prefs,
+// and returns the resulting state for assertions.
+function runPage({ hostname, viewportWidth, stored = {} }) {
+  const themeToggle = makeElement();
+  themeToggle.querySelector = () => makeElement();
+  const mobileToggle = makeElement();
+  const store = { ...stored };
+
+  const document = {
+    body: { dataset: {} },
+    querySelector(selector) {
+      if (selector === '.theme-toggle') return themeToggle;
+      if (selector === '.mobile-toggle') return mobileToggle;
+      return makeElement();
+    },
+  };
+  const window = {
+    location: { hostname },
+    localStorage: {
+      getItem: (key) => (key in store ? store[key] : null),
+      setItem: (key, value) => { store[key] = String(value); },
+    },
+    matchMedia: (query) => ({
+      matches: query.includes('max-width')
+        ? viewportWidth <= parseInt(query.match(/\d+/)[0], 10)
+        : false,
+    }),
+  };
+
+  vm.runInNewContext(pageScript, { document, window }, { timeout: 1000 });
+  return { body: document.body, themeToggle, mobileToggle, store };
+}
+
+const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', ''];
+const DEPLOYED_HOSTNAMES = ['nicholascaplan.github.io', 'www.example.com'];
+
+test('local hosts keep the mobile preview toggle', () => {
+  for (const hostname of LOCAL_HOSTNAMES) {
+    const { mobileToggle } = runPage({ hostname, viewportWidth: 1440 });
+    assert.equal(mobileToggle.removed, false, `toggle should stay on ${hostname || 'file://'}`);
+  }
+});
+
+test('deployed hosts remove the mobile preview toggle', () => {
+  for (const hostname of DEPLOYED_HOSTNAMES) {
+    const { mobileToggle } = runPage({ hostname, viewportWidth: 1440 });
+    assert.equal(mobileToggle.removed, true, `toggle should be removed on ${hostname}`);
+  }
+});
+
+test('local hosts honour the stored mobile choice over the viewport', () => {
+  const wide = runPage({ hostname: 'localhost', viewportWidth: 1440, stored: { 'nick-mobile': 'true' } });
+  assert.equal(wide.body.dataset.mobile, 'true', 'stored mobile=true should win on a wide local viewport');
+
+  const narrow = runPage({ hostname: 'localhost', viewportWidth: 390, stored: { 'nick-mobile': 'false' } });
+  assert.equal(narrow.body.dataset.mobile, 'false', 'stored mobile=false should win on a narrow local viewport');
+});
+
+test('deployed hosts ignore the stored mobile choice and follow the viewport', () => {
+  const wide = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 1440, stored: { 'nick-mobile': 'true' } });
+  assert.equal(wide.body.dataset.mobile, 'false', 'stored mobile=true must be ignored on a wide deployed viewport');
+
+  const narrow = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 390, stored: { 'nick-mobile': 'false' } });
+  assert.equal(narrow.body.dataset.mobile, 'true', 'stored mobile=false must be ignored on a narrow deployed viewport');
+});
+
+test('deployed hosts do not persist a mobile choice', () => {
+  const { store } = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 390 });
+  assert.equal('nick-mobile' in store, false, 'no nick-mobile value should be written off local hosts');
+});
+
+test('theme still defaults to light and persists when toggled', () => {
+  const { body, themeToggle, store } = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 1440 });
+  assert.equal(body.dataset.theme, 'light');
+  themeToggle.listeners.click();
+  assert.equal(body.dataset.theme, 'dark');
+  assert.equal(store['nick-theme'], 'dark');
+});
