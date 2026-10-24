@@ -55,6 +55,7 @@ function runPage({ prefersDark = false, stored = {} }) {
     },
     matchMedia: (query) => ({
       matches: query.includes('prefers-color-scheme') ? prefersDark : false,
+      addEventListener() {},
     }),
   };
 
