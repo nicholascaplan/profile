@@ -6,10 +6,39 @@ on:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # Official Playwright image: browsers and their system libraries are already
+    # installed, so no per-run package or browser download. The tag must match the
+    # @playwright/test version in package-lock.json (checked in a step below).
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --init --ipc=host
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - run: node --test
+          cache: npm
+      - run: npm ci
+      - name: Check the Playwright image matches the installed version
+        run: |
+          installed="$(node -p "require('@playwright/test/package.json').version")"
+          if [ "$installed" != "1.63.0" ]; then
+            echo "@playwright/test is $installed but the container image is v1.63.0-noble. Update the image tag in .github/workflows/test.yml to match."
+            exit 1
+          fi
+      - name: DOM and content checks
+        run: node --test tests/*.test.mjs
+      - name: Browser checks (Chromium, Firefox, WebKit, mobile Chrome)
+        run: npx playwright test
+      - name: Coverage summary (genuine passes counted separately from known defects)
+        if: always()
+        run: node scripts/summarise-playwright.mjs >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain browser diagnostics and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
