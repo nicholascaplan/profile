@@ -154,7 +154,8 @@ button { color: inherit; font: inherit; }
 .shot-desk { aspect-ratio: 1280 / 713; }
 .shot-mob { aspect-ratio: 390 / 844; }
 .shot { position: relative; }
-.shot .zoom-cue { background: rgba(16, 19, 26, .85); border-radius: 99px; bottom: 10px; color: #edf1ed; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; padding: 4px 9px; pointer-events: none; position: absolute; right: 10px; text-transform: uppercase; }
+.shot .zoom-cue { appearance: none; background: rgba(16, 19, 26, .85); border: 0; border-radius: 99px; bottom: 10px; color: #edf1ed; cursor: pointer; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; margin: 0; padding: 4px 9px; position: absolute; right: 10px; text-transform: uppercase; }
+.shot .zoom-cue:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .shot-zoom { align-items: flex-start; background: rgba(12, 15, 13, .93); display: flex; inset: 0; justify-content: center; overflow-y: auto; padding: 28px 14px; position: fixed; z-index: 80; }
 .shot-zoom img { border-radius: 14px; height: auto; width: min(430px, 94vw); }
 .shot-zoom img.z-desk { width: min(1180px, 94vw); }
