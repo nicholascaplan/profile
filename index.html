@@ -152,7 +152,7 @@
     .portrait-note { color: var(--muted); font-family: var(--mono); font-size: 9px; margin: 0 0 0 13px; }
     .linkedin-icon { display: none; }
     .mail-icon { fill: none; height: 17px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 17px; }
-    .button > span[aria-hidden="true"] { font-size: 17px; line-height: 1; }
+    .button .cta-end { white-space: nowrap; } .button .cta-icon { display: inline-block; font-size: 17px; line-height: 1; margin-left: 10px; }
 
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 auto; max-width: 1240px; }
     .stat { border-right: 1px solid var(--line); padding: 30px 32px; }
@@ -439,7 +439,7 @@
              <p class="hero-intro">I’m Nick, a Senior Engineering Leader turning ambitious product mandates into predictable execution across teams and enterprise architecture.</p>
             <p class="hero-principle">Clear thinking. Calm delivery. Better systems.</p>
             <div class="hero-actions">
-              <a class="button button-primary" href="#experience">Explore my work <span aria-hidden="true">↓</span></a>
+              <a class="button button-primary" href="#experience"><span class="cta-label">Explore my <span class="cta-end">work<span class="cta-icon" aria-hidden="true">↓</span></span></span></a>
               <a class="button" href="#contact">Get in touch <svg class="mail-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></a>
             </div>
           </div>
@@ -464,7 +464,7 @@
           <p class="mobile-hero-bio">Strategic, results-driven and collaborative. I work at the intersection of people, systems and execution - currently leading engineering teams responsible for how customers, products and accounts move through a modern banking platform.</p>
           <p class="hero-principle">Clear thinking. Calm delivery. Better systems.</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#experience">Explore my work <span aria-hidden="true">↓</span></a>
+            <a class="button button-primary" href="#experience"><span class="cta-label">Explore my <span class="cta-end">work<span class="cta-icon" aria-hidden="true">↓</span></span></span></a>
             <a class="button" href="#contact">Get in touch <svg class="mail-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></a>
           </div>
         </div>
