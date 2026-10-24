@@ -47,3 +47,28 @@ if (isLocalEnvironment) {
     setMobileMode(event.matches);
   });
 }
+
+// Tap-to-enlarge lightbox for project screenshots.
+document.querySelectorAll('.case-shot').forEach(cs => {
+  const shot = cs.querySelector('.shot');
+  const cue = document.createElement('span');
+  cue.className = 'zoom-cue'; cue.textContent = 'Tap to enlarge';
+  shot.appendChild(cue);
+  const open = () => {
+    const mob = document.body.dataset.mobile === 'true';
+    const img = cs.querySelector(mob ? '.shot-mob' : '.shot-desk');
+    const ov = document.createElement('div');
+    ov.className = 'shot-zoom'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Enlarged screenshot');
+    const im = document.createElement('img');
+    im.src = img.currentSrc || img.src; im.alt = img.alt || 'Enlarged screenshot';
+    if (!mob) im.className = 'z-desk';
+    const x = document.createElement('button');
+    x.className = 'z-close'; x.textContent = '×'; x.setAttribute('aria-label', 'Close enlarged screenshot');
+    ov.append(im, x); document.body.appendChild(ov);
+    const close = () => ov.remove();
+    x.addEventListener('click', close);
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+  };
+  cs.querySelectorAll('.shot-img').forEach(i => i.addEventListener('click', open));
+});
