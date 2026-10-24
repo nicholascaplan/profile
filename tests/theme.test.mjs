@@ -10,10 +10,7 @@ import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const html = readFileSync(join(root, 'index.html'), 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
-assert.ok(scriptMatch, 'index.html contains an inline script');
-const pageScript = scriptMatch[1];
+const pageScript = readFileSync(join(root, 'assets/js/site.js'), 'utf8');
 
 function makeElement() {
   return {
