@@ -31,6 +31,10 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Browser checks (Chromium, Firefox, WebKit, mobile Chrome)
         run: npx playwright test
+        env:
+          # The Actions container runs as root but sets HOME=/github/home, which
+          # Firefox refuses to launch with; Chromium and WebKit are unaffected.
+          HOME: /root
       - name: Coverage summary (genuine passes counted separately from known defects)
         if: always()
         run: node scripts/summarise-playwright.mjs >> "$GITHUB_STEP_SUMMARY"
