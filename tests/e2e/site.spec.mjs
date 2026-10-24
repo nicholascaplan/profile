@@ -224,6 +224,31 @@ for (const [name, path] of [['home', '/'], ['experience', '/experience/'], ['con
   });
 }
 
+test('portrait: headline and portrait share the hero without overlap or horizontal scroll', async ({ page }, testInfo) => {
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const r = await page.evaluate(() => {
+      const h1 = document.querySelector('.hero h1');
+      const p = document.querySelector('.hero .portrait');
+      if (!h1 || !p || p.offsetParent === null) return { missing: true };
+      const a = h1.getBoundingClientRect();
+      const b = p.getBoundingClientRect();
+      const overlap = !(b.right <= a.left || b.left >= a.right || b.bottom <= a.top || b.top >= a.bottom);
+      return {
+        overlap,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        portraitWidth: Math.round(b.width),
+      };
+    });
+    assert.ok(!r.missing, `portrait renders at ${width}px`);
+    assert.equal(r.overlap, false, `headline and portrait must not overlap at ${width}px`);
+    assert.ok(r.overflow <= 1, `no horizontal scroll at ${width}px (overflow ${r.overflow}px)`);
+  }
+  await settle(page);
+  await shot(page, 'browser-portrait-hero', testInfo.project.name);
+});
+
 test('200% text at a laptop viewport: no horizontal scrolling', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 720, height: 450 });
   await page.goto('/');
