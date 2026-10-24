@@ -43,6 +43,9 @@ function runPage({ prefersDark = false, stored = {} }) {
       if (selector === '.mobile-toggle') return mobileToggle;
       return makeElement();
     },
+    querySelectorAll() {
+      return [];
+    },
   };
   const window = {
     location: { hostname: 'nicholascaplan.github.io' },

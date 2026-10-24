@@ -40,6 +40,9 @@ function runPage({ hostname, viewportWidth, stored = {} }) {
       if (selector === '.mobile-toggle') return mobileToggle;
       return makeElement();
     },
+    querySelectorAll() {
+      return [];
+    },
   };
   const window = {
     location: { hostname },
