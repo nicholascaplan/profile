@@ -192,6 +192,53 @@ test('mobile 390px: one visible h1 and no horizontal scrolling', async ({ page }
   await shot(page, 'browser-mobile-390', testInfo.project.name);
 });
 
+test('desktop mobile preview: content fits the frame and matches a phone layout', async ({ page, isMobile }, testInfo) => {
+  desktopOnly(isMobile);
+  const layout = () => {
+    const shell = document.querySelector('.site-shell').getBoundingClientRect();
+    const clipped = [...document.querySelectorAll('main h1, main h2, main h3, main p, main a, main input, main textarea, main .portrait')]
+      .filter((el) => el.getClientRects().length)
+      .filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.left < shell.left - 1 || r.right > shell.right + 1;
+      })
+      .map((el) => el.className || el.tagName);
+    const structures = [...document.querySelectorAll('.mobile-hero, .role, .lower-grid, .contact-grid')].map((el) => {
+      const css = getComputedStyle(el);
+      return { display: css.display, columns: css.gridTemplateColumns };
+    });
+    const hero = document.querySelector('.mobile-hero');
+    const range = document.createRange();
+    range.selectNodeContents(hero.querySelector('h1'));
+    const text = range.getBoundingClientRect();
+    const portrait = hero.querySelector('.portrait').getBoundingClientRect();
+    return { width: shell.width, clipped, structures, stacked: text.bottom <= portrait.top };
+  };
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/');
+  await page.locator('.mobile-toggle').click();
+  assert.equal(await page.locator('.mobile-toggle').getAttribute('aria-pressed'), 'true');
+  const preview = await page.evaluate(layout);
+  assert.equal(preview.width, 430);
+  assert.deepEqual(preview.clipped, [], 'content must fit inside the frame, not just avoid document scrollbars');
+  assert.equal(preview.stacked, true, 'portrait stacks below headline in the phone-width frame');
+  await shot(page, 'browser-desktop-mobile-preview', testInfo.project.name);
+
+  await page.setViewportSize({ width: 430, height: DESKTOP.height });
+  await page.reload();
+  const phone = await page.evaluate(layout);
+  assert.deepEqual(preview.structures, phone.structures, 'preview and phone use the same responsive layouts');
+  assert.deepEqual(phone.clipped, []);
+
+  await page.setViewportSize(DESKTOP);
+  await page.reload();
+  assert.equal(await page.locator('.mobile-toggle').getAttribute('aria-pressed'), 'true', 'preview persists across reloads');
+  await page.locator('.mobile-toggle').click();
+  assert.equal(await page.locator('.mobile-toggle').getAttribute('aria-pressed'), 'false');
+  assert.ok((await page.locator('.site-shell').boundingBox()).width > 430, 'toggle restores the desktop width');
+  assert.equal(await page.locator('.hero-grid').evaluate((el) => getComputedStyle(el).display), 'grid', 'desktop hero returns to columns');
+});
+
 test('200% text at a laptop viewport: no horizontal scrolling', async ({ page }, testInfo) => {
   // 200% browser zoom at 1440px leaves a 720px CSS viewport.
   await page.setViewportSize({ width: 720, height: 450 });

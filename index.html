@@ -51,7 +51,9 @@
     button { color: inherit; font: inherit; }
     ::selection { background: var(--accent); color: var(--surface); }
 
-    .site-shell { min-height: 100vh; overflow: hidden; }
+    /* Layout follows the page width, including the mobile preview frame
+       inside a wide desktop browser. */
+    .site-shell { container: site / inline-size; min-height: 100vh; overflow: hidden; }
     .site-nav {
       align-items: center;
       display: flex;
@@ -208,7 +210,7 @@
     body[data-style="atelier"][data-theme="dark"] .form-field textarea:focus { border-color: var(--accent); }
      .contact-form .button { justify-self: start; }
 
-     @media (min-width: 1281px) {
+     @container site (min-width: 1281px) {
        .lower-grid { grid-template-columns: 1fr .42fr; }
        .tag-cloud { gap: 6px; max-width: none; }
        .tag { font-size: 9px; padding: 7px 9px; }
@@ -308,7 +310,7 @@
     body[data-style="atelier"][data-theme="dark"] .footer-links a { border-color: rgba(247, 244, 239, .5); }
     body[data-style="atelier"][data-theme="dark"] .footer-bottom { border-color: rgba(247, 244, 239, .22); color: rgba(247, 244, 239, .65); }
 
-    @media (max-width: 1280px) {
+    @container site (max-width: 1280px) {
       .style-picker { max-width: calc(100vw - 28px); top: 12px; width: max-content; }
       .style-picker-label { display: none; }
       .style-button { font-size: 10px; padding: 8px 9px; }
@@ -368,7 +370,7 @@
 
     /* Very narrow screens: stack the portrait under the headline so the 56px
        display type never paints over the image. */
-    @media (max-width: 480px) {
+    @container site (max-width: 480px) {
       body[data-mobile="true"] .mobile-hero { grid-template-columns: minmax(0, 1fr); }
       body[data-mobile="true"] .mobile-hero > .portrait-wrap { grid-column: 1; grid-row: auto; }
     }
