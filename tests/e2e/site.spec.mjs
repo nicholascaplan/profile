@@ -49,8 +49,8 @@ const KNOWN_DEFECTS = {
     reason: 'pre-existing layout defect on main: the headline text overflows its grid box into the portrait; fix in the defect-fix PR',
     projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
   },
-  ctaArrow320: {
-    reason: 'pre-existing layout defect on main: at 320px the hero primary CTA arrow separates from the end of its label; fix in the defect-fix PR',
+  ctaSymbols: {
+    reason: "pre-existing layout defect on main: CTA symbols separate from the end of their label - the hero arrow at 320px, and the Get in touch / Send message mail icons under 200% enlarged text; fix in the defect-fix PR",
     projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
   },
   lightMutedContrast: {
@@ -260,12 +260,9 @@ test('light-theme muted body text has at least 4.5:1 contrast', async ({ page },
 
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
 // of its label. Check every visible CTA with a symbol at the narrowest width.
-test('CTA symbols stay with the end of their label at 320px', async ({ page }, testInfo) => {
-  trackKnownDefect(testInfo, KNOWN_DEFECTS.ctaArrow320);
-  await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/');
-  await settle(page);
-  const stranded = await page.evaluate(() => {
+test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
+  trackKnownDefect(testInfo, KNOWN_DEFECTS.ctaSymbols);
+  const probe = () => {
     const bad = [];
     for (const el of document.querySelectorAll('.hero-actions .button, .nav-contact, .contact-form button[type=submit]')) {
       if (el.offsetParent === null) continue;
@@ -292,11 +289,30 @@ test('CTA symbols stay with the end of their label at 320px', async ({ page }, t
       }
     }
     return bad;
-  });
-  await shot(page, 'browser-320-cta-symbols', testInfo.project.name);
-  assert.equal(stranded.length, 0, `CTA symbols separated from the end of their label at 320px: ${JSON.stringify(stranded)}`);
+  };
+  // Text enlargement emulation: double every px font-size (the site's fonts are
+  // all px; unitless line-heights scale with them) while the layout viewport
+  // stays the same width, matching browser text-only zoom.
+  const enlargeText = () => {
+    const css = document.querySelector('style').textContent.replace(
+      /(font-size\s*:\s*)([^;}]+)/g,
+      (all, prop, val) => prop + val.replace(/(\d+(?:\.\d+)?)px/g, (m, n) => (parseFloat(n) * 2) + 'px'));
+    const s = document.createElement('style');
+    s.textContent = css;
+    document.head.appendChild(s);
+  };
+  const stranded = [];
+  for (const scenario of [{ width: 320, zoom: false }, { width: 390, zoom: false }, { width: 390, zoom: true }, { width: 320, zoom: true }]) {
+    await page.setViewportSize({ width: scenario.width, height: 700 });
+    await page.goto('/');
+    if (scenario.zoom) await page.evaluate(enlargeText);
+    await settle(page);
+    const bad = await page.evaluate(probe);
+    for (const b of bad) stranded.push({ ...b, width: scenario.width, zoom: scenario.zoom });
+    await shot(page, `browser-${scenario.width}${scenario.zoom ? '-text200' : ''}-cta-symbols`, testInfo.project.name);
+  }
+  assert.equal(stranded.length, 0, `CTA symbols separated from the end of their label: ${JSON.stringify(stranded)}`);
 });
-
 test('contact form: empty form is invalid, completed form is valid', async ({ page }) => {
   await page.goto('/');
   const state = await page.evaluate(() => ({
