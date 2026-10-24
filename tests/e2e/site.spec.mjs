@@ -50,7 +50,7 @@ const KNOWN_DEFECTS = {
     projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
   },
   ctaSymbols: {
-    reason: "pre-existing layout defect on main: CTA symbols separate from the end of their label - the hero arrow at 320px, and the Get in touch / Send message mail icons under 200% enlarged text; fix in the defect-fix PR",
+    reason: "pre-existing layout defect on main: CTA symbols separate from the end of their label - the hero arrow at 320px, and the Get in touch / Send message mail icons and the footer source link's GitHub icon under 200% enlarged text; fix in the defect-fix PR",
     projects: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
   },
   lightMutedContrast: {
@@ -259,12 +259,12 @@ test('light-theme muted body text has at least 4.5:1 contrast', async ({ page },
 });
 
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
-// of its label. Check every visible CTA with a symbol at the narrowest width.
+// of its label. Check every visible CTA with a symbol, narrow widths and enlarged text.
 test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
   trackKnownDefect(testInfo, KNOWN_DEFECTS.ctaSymbols);
   const probe = () => {
     const bad = [];
-    for (const el of document.querySelectorAll('.hero-actions .button, .nav-contact, .contact-form button[type=submit]')) {
+    for (const el of document.querySelectorAll('.hero-actions .button, .nav-contact, .contact-form button[type=submit], .github-link')) {
       if (el.offsetParent === null) continue;
       const sym = el.querySelector('span[aria-hidden="true"], svg');
       if (!sym) continue;
