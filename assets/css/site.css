@@ -103,7 +103,7 @@ button { color: inherit; font: inherit; }
 .eyebrow, .section-kicker { color: var(--accent); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .hero h1 { font-family: var(--display); font-size: clamp(56px, 9vw, 118px); font-weight: 500; letter-spacing: -.075em; line-height: .94; margin: 22px 0 34px; max-width: 900px; }
 .hero h1 em { color: var(--accent); font-style: normal; }
-.hero-intro { color: var(--muted); font-size: clamp(18px, 2vw, 23px); letter-spacing: -.02em; line-height: 1.35; margin: 0; max-width: 655px; }
+.hero-intro { color: var(--muted); font-size: clamp(18px, 2vw, 23px); letter-spacing: -.02em; line-height: 1.35; margin: 0; max-width: none; }
 .hero-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 18px; margin-top: 36px; }
 .button {
   align-items: center;
@@ -134,6 +134,10 @@ button { color: inherit; font: inherit; }
 .portrait-frame { width: 100%; }
 .portrait { aspect-ratio: 1; border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 10px 24px rgba(24, 33, 31, .14); display: block; filter: saturate(.9); height: auto; object-fit: cover; object-position: center top; padding: 4px; width: 100%; }
 .portrait-note { color: var(--muted); font-family: var(--mono); font-size: 9px; margin: 8px 0 0; text-align: center; }
+
+/* Home hero: the portrait sits beside the headline; the intro below runs full width. */
+.hero-grid { align-items: center; display: grid; gap: 48px; grid-template-columns: minmax(0, 1fr) auto; }
+.hero-grid .portrait-wrap { width: 250px; }
 
 /* Showcase: one hero-sized screenshot per site, chosen by labelled thumbnails. */
 .showcase { margin: 0 auto; max-width: 1240px; padding: 30px 32px 10px; }
@@ -300,7 +304,7 @@ body[data-style="atelier"] .wordmark span { font-weight: 700; }
 body[data-style="atelier"] .hero { padding-top: 68px; }
 body[data-style="atelier"] .hero h1 { font-family: var(--body); font-size: clamp(52px, 8vw, 104px); font-weight: 400; letter-spacing: -.085em; line-height: .91; }
 body[data-style="atelier"] .hero h1 em { font-weight: 600; }
-body[data-style="atelier"] .hero-intro { font-size: 19px; max-width: 570px; }
+body[data-style="atelier"] .hero-intro { font-size: 19px; max-width: none; }
 body[data-style="atelier"] .portrait { filter: sepia(.16) saturate(.7); }
 body[data-style="atelier"] .section-heading h2, body[data-style="atelier"] .footer h2, body[data-style="atelier"] .page-hero h1 { font-weight: 400; }
 body[data-style="atelier"] .role { gap: 70px; grid-template-columns: 160px 1fr; }
@@ -315,6 +319,8 @@ body[data-style="atelier"][data-theme="dark"] .credstrip { background: #101711; 
 
 @media (max-width: 1280px) {
   .site-nav { padding: 22px 20px; }
+  .hero-grid { gap: 28px; }
+  .hero-grid .portrait-wrap { width: 190px; }
   .nav-links { gap: 13px; }
   .hero { padding: 60px 20px 40px; }
   .hero h1 { font-size: clamp(54px, 15vw, 88px); margin: 20px 0 26px; }
@@ -355,7 +361,9 @@ body[data-mobile="true"] .nav-chips a small { color: var(--muted); display: bloc
 body[data-mobile="true"] .nav-chips a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fbfaf6; font-weight: 700; }
 body[data-mobile="true"] .nav-chips a[aria-current="page"] small { color: #f0d8cc; }
 body[data-mobile="true"] .hero { padding: 24px 20px 30px; }
-body[data-mobile="true"] .hero h1 { font-size: 54px; margin: 14px 0 22px; }
+body[data-mobile="true"] .hero h1 { font-size: 48px; margin: 14px 0 22px; }
+body[data-mobile="true"] .hero-grid { gap: 18px; }
+body[data-mobile="true"] .hero-grid .portrait-wrap { width: 120px; }
 body[data-mobile="true"] .hero-intro { font-size: 17px; }
 body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin-top: 26px; }
 body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
@@ -413,6 +421,8 @@ body[data-mobile="true"][data-style="atelier"] .role { display: block; }
    headline, buttons, chips and thumbnails readable instead of crushed. */
 @media (max-width: 15rem) {
   .hero h1 { font-size: min(3.5rem, 13vw); }
+  .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .hero-grid .portrait-wrap { width: 160px; }
   .page-hero h1 { font-size: min(2.8rem, 12vw); }
   .nav-chips { flex-wrap: wrap; }
   body[data-mobile="true"] .nav-chips a { flex: 1 1 40%; }
