@@ -13,7 +13,7 @@
   }
   bar.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) apply(b.dataset.v); });
   var showcase = document.querySelector('.showcase');
-  if (showcase) showcase.prepend(bar);
+  if (showcase) showcase.parentElement.insertBefore(bar, showcase);
   var saved = null;
   try { saved = sessionStorage.getItem('mock-shot'); } catch (e) {}
   apply(saved === null ? 'crop540' : saved);
