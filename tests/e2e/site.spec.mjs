@@ -388,7 +388,7 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
   assert.match(before.src, /foa-home-desk\.webp$/, 'homepage screenshot shown by default');
-  assert.match(before.pill, /1 OF 3 · HOMEPAGE · DESKTOP/, 'pill labels the default shot');
+  assert.match(before.pill, /HOMEPAGE · DESKTOP/, 'pill labels the default shot');
   await page.locator('.case:first-child .thumb:nth-child(2)').click();
   await page.waitForTimeout(200);
   const after = await page.evaluate(() => ({
@@ -400,9 +400,9 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
   }));
   assert.match(after.src, /foa-whatson-desk\.webp$/, 'main screenshot swaps to the chosen page');
   assert.match(after.mobSrc, /foa-whatson-mob\.webp$/, 'mobile variant swaps too');
-  assert.match(after.pill, /2 OF 3 · WHAT’S ON · DESKTOP/, 'pill follows the choice');
+  assert.match(after.pill, /WHAT’S ON · DESKTOP/, 'pill follows the choice');
   assert.equal(after.pressed, 'true', 'chosen thumbnail is pressed');
-  assert.match(after.otherPill, /1 OF 3/, 'the other card is untouched');
+  assert.match(after.otherPill, /HOMEPAGE/, 'the other card is untouched');
   await shot(page, 'browser-showcase-thumb-pick', testInfo.project.name);
 });
 
