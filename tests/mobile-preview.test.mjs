@@ -10,10 +10,7 @@ import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const html = readFileSync(join(root, 'index.html'), 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
-assert.ok(scriptMatch, 'index.html contains an inline script');
-const pageScript = scriptMatch[1];
+const pageScript = readFileSync(join(root, 'assets/js/site.js'), 'utf8');
 
 function makeElement() {
   return {
@@ -42,6 +39,9 @@ function runPage({ hostname, viewportWidth, stored = {} }) {
       if (selector === '.theme-toggle') return themeToggle;
       if (selector === '.mobile-toggle') return mobileToggle;
       return makeElement();
+    },
+    querySelectorAll() {
+      return [];
     },
   };
   const window = {
@@ -87,7 +87,7 @@ const PREVIEW_HOSTNAMES = [
   'deploy-preview-123--another-site.netlify.app',
 ];
 const DEPLOYED_HOSTNAMES = [
-  'nicholascaplan.github.io',
+  'nickcaplan.github.io',
   'www.example.com',
   'nickcaplan-profile.netlify.app',
   'deploy-preview-4--nickcaplan-profile.netlify.app.example.com',
@@ -105,6 +105,7 @@ test('preview hosts default to the viewport and persist manual layout changes', 
     for (const viewportWidth of [390, 1440]) {
       const page = runPage({ hostname, viewportWidth });
       assert.equal(page.body.dataset.mobile, String(viewportWidth <= 1280));
+      assert.equal('nick-mobile' in page.store, false, 'viewport default is not persisted before a manual toggle');
       page.mobileToggle.listeners.click();
       assert.equal(page.body.dataset.mobile, String(viewportWidth > 1280));
       assert.equal(page.store['nick-mobile'], String(viewportWidth > 1280));
@@ -128,15 +129,15 @@ test('local hosts honour the stored mobile choice over the viewport', () => {
 });
 
 test('deployed hosts ignore the stored mobile choice and follow the viewport', () => {
-  const wide = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 1440, stored: { 'nick-mobile': 'true' } });
+  const wide = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 1440, stored: { 'nick-mobile': 'true' } });
   assert.equal(wide.body.dataset.mobile, 'false', 'stored mobile=true must be ignored on a wide deployed viewport');
 
-  const narrow = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 390, stored: { 'nick-mobile': 'false' } });
+  const narrow = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 390, stored: { 'nick-mobile': 'false' } });
   assert.equal(narrow.body.dataset.mobile, 'true', 'stored mobile=false must be ignored on a narrow deployed viewport');
 });
 
 test('deployed hosts do not persist a mobile choice', () => {
-  const { store } = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 390 });
+  const { store } = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 390 });
   assert.equal('nick-mobile' in store, false, 'no nick-mobile value should be written off local hosts');
 });
 
@@ -172,10 +173,22 @@ test('local and Netlify preview choices remain unchanged on resize and can still
   }
 });
 
-test('theme still defaults to light and persists when toggled', () => {
-  const { body, themeToggle, store } = runPage({ hostname: 'nicholascaplan.github.io', viewportWidth: 1440 });
+test('theme defaults to dark for new visitors and persists only manual choices', () => {
+  const { body, themeToggle, store } = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 1440 });
+  assert.equal(body.dataset.theme, 'dark', 'new visitors get dark by default');
+  assert.equal('nick-theme' in store, false, 'no theme is written before a manual toggle');
+  themeToggle.listeners.click();
   assert.equal(body.dataset.theme, 'light');
+  assert.equal(store['nick-theme'], 'light');
   themeToggle.listeners.click();
   assert.equal(body.dataset.theme, 'dark');
   assert.equal(store['nick-theme'], 'dark');
+});
+
+test('a stored theme choice wins over the dark default', () => {
+  for (const theme of ['light', 'dark']) {
+    const { body, store } = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 1440, stored: { 'nick-theme': theme } });
+    assert.equal(body.dataset.theme, theme);
+    assert.equal(store['nick-theme'], theme, 'stored choice is left untouched');
+  }
 });

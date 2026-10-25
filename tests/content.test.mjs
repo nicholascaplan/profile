@@ -1,5 +1,6 @@
-// Content and structure checks for index.html - no dependencies.
-// Guards the page's metadata, links, images, form and accessibility hooks.
+// Content and structure checks for the site's pages - no dependencies.
+// Guards each page's metadata, links, images and accessibility hooks; the
+// contact page additionally gets the form checks.
 // Usage: node --test
 
 import { test } from 'node:test';
@@ -10,94 +11,141 @@ import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const html = readFileSync(join(root, 'index.html'), 'utf8');
-
-const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
-const anchors = [...html.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
-const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+const pages = ['index.html', 'experience/index.html', 'contact/index.html'];
+const read = (page) => readFileSync(join(root, page), 'utf8');
 
 function attr(tag, name) {
   const match = tag.match(new RegExp(` ${name}="([^"]*)"`));
   return match ? match[1] : null;
 }
 
-test('document shell: doctype, language, title and viewport', () => {
-  assert.match(html, /^<!doctype html>/i);
-  assert.match(html, /<html lang="en">/);
-  const title = html.match(/<title>([^<]+)<\/title>/);
-  assert.ok(title && title[1].trim().length > 0, 'title is present and non-empty');
-  assert.match(html, /<meta name="viewport" content="[^"]*width=device-width[^"]*">/);
-});
+for (const page of pages) {
+  const html = read(page);
+  const dir = dirname(join(root, page));
+  const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+  const anchors = [...html.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
+  const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
 
-test('social metadata is present for link previews', () => {
-  for (const property of ['og:title', 'og:description', 'og:image', 'og:url']) {
-    assert.match(html, new RegExp(`<meta property="${property}" content="[^"]+"`), `${property} is set`);
-  }
-  for (const name of ['twitter:card', 'twitter:title', 'twitter:description', 'twitter:image']) {
-    assert.match(html, new RegExp(`<meta name="${name}" content="[^"]+"`), `${name} is set`);
-  }
-  assert.match(html, /<meta name="description" content="[^"]+"/);
-});
+  test(`${page}: document shell - doctype, language, title and viewport`, () => {
+    assert.match(html, /^<!doctype html>/i);
+    assert.match(html, /<html lang="en">/);
+    const title = html.match(/<title>([^<]+)<\/title>/);
+    assert.ok(title && title[1].trim().length > 0, 'title is present and non-empty');
+    assert.match(html, /<meta name="viewport" content="[^"]*width=device-width[^"]*">/);
+  });
 
-test('there is exactly one inline script and it parses', () => {
-  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
-  assert.equal(scripts.length, 1);
-  new vm.Script(scripts[0][1]);
-});
-
-test('every navigation anchor points at an element that exists', () => {
-  const fragmentHrefs = anchors
-    .map((tag) => attr(tag, 'href'))
-    .filter((href) => href && href.startsWith('#'));
-  assert.ok(fragmentHrefs.length > 0, 'page has fragment navigation');
-  for (const href of fragmentHrefs) {
-    assert.ok(ids.includes(href.slice(1)), `${href} resolves to an existing id`);
-  }
-});
-
-test('all element ids are unique', () => {
-  const seen = new Set();
-  for (const id of ids) {
-    assert.ok(!seen.has(id), `duplicate id "${id}"`);
-    seen.add(id);
-  }
-});
-
-test('every image has alt text and a file that exists', () => {
-  assert.ok(images.length > 0, 'page has images');
-  for (const tag of images) {
-    const alt = attr(tag, 'alt');
-    assert.ok(alt && alt.trim().length > 0, `image has alt text: ${tag.slice(0, 80)}`);
-    const src = attr(tag, 'src');
-    assert.ok(src, 'image has a src');
-    if (!src.startsWith('http')) {
-      assert.ok(existsSync(join(root, src)), `${src} exists in the repo`);
+  test(`${page}: social metadata is present for link previews`, () => {
+    for (const property of ['og:title', 'og:description', 'og:image', 'og:url']) {
+      assert.match(html, new RegExp(`<meta property="${property}" content="[^"]+"`), `${property} is set`);
     }
-  }
-});
-
-test('external links use https, and new-tab links neutralise opener access', () => {
-  const external = anchors.filter((tag) => (attr(tag, 'href') || '').startsWith('http'));
-  assert.ok(external.length > 0, 'page has external links');
-  for (const tag of external) {
-    assert.ok(attr(tag, 'href').startsWith('https://'), `https link: ${attr(tag, 'href')}`);
-    if (attr(tag, 'target') === '_blank') {
-      assert.match(attr(tag, 'rel') || '', /noreferrer/, `rel=noreferrer on ${attr(tag, 'href')}`);
+    for (const name of ['twitter:card', 'twitter:title', 'twitter:description', 'twitter:image']) {
+      assert.match(html, new RegExp(`<meta name="${name}" content="[^"]+"`), `${name} is set`);
     }
-  }
+    assert.match(html, /<meta name="description" content="[^"]+"/);
+  });
+
+  test(`${page}: exactly one h1`, () => {
+    assert.equal([...html.matchAll(/<h1\b/g)].length, 1);
+  });
+
+  test(`${page}: all element ids are unique`, () => {
+    const seen = new Set();
+    for (const id of ids) {
+      assert.ok(!seen.has(id), `duplicate id "${id}"`);
+      seen.add(id);
+    }
+  });
+
+  test(`${page}: every internal link resolves to a page that exists`, () => {
+    const internal = anchors
+      .map((tag) => attr(tag, 'href'))
+      .filter((href) => href && !href.startsWith('http') && !href.startsWith('#'));
+    assert.ok(internal.length > 0, 'page links to other pages');
+    for (const href of internal) {
+      const target = join(dir, href);
+      const resolved = existsSync(target) && !target.endsWith('.html') ? join(target, 'index.html') : target;
+      assert.ok(existsSync(resolved), `${href} resolves to an existing page`);
+    }
+  });
+
+  test(`${page}: every image has alt text and a file that exists`, () => {
+    for (const tag of images) {
+      const alt = attr(tag, 'alt');
+      assert.ok(alt !== null, `image has an alt attribute: ${tag.slice(0, 80)}`);
+      const src = attr(tag, 'src');
+      assert.ok(src, 'image has a src');
+      if (!src.startsWith('http')) {
+        assert.ok(existsSync(join(dir, src)), `${src} exists in the repo`);
+      }
+    }
+  });
+
+  test(`${page}: external links use https, and new-tab links neutralise opener access`, () => {
+    const external = anchors.filter((tag) => (attr(tag, 'href') || '').startsWith('http'));
+    assert.ok(external.length > 0, 'page has external links');
+    for (const tag of external) {
+      assert.ok(attr(tag, 'href').startsWith('https://'), `https link: ${attr(tag, 'href')}`);
+      if (attr(tag, 'target') === '_blank') {
+        assert.match(attr(tag, 'rel') || '', /noreferrer/, `rel=noreferrer on ${attr(tag, 'href')}`);
+      }
+    }
+  });
+
+  test(`${page}: social preview images point at files that exist in the repo`, () => {
+    const metas = [...html.matchAll(/<meta\b[^>]*(?:og:image|twitter:image)[^>]*>/g)].map((m) => m[0]);
+    assert.ok(metas.length >= 2, 'og:image and twitter:image present');
+    for (const tag of metas) {
+      const content = attr(tag, 'content');
+      const localPath = content.replace('https://nickcaplan.github.io/websites-by-nick/', '');
+      assert.ok(existsSync(join(root, localPath)), `${localPath} exists in the repo`);
+    }
+  });
+
+  test(`${page}: toggle buttons ship with accessible names and pressed state`, () => {
+    for (const cls of ['theme-toggle', 'mobile-toggle']) {
+      const button = html.match(new RegExp(`<button[^>]*class="${cls}"[^>]*>`));
+      assert.ok(button, `${cls} exists`);
+      assert.ok(attr(button[0], 'aria-label'), `${cls} has an aria-label`);
+      assert.ok(attr(button[0], 'aria-pressed'), `${cls} has aria-pressed`);
+    }
+  });
+
+  test(`${page}: nav marks the current page`, () => {
+    assert.match(html, /aria-current="page"/);
+  });
+
+  test(`${page}: nav chips match across pages - no subtitles`, () => {
+    const chips = html.match(/<div class="nav-chips"[\s\S]*?<\/div>/);
+    assert.ok(chips, 'nav-chips block exists');
+    assert.ok(!/<small/.test(chips[0]), 'chips carry no subtitles on any page');
+    const labels = [...chips[0].matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map((m) => m[1].trim());
+    assert.deepEqual(labels, ['Work', 'Experience', 'Contact']);
+  });
+
+  test(`${page}: aria reference attributes resolve to existing ids`, () => {
+    const refs = [...html.matchAll(/ aria-labelledby="([^"]+)"/g)].map((m) => m[1]);
+    for (const ref of refs) {
+      for (const id of ref.split(/\s+/)) {
+        assert.ok(ids.includes(id), `aria-labelledby target "${id}" exists`);
+      }
+    }
+  });
+
+  test(`${page}: every showcase data source file exists`, () => {
+    const dataSrcs = [...html.matchAll(/ data-src-(?:desk|mob)="([^"]+)"/g)].map((m) => m[1]);
+    for (const src of dataSrcs) {
+      assert.ok(existsSync(join(dir, src)), `${src} exists in the repo`);
+    }
+  });
+}
+
+test('home page carries the showcase imagery', () => {
+  const images = [...read('index.html').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+  assert.ok(images.length >= 16, 'home page has the showcase images');
 });
 
-test('social preview images point at files that exist in the repo', () => {
-  const metas = [...html.matchAll(/<meta\b[^>]*(?:og:image|twitter:image)[^>]*>/g)].map((m) => m[0]);
-  assert.ok(metas.length >= 2, 'og:image and twitter:image present');
-  for (const tag of metas) {
-    const content = attr(tag, 'content');
-    const localPath = content.replace('https://nicholascaplan.github.io/profile/', '');
-    assert.ok(existsSync(join(root, localPath)), `${localPath} exists in the repo`);
-  }
-});
-
-test('contact form posts securely and every field is labelled and required', () => {
+test('contact page: form posts securely and every field is labelled and required', () => {
+  const html = read('contact/index.html');
   const form = html.match(/<form\b[^>]*>/);
   assert.ok(form, 'contact form exists');
   assert.match(attr(form[0], 'action') || '', /^https:\/\//);
@@ -114,20 +162,17 @@ test('contact form posts securely and every field is labelled and required', () 
   assert.match(html, /<button[^>]*type="submit"/);
 });
 
-test('toggle buttons ship with accessible names and pressed state', () => {
-  for (const cls of ['theme-toggle', 'mobile-toggle']) {
-    const button = html.match(new RegExp(`<button[^>]*class="${cls}"[^>]*>`));
-    assert.ok(button, `${cls} exists`);
-    assert.ok(attr(button[0], 'aria-label'), `${cls} has an aria-label`);
-    assert.ok(attr(button[0], 'aria-pressed'), `${cls} has aria-pressed`);
+test('shared scripts parse', () => {
+  for (const script of ['assets/js/site.js', 'assets/js/showcase.js']) {
+    new vm.Script(readFileSync(join(root, script), 'utf8'), { filename: script });
   }
 });
 
-test('aria reference attributes resolve to existing ids', () => {
-  const refs = [...html.matchAll(/ aria-labelledby="([^"]+)"/g)].map((m) => m[1]);
-  for (const ref of refs) {
-    for (const id of ref.split(/\s+/)) {
-      assert.ok(ids.includes(id), `aria-labelledby target "${id}" exists`);
-    }
+test('pages carry no inline behaviour beyond the shared first-paint bootstrap', () => {
+  const bootstrap = read('index.html').match(/<script>(?!\s*<\/script>)[\s\S]*?<\/script>/)[0];
+  for (const page of pages) {
+    const inline = [...read(page).matchAll(/<script>(?!\s*<\/script>)[\s\S]*?<\/script>/g)].map((m) => m[0]);
+    assert.equal(inline.length, 1, `${page} carries exactly one inline bootstrap`);
+    assert.equal(inline[0], bootstrap, `${page} bootstrap matches the shared first-paint setup`);
   }
 });
