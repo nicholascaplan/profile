@@ -25,10 +25,13 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const mySeq = ++swapSeq;
     const srcD = chosen.dataset.srcDesk;
     const srcM = chosen.dataset.srcMob;
+    // decode() resolves only once the image is actually ready to paint;
+    // fall back to load/error events where decode is unavailable.
     const ready = (img, src) => img.currentSrc.endsWith(src) ? Promise.resolve() : new Promise((resolve) => {
       const pre = new Image();
       pre.onload = pre.onerror = () => resolve();
       pre.src = src;
+      if (typeof pre.decode === 'function') pre.decode().then(() => resolve(), () => resolve());
     });
     Promise.all([ready(desk, srcD), ready(mob, srcM)]).then(() => {
       if (mySeq !== swapSeq) return;
