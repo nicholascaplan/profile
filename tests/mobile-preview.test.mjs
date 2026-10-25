@@ -104,11 +104,13 @@ test('preview hosts default to the viewport and persist manual layout changes', 
   for (const hostname of PREVIEW_HOSTNAMES) {
     for (const viewportWidth of [390, 1440]) {
       const page = runPage({ hostname, viewportWidth });
-      assert.equal(page.body.dataset.mobile, String(viewportWidth <= 1280));
+      assert.equal(page.body.dataset.mobile, String(viewportWidth <= 600));
+      assert.equal(page.body.dataset.preview, 'false', 'viewport alone never enables a preview frame');
       assert.equal('nick-mobile' in page.store, false, 'viewport default is not persisted before a manual toggle');
       page.mobileToggle.listeners.click();
-      assert.equal(page.body.dataset.mobile, String(viewportWidth > 1280));
-      assert.equal(page.store['nick-mobile'], String(viewportWidth > 1280));
+      assert.equal(page.body.dataset.mobile, String(viewportWidth > 600));
+      assert.equal(page.body.dataset.preview, String(viewportWidth > 600));
+      assert.equal(page.store['nick-mobile'], String(viewportWidth > 600));
     }
   }
 });
@@ -145,9 +147,10 @@ test('deployed hosts follow breakpoint changes without reloading or persisting a
   for (const hostname of DEPLOYED_HOSTNAMES) {
     for (const viewportWidth of [390, 1440]) {
       const page = runPage({ hostname, viewportWidth, stored: { 'nick-mobile': 'true' } });
-      for (const width of [1281, 1280, 1440, 390]) {
+      for (const width of [1280, 768, 601, 600, 1440, 390]) {
         page.resize(width);
-        assert.equal(page.body.dataset.mobile, String(width <= 1280), `${hostname} follows a resize to ${width}px`);
+        assert.equal(page.body.dataset.mobile, String(width <= 600), `${hostname} follows a resize to ${width}px`);
+        assert.equal(page.body.dataset.preview, 'false', 'a public viewport never creates a preview frame');
         assert.equal(page.mobileToggle.removed, true);
         assert.equal(page.store['nick-mobile'], 'true', 'resizing must not overwrite a stored local preview choice');
       }
@@ -169,6 +172,18 @@ test('local and Netlify preview choices remain unchanged on resize and can still
       assert.equal(page.store['nick-mobile'], toggled);
       page.resize(390);
       assert.equal(page.body.dataset.mobile, toggled, 'resize preserves the toggled preview choice');
+    }
+  }
+});
+
+test('unmodified local and Netlify previews follow viewport changes without creating a frame', () => {
+  for (const hostname of PREVIEW_HOSTNAMES) {
+    const page = runPage({ hostname, viewportWidth: 1440 });
+    for (const width of [768, 600, 390, 1280]) {
+      page.resize(width);
+      assert.equal(page.body.dataset.mobile, String(width <= 600));
+      assert.equal(page.body.dataset.preview, 'false');
+      assert.equal('nick-mobile' in page.store, false);
     }
   }
 });
