@@ -144,12 +144,15 @@ test('theme and layout apply before first paint, before external scripts run', a
     await route.continue();
   });
   const painted = () => page.waitForFunction(() => getComputedStyle(document.body).backgroundColor !== 'rgba(0, 0, 0, 0)');
+  // The body's background fades in over .45s when site.css loads; Firefox and WebKit can
+  // reach the read mid-transition. Wait out the fade so the asserted colour is the final one.
+  const settledPaint = async () => { await painted(); await settle(page); };
   // Background can paint before the parser reaches .site-shell; wait for the node itself
   // (the delayed site.js route still holds, so the prepaint assertions keep their meaning).
 
   await page.setViewportSize(DESKTOP);
   await page.goto('/', { waitUntil: 'commit' });
-  await painted();
+  await settledPaint();
   await page.waitForSelector('.site-shell', { state: 'attached' });
   const desktop = await page.evaluate(prepaintState);
   assert.equal(desktop.siteJsRan, false, 'external site.js has not run yet');
@@ -161,7 +164,7 @@ test('theme and layout apply before first paint, before external scripts run', a
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/', { waitUntil: 'commit' });
-  await painted();
+  await settledPaint();
   await page.waitForSelector('.site-shell', { state: 'attached' });
   const phone = await page.evaluate(prepaintState);
   assert.equal(phone.siteJsRan, false, 'external site.js has not run yet');
@@ -171,7 +174,7 @@ test('theme and layout apply before first paint, before external scripts run', a
   await page.addInitScript(() => { try { window.localStorage.setItem('nick-theme', 'light'); } catch (error) {} });
   await page.setViewportSize(DESKTOP);
   await page.goto('/', { waitUntil: 'commit' });
-  await painted();
+  await settledPaint();
   await page.waitForSelector('.site-shell', { state: 'attached' });
   const stored = await page.evaluate(prepaintState);
   assert.equal(stored.siteJsRan, false, 'external site.js has not run yet');
@@ -374,6 +377,7 @@ test('light-theme muted body text has at least 4.5:1 contrast', async ({ page })
   await page.addInitScript(() => { try { window.localStorage.setItem('nick-theme', 'light'); } catch (error) {} });
   await page.setViewportSize(DESKTOP);
   await page.goto('/');
+  await settle(page); // let the .45s background fade finish so the measured colours are the final ones
   const contrast = await page.evaluate(heroTextContrast);
   assert.ok(contrast >= 4.5, `muted body text contrast ${contrast.toFixed(2)}:1 is below 4.5:1`);
 });
