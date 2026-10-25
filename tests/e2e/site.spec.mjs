@@ -558,7 +558,7 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
   assert.equal(dark0.foaDesk, 'foa-home-desk-dark.webp', 'FOA shows its dark capture in dark mode');
   assert.equal(dark0.foaMob, 'foa-home-mob-dark.webp', 'mobile shot follows too');
   assert.equal(dark0.foaThumb, 'foa-home-desk-dark.webp', 'thumbnails follow the theme');
-  assert.equal(dark0.samDesk, 'sam-home-desk.webp', 'the Sam site has no dark mode: its single capture set stays');
+  assert.equal(dark0.samDesk, 'sam-home-desk-dark.webp', 'Sam shows its dark capture in dark mode too');
   await page.locator('button.theme-toggle').first().click();
   await page.waitForTimeout(300);
   const light = await read();
@@ -566,11 +566,12 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
   assert.equal(light.foaDesk, 'foa-home-desk.webp', 'FOA swaps to its light capture in light mode');
   assert.equal(light.foaMob, 'foa-home-mob.webp');
   assert.equal(light.foaThumb, 'foa-home-desk.webp');
-  assert.equal(light.samDesk, 'sam-home-desk.webp', 'Sam shots are unchanged by theme');
+  assert.equal(light.samDesk, 'sam-home-desk.webp', 'Sam swaps to its light capture in light mode');
   await page.locator('button.theme-toggle').first().click();
   await page.waitForTimeout(300);
   const dark1 = await read();
   assert.equal(dark1.foaDesk, 'foa-home-desk-dark.webp', 'toggling back restores the dark captures');
+  assert.equal(dark1.samDesk, 'sam-home-desk-dark.webp', 'Sam dark captures return too');
 });
 
 test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
