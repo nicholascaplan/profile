@@ -53,7 +53,8 @@ for (const path of ['/', '/experience/', '/contact/']) {
           fontReady: (() => {
             // WebKit reports a face in "error" as check() === true; read the
             // face status directly - "loaded" is the only applied state.
-            const face = [...document.fonts].find((f) => f.family === 'DM Sans' && f.weight === '400');
+            // Firefox keeps the CSS quotes in FontFace.family ("DM Sans").
+            const face = [...document.fonts].find((f) => f.family.replace(/["']/g, '') === 'DM Sans' && f.weight === '400');
             return !!face && face.status === 'loaded';
           })(),
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -99,7 +100,7 @@ for (const path of ['/', '/experience/', '/contact/']) {
         // The delayed response lands on its own: the swap happens inside this
         // same document, so before/after measure the real runtime font swap.
         await page.waitForFunction(() => {
-          const face = [...document.fonts].find((f) => f.family === 'DM Sans' && f.weight === '400');
+          const face = [...document.fonts].find((f) => f.family.replace(/["']/g, '') === 'DM Sans' && f.weight === '400');
           return face && face.status === 'loaded';
         }, { timeout: 8000 });
         await page.evaluate(() => document.fonts.ready);
