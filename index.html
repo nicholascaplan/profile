@@ -610,18 +610,20 @@
     });
 
     const isLocalEnvironment = ['localhost', '127.0.0.1', '[::1]', ''].includes(window.location.hostname);
+    const isNetlifyDeployPreview = /^deploy-preview-\d+--[a-z0-9-]+\.netlify\.app$/.test(window.location.hostname);
+    const allowsMobilePreview = isLocalEnvironment || isNetlifyDeployPreview;
 
     function setMobileMode(isMobile) {
       document.body.dataset.mobile = String(isMobile);
       mobileToggle.setAttribute('aria-pressed', String(isMobile));
       mobileToggle.setAttribute('aria-label', isMobile ? 'Switch to desktop mode' : 'Switch to mobile mode');
       mobileToggle.title = isMobile ? 'Switch to desktop mode' : 'Switch to mobile mode';
-      if (isLocalEnvironment) {
+      if (allowsMobilePreview) {
         window.localStorage.setItem('nick-mobile', String(isMobile));
       }
     }
 
-    if (isLocalEnvironment) {
+    if (allowsMobilePreview) {
       const storedMobile = window.localStorage.getItem('nick-mobile');
       setMobileMode(storedMobile === null ? window.matchMedia('(max-width: 1280px)').matches : storedMobile === 'true');
       mobileToggle.addEventListener('click', () => {
