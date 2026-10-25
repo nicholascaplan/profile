@@ -3,9 +3,9 @@
 
 /* Show both shots, composed: desktop fills the card, phone sits inset. */
 .shot-desk { display: block; }
-.shot-mob { position: absolute; right: 4%; bottom: 9%; display: block; height: 66%; width: auto; max-width: none; max-height: none; margin-inline: 0; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); z-index: 2; }
+.shot-mob { position: absolute; right: 4%; bottom: 8%; display: block; height: 78%; width: auto; max-width: none; max-height: none; margin-inline: 0; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); z-index: 2; }
 body[data-mobile="true"] .shot-desk { display: block; }
-body[data-mobile="true"] .shot-mob { position: absolute; right: 4%; bottom: 9%; height: 62%; width: auto; max-width: none; max-height: none; margin-inline: 0; object-fit: cover; object-position: center top; border-radius: 8px; z-index: 2; }
+body[data-mobile="true"] .shot-mob { position: absolute; right: 4%; bottom: 8%; height: 80%; width: auto; max-width: none; max-height: none; margin-inline: 0; object-fit: cover; object-position: center top; border-radius: 8px; z-index: 2; }
 
 /* The pill labels the composed pair. */
 .pill .dev-desk, .pill .dev-mob { display: none; }
