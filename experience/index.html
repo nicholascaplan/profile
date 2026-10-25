@@ -9,12 +9,12 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://nickcaplan.github.io/websites-by-nick/experience/">
   <meta property="og:title" content="Nick Caplan | Experience">
-  <meta property="og:description" content="A career spent making complex platforms more capable, and the teams behind them more confident.">
+  <meta property="og:description" content="Over 15 years in engineering: clear communication, dependable delivery and websites that are straightforward to maintain.">
   <meta property="og:image" content="https://nickcaplan.github.io/websites-by-nick/assets/images/profile-picture.jpeg">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Nick Caplan | Experience">
-  <meta name="twitter:description" content="A career spent making complex platforms more capable, and the teams behind them more confident.">
+  <meta name="twitter:description" content="Over 15 years in engineering: clear communication, dependable delivery and websites that are straightforward to maintain.">
   <meta name="twitter:image" content="https://nickcaplan.github.io/websites-by-nick/assets/images/profile-picture.jpeg">
   <link rel="preload" href="../assets/fonts/dmsans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/dmmono-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -35,7 +35,8 @@
       var allowsPreview = ['localhost', '127.0.0.1', '[::1]', ''].indexOf(host) !== -1 || /^deploy-preview-\d+--[a-z0-9-]+\.netlify\.app$/.test(host);
       var storedMobile = null;
       if (allowsPreview) { try { storedMobile = window.localStorage.getItem('nick-mobile'); } catch (error) {} }
-      body.dataset.mobile = String(storedMobile === null ? window.matchMedia('(max-width: 1280px)').matches : storedMobile === 'true');
+      body.dataset.preview = String(allowsPreview && storedMobile === 'true');
+      body.dataset.mobile = String(storedMobile === null ? window.matchMedia('(max-width: 600px)').matches : storedMobile === 'true');
     })();
   </script>
   <div class="site-shell">
@@ -60,7 +61,7 @@
       <section class="page-hero">
         <div class="eyebrow">Experience</div>
         <h1>Selected <em>experience.</em></h1>
-        <p class="intro">A career spent making complex platforms more capable, and the teams behind them more confident.</p>
+        <p class="intro">Over 15 years in engineering informs how I build your website: clear communication, dependable delivery and code that is straightforward to maintain.</p>
       </section>
 
       <section class="content" aria-label="Roles">

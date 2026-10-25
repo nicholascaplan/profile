@@ -123,7 +123,7 @@ for (const page of pages) {
   });
 
   test(`${page}: aria reference attributes resolve to existing ids`, () => {
-    const refs = [...html.matchAll(/ aria-labelledby="([^"]+)"/g)].map((m) => m[1]);
+    const refs = [...html.matchAll(/ aria-(?:labelledby|describedby)="([^"]+)"/g)].map((m) => m[1]);
     for (const ref of refs) {
       for (const id of ref.split(/\s+/)) {
         assert.ok(ids.includes(id), `aria-labelledby target "${id}" exists`);
@@ -132,7 +132,7 @@ for (const page of pages) {
   });
 
   test(`${page}: every showcase data source file exists`, () => {
-    const dataSrcs = [...html.matchAll(/ data-src-(?:desk|mob)="([^"]+)"/g)].map((m) => m[1]);
+    const dataSrcs = [...html.matchAll(/ data-src-(?:desk|mob)(?:-dark)?="([^"]+)"/g)].map((m) => m[1]);
     for (const src of dataSrcs) {
       assert.ok(existsSync(join(dir, src)), `${src} exists in the repo`);
     }
@@ -140,8 +140,17 @@ for (const page of pages) {
 }
 
 test('home page carries the showcase imagery', () => {
-  const images = [...read('index.html').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
-  assert.ok(images.length >= 16, 'home page has the showcase images');
+  const html = read('index.html');
+  const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+  assert.equal(images.filter((tag) => /class="shot-img shot-desk"/.test(tag)).length, 2, 'each project has a desktop overview');
+  assert.equal(images.filter((tag) => /class="shot-img shot-mob"/.test(tag)).length, 2, 'each project has a phone inset');
+  assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 6, 'three labelled page choices per project');
+  assert.doesNotMatch(html, /class="(?:m-step|teaser)"|Tap to enlarge|thumb-desk|thumb-mob/, 'no duplicate gallery controls or closing contact panel');
+  assert.match(html, /class="intro-contact" href="contact\/"/, 'an early enquiry link is present');
+  assert.equal([...html.matchAll(/class="case-role"/g)].length, 2, 'each project explains Nick’s role');
+  for (const article of html.matchAll(/<article class="case[^\"]*"[\s\S]*?<\/article>/g)) {
+    assert.match(article[0], /<header class="case-heading">[\s\S]*?<h2[\s\S]*?<div class="case-shot">[\s\S]*?<div class="case-copy">/, 'project reading order is heading, imagery, details');
+  }
 });
 
 test('contact page: form posts securely and every field is labelled and required', () => {

@@ -1,5 +1,16 @@
 # Profile site project brief
 
+## Current design (25 October 2026, responsive UX refinement)
+
+- Keep the forest-green/terracotta identity, both themes, dark first-visit default and side-by-side hero portrait. Scale the portrait and headline with the site container on phones, including desktop phone previews.
+- Public pages use the available width. Phone styling starts at 600px; project sections stack at 960px and below. A fixed 430px frame is exclusively an explicit local/Netlify development-preview choice, tracked separately as `data-preview`. With no manual override, every host follows viewport changes; production ignores stored development choices.
+- Projects read in DOM order as heading, composed screenshot, description/role and live-site CTA. Desktop keeps the alternating two-column composition. Project headings use h2 and label their articles.
+- Treat screenshots as visual teasers, not miniature interactive sites. Keep paired, theme-matching captures and atomic switching, replacing tiny image thumbnails and duplicate arrow/counter controls with one set of readable, keyboard-operable page buttons (44px minimum targets). The live site remains the route for exploring a project. No lightbox or zoom affordance.
+- Mobile project copy and contact inputs are at least 16px. The home intro offers an early enquiry link; the footer is the single closing contact section, replacing the duplicated bordered teaser.
+- Explain design/development roles without inventing project outcomes, target markets or delivery promises. Introduce the experience page in terms of client benefits, retaining the career detail. The contact message has a visible, programmatically associated prompt; no response-time promise is added without Nick confirming one. Native validation and the existing Formspree submission remain unchanged.
+
+Earlier entries below are historical decisions and intermediate states; the current design above supersedes conflicting layout/gallery descriptions.
+
 Current status (24 October 2026): the portfolio-first redesign (option C7) is on the c7-redesign branch. The single page becomes three real URLs - home (websites lead), experience (the CV content) and contact (the form, reframed "Have a website in mind?") - with visible navigation on every screen size and no menu button. Showcase cards show one hero-sized screenshot per site, chosen by labelled thumbnails; on mobile, visible prev/next arrows and a counter step through the same set. Screenshots are static captures, optimised to WebP. Shared CSS and JavaScript move to `assets/css/site.css` and `assets/js/`; the theme and mobile preview behaviour are unchanged. The hero portrait's placement is awaiting Nick's choice between beside the Experience intro and beside the home hero text, and lands separately.
 
 

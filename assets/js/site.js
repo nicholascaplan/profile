@@ -42,28 +42,27 @@ const isLocalEnvironment = ['localhost', '127.0.0.1', '[::1]', ''].includes(wind
 const isNetlifyDeployPreview = /^deploy-preview-\d+--[a-z0-9-]+\.netlify\.app$/.test(window.location.hostname);
 const allowsMobilePreview = isLocalEnvironment || isNetlifyDeployPreview;
 
-function setMobileMode(isMobile, persist) {
+function setMobileMode(isMobile, preview) {
   document.body.dataset.mobile = String(isMobile);
+  document.body.dataset.preview = String(preview && isMobile);
   mobileToggle.setAttribute('aria-pressed', String(isMobile));
   mobileToggle.setAttribute('aria-label', isMobile ? 'Switch to desktop mode' : 'Switch to mobile mode');
   mobileToggle.title = isMobile ? 'Switch to desktop mode' : 'Switch to mobile mode';
-  if (persist && allowsMobilePreview) {
-    writeStored('nick-mobile', String(isMobile));
-  }
 }
 
+const mobileViewport = window.matchMedia('(max-width: 600px)');
+let previewChoice = allowsMobilePreview ? readStored('nick-mobile') : null;
+function syncLayout() {
+  setMobileMode(previewChoice === null ? mobileViewport.matches : previewChoice === 'true', previewChoice === 'true');
+}
 if (allowsMobilePreview) {
-  const storedMobile = readStored('nick-mobile');
-  setMobileMode(storedMobile === null ? window.matchMedia('(max-width: 1280px)').matches : storedMobile === 'true', false);
   mobileToggle.addEventListener('click', () => {
-    setMobileMode(document.body.dataset.mobile !== 'true', true);
+    previewChoice = String(document.body.dataset.mobile !== 'true');
+    writeStored('nick-mobile', previewChoice);
+    syncLayout();
   });
 } else {
   mobileToggle.remove();
-  const mobileViewport = window.matchMedia('(max-width: 1280px)');
-  setMobileMode(mobileViewport.matches, false);
-  mobileViewport.addEventListener('change', (event) => {
-    setMobileMode(event.matches, false);
-  });
 }
-
+syncLayout();
+mobileViewport.addEventListener('change', syncLayout);
