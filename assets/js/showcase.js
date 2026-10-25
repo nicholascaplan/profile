@@ -23,8 +23,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     // different times. The latest choice wins if thumbnails are clicked
     // in quick succession.
     const mySeq = ++swapSeq;
-    const srcD = chosen.dataset.srcDesk;
-    const srcM = chosen.dataset.srcMob;
+    const srcD = variant(chosen, 'Desk');
+    const srcM = variant(chosen, 'Mob');
     // decode() resolves only once the image is actually ready to paint;
     // fall back to load/error events where decode is unavailable.
     const ready = (img, src) => img.currentSrc.endsWith(src) ? Promise.resolve() : new Promise((resolve) => {
@@ -41,6 +41,31 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       mob.alt = chosen.dataset.altMob;
     });
   }
+  // Screenshots follow the page theme: a site captured in both modes
+  // (data-src-*-dark on its thumbnails) swaps variants when data-theme
+  // flips; sites with only one mode keep their single capture set.
+  function variant(thumb, kind) {
+    if (document.body.dataset.theme === 'dark' && thumb.dataset[`src${kind}Dark`]) {
+      return thumb.dataset[`src${kind}Dark`];
+    }
+    return thumb.dataset[`src${kind}`];
+  }
+  function syncThumbImgs() {
+    thumbs.forEach((thumb) => {
+      const td = thumb.querySelector('.thumb-desk');
+      const tm = thumb.querySelector('.thumb-mob');
+      if (td) td.src = variant(thumb, 'Desk');
+      if (tm) tm.src = variant(thumb, 'Mob');
+    });
+  }
+  new MutationObserver((records) => {
+    if (records.some((r) => r.attributeName === 'data-theme')) {
+      syncThumbImgs();
+      select(current);
+    }
+  }).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+  syncThumbImgs();
+  select(0);
   thumbs.forEach((thumb, j) => thumb.addEventListener('click', () => select(j)));
   caseEl.querySelectorAll('.m-step .arr').forEach((arrow) => {
     arrow.addEventListener('click', () => select(current + Number(arrow.dataset.step)));
