@@ -11,13 +11,3 @@ body[data-mobile="true"] .shot-mob { position: absolute; right: 10%; bottom: 2%;
 .pill .dev-desk, .pill .dev-mob { display: none; }
 body[data-mobile="true"] .pill .dev-desk, body[data-mobile="true"] .pill .dev-mob { display: none; }
 .pill::after { content: 'DESKTOP + MOBILE'; }
-
-/* Zoom cues move off the inset's corner. */
-.shot .zoom-cues { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 6px; z-index: 3; }
-.shot .zoom-cues .zoom-cue { position: static; }
-
-/* Tighter case spacing. */
-.case { gap: 28px; padding: 28px 0 24px; }
-.thumbs { margin-top: 10px; }
-body[data-mobile="true"] .case { padding: 18px 0 14px; }
-body[data-mobile="true"] .case .case-shot { margin-top: 14px; }
