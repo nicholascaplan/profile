@@ -372,16 +372,17 @@ test('desktop mobile preview: content fits the frame and matches a phone layout'
         return r.left < shell.left - 1 || r.right > shell.right + 1;
       })
       .map((el) => el.className || el.tagName);
-    const structures = [...document.querySelectorAll('.mobile-hero, .role, .lower-grid, .contact-grid')].map((el) => {
+    const structures = [...document.querySelectorAll('.hero, .role, .lower-grid, .contact-grid')].map((el) => {
       const css = getComputedStyle(el);
       return { display: css.display, columns: css.gridTemplateColumns };
     });
-    const hero = document.querySelector('.mobile-hero');
+    const hero = document.querySelector('.hero');
     const range = document.createRange();
     range.selectNodeContents(hero.querySelector('h1'));
     const text = range.getBoundingClientRect();
     const portrait = hero.querySelector('.portrait').getBoundingClientRect();
-    return { width: shell.width, clipped, structures, stacked: text.bottom <= portrait.top };
+    const overlap = !(portrait.right <= text.left || portrait.left >= text.right || portrait.bottom <= text.top || portrait.top >= text.bottom);
+    return { width: shell.width, clipped, structures, overlap };
   };
   await page.setViewportSize(DESKTOP);
   await page.goto('/');
@@ -390,7 +391,7 @@ test('desktop mobile preview: content fits the frame and matches a phone layout'
   const preview = await page.evaluate(layout);
   assert.equal(preview.width, 430);
   assert.deepEqual(preview.clipped, [], 'content must fit inside the frame, not just avoid document scrollbars');
-  assert.equal(preview.stacked, true, 'portrait stacks below headline in the phone-width frame');
+  assert.equal(preview.overlap, false, 'headline and portrait must not overlap in the phone-width frame');
   await shot(page, 'browser-desktop-mobile-preview', testInfo.project.name);
 
   await page.setViewportSize({ width: 430, height: DESKTOP.height });
