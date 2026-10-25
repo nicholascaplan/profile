@@ -21,18 +21,20 @@ for (const path of ['/', '/experience/', '/contact/']) {
       // Mobile projects keep their device viewport; desktop projects exercise
       // the full-sized headline.
       if (!isMobile) await page.setViewportSize({ width: 1440, height: 900 });
-      // Hold the webfont request until the fallback has painted, then release
-      // it so the swap is measured in the SAME document. Every fulfill is
-      // no-store: WebKit's memory cache would otherwise serve the font across
-      // the per-variant navigations without a network request, silently
-      // defeating the hold (the preload and the CSS fetch share the cache).
-      let releaseFont;
-      const held = new Promise((resolve) => { releaseFont = resolve; });
+      // Delay the webfont response instead of holding it: an indefinitely held
+      // request is killed on WebKit before release (the face goes to "error"
+      // and the same-document swap can never happen). A delayed response keeps
+      // the face "loading" while the fallback paints, then completes the swap
+      // inside the SAME document. Every fulfill is no-store: WebKit's memory
+      // cache would otherwise serve the font across the per-variant
+      // navigations without a network request (the preload and the CSS fetch
+      // share the cache). The delay is well beyond the fallback-paint work.
+      const FONT_DELAY_MS = 2500;
       let fontRequested;
       const requested = new Promise((resolve) => { fontRequested = resolve; });
       await page.route('**/assets/fonts/dmsans.woff2', async (route) => {
         fontRequested();
-        await held;
+        await new Promise((resolve) => setTimeout(resolve, FONT_DELAY_MS));
         const response = await route.fetch();
         const headers = { ...response.headers(), 'cache-control': 'no-store' };
         await route.fulfill({ response, headers });
@@ -48,7 +50,12 @@ for (const path of ['/', '/experience/', '/contact/']) {
           bottom: text.bottom,
           width: text.width,
           text: heading.textContent.trim(),
-          fontReady: document.fonts.check('400 48px "DM Sans"'),
+          fontReady: (() => {
+            // WebKit reports a face in "error" as check() === true; read the
+            // face status directly - "loaded" is the only applied state.
+            const face = [...document.fonts].find((f) => f.family === 'DM Sans' && f.weight === '400');
+            return !!face && face.status === 'loaded';
+          })(),
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         };
       };
@@ -89,9 +96,12 @@ for (const path of ['/', '/experience/', '/contact/']) {
         assert.ok(before.text.length > 0, 'headline is readable before the font arrives');
         assert.ok(before.overflow <= 1, 'fallback does not introduce horizontal scrolling');
 
-        // Release the held request: the swap now happens inside this same
-        // document, so before/after measure the real runtime font swap.
-        releaseFont();
+        // The delayed response lands on its own: the swap happens inside this
+        // same document, so before/after measure the real runtime font swap.
+        await page.waitForFunction(() => {
+          const face = [...document.fonts].find((f) => f.family === 'DM Sans' && f.weight === '400');
+          return face && face.status === 'loaded';
+        }, { timeout: 8000 });
         await page.evaluate(() => document.fonts.ready);
         await paint();
         const after = await page.evaluate(measure);
@@ -106,7 +116,6 @@ for (const path of ['/', '/experience/', '/contact/']) {
             `matched fallback keeps text bottom stable (${before.bottom} -> ${after.bottom})`);
         }
       } finally {
-        releaseFont();
         await page.unrouteAll({ behavior: 'wait' });
       }
     });
