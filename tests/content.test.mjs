@@ -114,6 +114,14 @@ for (const page of pages) {
     assert.match(html, /aria-current="page"/);
   });
 
+  test(`${page}: nav chips match across pages - no subtitles`, () => {
+    const chips = html.match(/<div class="nav-chips"[\s\S]*?<\/div>/);
+    assert.ok(chips, 'nav-chips block exists');
+    assert.ok(!/<small/.test(chips[0]), 'chips carry no subtitles on any page');
+    const labels = [...chips[0].matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map((m) => m[1].trim());
+    assert.deepEqual(labels, ['Work', 'Experience', 'Contact']);
+  });
+
   test(`${page}: aria reference attributes resolve to existing ids`, () => {
     const refs = [...html.matchAll(/ aria-labelledby="([^"]+)"/g)].map((m) => m[1]);
     for (const ref of refs) {
