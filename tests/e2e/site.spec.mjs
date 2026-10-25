@@ -281,6 +281,38 @@ test('keyboard: screenshot lightbox opens, traps focus, closes and restores focu
   assert.equal(await page.locator('.shot-zoom').count(), 0, 'pointer click opens and the close button closes');
 });
 
+test('lightbox opens the screenshot variant that was clicked', async ({ page }) => {
+  await page.goto('/');
+  const shot = page.locator('.case-shot').first();
+  const dialog = page.locator('.shot-zoom[role="dialog"]');
+  const dialogImg = page.locator('.shot-zoom img');
+
+  // Tapping the phone inset opens the phone screenshot, not the desktop one.
+  await shot.locator('.shot-mob').click();
+  await dialog.waitFor();
+  assert.ok((await dialogImg.getAttribute('src')).includes('-mob'), 'phone inset opens the mobile screenshot');
+  assert.equal((await dialogImg.getAttribute('class')) || '', '', 'mobile enlargement keeps the narrow frame');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.shot-zoom').count(), 0, 'closed after mobile variant');
+
+  // Tapping the desktop shot opens the desktop screenshot.
+  await shot.locator('.shot-desk').click();
+  await dialog.waitFor();
+  assert.ok((await dialogImg.getAttribute('src')).includes('-desk'), 'desktop shot opens the desktop screenshot');
+  assert.equal(await dialogImg.getAttribute('class'), 'z-desk', 'desktop enlargement uses the wide frame');
+  await page.keyboard.press('Escape');
+
+  // The explicit enlarge choices open their named variants.
+  await shot.locator('.zoom-cue', { hasText: 'Enlarge mobile' }).click();
+  await dialog.waitFor();
+  assert.ok((await dialogImg.getAttribute('src')).includes('-mob'), 'mobile cue opens the mobile screenshot');
+  await page.keyboard.press('Escape');
+  await shot.locator('.zoom-cue', { hasText: 'Enlarge desktop' }).click();
+  await dialog.waitFor();
+  assert.ok((await dialogImg.getAttribute('src')).includes('-desk'), 'desktop cue opens the desktop screenshot');
+  await page.keyboard.press('Escape');
+});
+
 test('keyboard: contact form can be completed and submitted by keyboard (submission intercepted)', async ({ page, isMobile }) => {
   desktopOnly(isMobile);
   await page.addInitScript(() => {
