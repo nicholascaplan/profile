@@ -465,6 +465,79 @@ test('showcase: thumbnails and main shot show the matching breakpoint imagery', 
 
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
 // of its label. Check every visible CTA with a symbol, narrow widths and enlarged text.
+// Regression coverage for the paired screenshot swap (the composed card shows
+// both shots, so a staggered change is visible): the desktop and mobile shots
+// must change together, rapid choices must settle on the latest, and a failed
+// image must not block the pair. Artificial per-image latency forces the
+// windows open; assertions are on observable behaviour, not timing internals.
+const pageOf = (file) => (file.match(/foa-(home|whatson|fundraising)-/) || [])[1] || '';
+const shotPair = (page) => page.evaluate(() => ({
+  desk: document.querySelector('.case:first-child .shot-desk').currentSrc.split('/').pop(),
+  mob: document.querySelector('.case:first-child .shot-mob').currentSrc.split('/').pop(),
+}));
+const initialPairLoaded = () => {
+  const d = document.querySelector('.case:first-child .shot-desk');
+  const m = document.querySelector('.case:first-child .shot-mob');
+  return d && m && d.complete && d.naturalWidth > 0 && m.complete && m.naturalWidth > 0;
+};
+
+test('showcase: screenshot pair swaps atomically under uneven image latency', async ({ page }) => {
+  await page.route('**/assets/images/work/*-desk.webp', async (route) => { await new Promise((r) => setTimeout(r, 700)); await route.continue(); });
+  await page.route('**/assets/images/work/*-mob.webp', async (route) => { await new Promise((r) => setTimeout(r, 100)); await route.continue(); });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(initialPairLoaded);
+  await page.click('.case:first-child .thumb:nth-child(2)');
+  const mismatches = [];
+  for (let i = 0; i < 12; i++) {
+    const pair = await shotPair(page);
+    if (pageOf(pair.desk) !== pageOf(pair.mob)) mismatches.push(`${pair.desk} vs ${pair.mob}`);
+    await page.waitForTimeout(80);
+  }
+  assert.deepEqual(mismatches, [], `pair changed at different times: ${mismatches.join('; ')}`);
+  const finalPair = await shotPair(page);
+  assert.equal(pageOf(finalPair.desk), 'whatson', 'desktop shot settled on the chosen page');
+  assert.equal(pageOf(finalPair.mob), 'whatson', 'mobile shot settled on the chosen page');
+});
+
+test('showcase: rapid thumbnail changes settle on the latest choice', async ({ page }) => {
+  await page.route('**/assets/images/work/*.webp', async (route) => { await new Promise((r) => setTimeout(r, 450)); await route.continue(); });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(initialPairLoaded);
+  await page.click('.case:first-child .thumb:nth-child(2)');
+  await page.waitForTimeout(120);
+  await page.click('.case:first-child .thumb:nth-child(3)');
+  await page.waitForFunction(() => {
+    const d = document.querySelector('.case:first-child .shot-desk');
+    const m = document.querySelector('.case:first-child .shot-mob');
+    return d.currentSrc.includes('fundraising-desk') && m.currentSrc.includes('fundraising-mob');
+  }, { timeout: 8000 });
+  const state = await page.evaluate(() => ({
+    pill: document.querySelector('.case:first-child .pill').textContent,
+    cnt: document.querySelector('.case:first-child .cnt').textContent,
+  }));
+  assert.match(state.pill, /FUNDRAISING/, 'pill follows the latest choice');
+  assert.equal(state.cnt, '3 OF 3', 'counter follows the latest choice');
+});
+
+test('showcase: a failed screenshot does not block the pair swap', async ({ page }) => {
+  await page.route('**/assets/images/work/foa-fundraising-desk.webp', (route) => route.fulfill({ status: 404, body: '' }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(initialPairLoaded);
+  await page.click('.case:first-child .thumb:nth-child(3)');
+  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fundraising-mob'), { timeout: 8000 });
+  const state = await page.evaluate(() => ({
+    deskSrc: document.querySelector('.case:first-child .shot-desk').currentSrc,
+    deskAlt: document.querySelector('.case:first-child .shot-desk').alt,
+    pill: document.querySelector('.case:first-child .pill').textContent,
+  }));
+  assert.ok(state.deskSrc.includes('fundraising-desk'), 'failed desktop image still commits its src');
+  assert.match(state.deskAlt, /Fundraising/, 'alt text accompanies the failed image');
+  assert.match(state.pill, /FUNDRAISING/);
+});
+
 test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
   const probe = () => {
     const bad = [];
