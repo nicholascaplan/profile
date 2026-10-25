@@ -237,12 +237,20 @@ for (const [name, path] of [['home', '/'], ['experience', '/experience/'], ['con
       mobileMode: document.body.dataset.mobile,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       chips: [...document.querySelectorAll('.nav-chips a')].filter((a) => a.offsetParent !== null).length,
+      chipDelta: Math.max(...[...document.querySelectorAll('.nav-chips a')].filter((a) => a.offsetParent !== null).map((a) => {
+        const range = document.createRange();
+        range.selectNodeContents(a);
+        const t = range.getBoundingClientRect();
+        const b = a.getBoundingClientRect();
+        return Math.abs((t.top + t.bottom) / 2 - (b.top + b.bottom) / 2);
+      })),
       menuButton: !!document.querySelector('[aria-label*="menu" i], .hamburger'),
     }));
     assert.equal(state.visibleH1, 1, 'exactly one h1 is rendered');
     assert.equal(state.mobileMode, 'true', 'mobile layout active at 390px');
     assert.ok(state.overflow <= 1, `no horizontal scroll (overflow ${state.overflow}px)`);
     assert.equal(state.chips, 3, 'Work / Experience / Contact chips all visible on mobile');
+    assert.ok(state.chipDelta <= 2, `chip labels vertically centred (delta ${state.chipDelta.toFixed(1)}px)`);
     assert.equal(state.menuButton, false, 'no hidden menu button');
     await settle(page);
     await shot(page, `browser-mobile-390-${name}`, testInfo.project.name);
