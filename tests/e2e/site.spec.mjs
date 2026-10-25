@@ -675,6 +675,26 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
   const dark1 = await read();
   assert.equal(dark1.foaDesk, 'foa-home-desk-dark.webp', 'toggling back restores the dark captures');
   assert.equal(dark1.samDesk, 'sam-home-desk-dark.webp', 'Sam dark captures return too');
+
+  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  const waitForSelectedPair = (suffix) => page.waitForFunction((ending) => {
+    const first = document.querySelector('.case:first-child');
+    return first.querySelector('.shot-desk').currentSrc.endsWith(`foa-whatson-desk${ending}.webp`)
+      && first.querySelector('.shot-mob').currentSrc.endsWith(`foa-whatson-mob${ending}.webp`);
+  }, suffix);
+  await waitForSelectedPair('-dark');
+
+  for (const [theme, suffix] of [['light', ''], ['dark', '-dark']]) {
+    await page.locator('.theme-toggle').click();
+    await waitForSelectedPair(suffix);
+    const selected = await read();
+    assert.equal(selected.theme, theme);
+    assert.equal(selected.foaDesk, `foa-whatson-desk${suffix}.webp`, `selected desktop capture follows ${theme} mode`);
+    assert.equal(selected.foaMob, `foa-whatson-mob${suffix}.webp`, `selected mobile capture follows ${theme} mode`);
+    assert.equal(selected.foaSelected, 'What’s On', 'theme changes preserve the selected page');
+    assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'What’s On', 'displayed page label is preserved too');
+    assert.equal(selected.samDesk, `sam-home-desk${suffix}.webp`, 'the other project keeps its own page selection');
+  }
 });
 
 test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
