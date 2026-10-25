@@ -70,15 +70,8 @@ if (allowsMobilePreview) {
 // Tap-to-enlarge lightbox for project screenshots.
 document.querySelectorAll('.case-shot').forEach(cs => {
   const shot = cs.querySelector('.shot');
-  const cue = document.createElement('button');
-  cue.type = 'button';
-  cue.className = 'zoom-cue';
-  cue.textContent = 'Tap to enlarge';
-  cue.setAttribute('aria-haspopup', 'dialog');
-  shot.appendChild(cue);
-  const open = (trigger) => {
-    const mob = document.body.dataset.mobile === 'true';
-    const img = cs.querySelector(mob ? '.shot-mob' : '.shot-desk');
+  const open = (trigger, img) => {
+    const isDesk = img.classList.contains('shot-desk');
     const ov = document.createElement('div');
     ov.className = 'shot-zoom';
     ov.setAttribute('role', 'dialog');
@@ -86,7 +79,7 @@ document.querySelectorAll('.case-shot').forEach(cs => {
     ov.setAttribute('aria-label', 'Enlarged screenshot');
     const im = document.createElement('img');
     im.src = img.currentSrc || img.src; im.alt = img.alt || 'Enlarged screenshot';
-    if (!mob) im.className = 'z-desk';
+    if (isDesk) im.className = 'z-desk';
     const x = document.createElement('button');
     x.type = 'button';
     x.className = 'z-close'; x.textContent = '×'; x.setAttribute('aria-label', 'Close enlarged screenshot');
@@ -105,6 +98,18 @@ document.querySelectorAll('.case-shot').forEach(cs => {
     document.addEventListener('keydown', keys);
     x.focus();
   };
-  cue.addEventListener('click', () => open(cue));
-  cs.querySelectorAll('.shot-img').forEach(i => i.addEventListener('click', () => open(i)));
+  // Explicit desktop / mobile enlarge choices for the composed pair.
+  const cues = document.createElement('div');
+  cues.className = 'zoom-cues';
+  [['Enlarge desktop', '.shot-desk'], ['Enlarge mobile', '.shot-mob']].forEach(([label, sel]) => {
+    const cue = document.createElement('button');
+    cue.type = 'button';
+    cue.className = 'zoom-cue';
+    cue.textContent = label;
+    cue.setAttribute('aria-haspopup', 'dialog');
+    cue.addEventListener('click', () => open(cue, cs.querySelector(sel)));
+    cues.appendChild(cue);
+  });
+  shot.appendChild(cues);
+  cs.querySelectorAll('.shot-img').forEach(i => i.addEventListener('click', () => open(i, i)));
 });
