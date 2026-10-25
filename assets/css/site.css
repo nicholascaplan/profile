@@ -113,7 +113,7 @@ button { color: inherit; font: inherit; }
   border: 1px solid var(--ink);
   border-radius: 100px;
   display: inline-flex;
-  font-size: 13px;
+  font-size: 15px;
   gap: 10px;
   justify-content: center;
   height: 58px;
@@ -128,7 +128,7 @@ button { color: inherit; font: inherit; }
 /* Nick's rule (24 October 2026): a CTA symbol, arrow or icon, never wraps away
    from the end of its label - the final word and its symbol form one no-wrap unit. */
 .cta-end { white-space: nowrap; }
-.button .cta-icon { display: inline-block; font-size: 17px; line-height: 1; margin-left: 10px; }
+.button .cta-icon { display: inline-block; font-size: 18px; line-height: 1; margin-left: 10px; }
 .github-link .cta-end .github-icon { display: inline-block; vertical-align: -2px; }
 .button .cta-end .mail-icon { display: inline-block; margin-left: 10px; vertical-align: -2px; }
 
@@ -251,6 +251,9 @@ body[data-style="atelier"][data-theme="dark"] .form-field textarea:focus { borde
 .footer-inner { margin: 0 auto; max-width: 1240px; }
 .footer h2 { font-family: var(--display); font-size: clamp(42px, 7vw, 92px); font-weight: 500; letter-spacing: -.07em; line-height: .92; margin: 0 0 42px; max-width: 700px; overflow-wrap: break-word; }
 .footer h2 em { color: var(--accent); font-style: normal; }
+.footer-cta { color: inherit; display: block; text-decoration: none; }
+.footer-cta .cta-icon { display: inline-block; font-size: .42em; line-height: 1; margin-left: .14em; vertical-align: middle; transform: translateY(-.22em); transition: transform .25s var(--ease); }
+.footer-cta:hover .cta-icon, .footer-cta:focus-visible .cta-icon { transform: translate(6px, -.22em); }
 .footer-links { display: none; }
 .footer-bottom { border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: flex; font-family: var(--mono); font-size: 9px; justify-content: space-between; padding-top: 18px; text-transform: uppercase; }
 .github-link { align-items: center; display: inline-flex; gap: 7px; }
