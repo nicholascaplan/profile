@@ -387,7 +387,7 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
     src: document.querySelector('.case:first-child .shot-desk').src,
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
-  assert.match(before.src, /foa-home-desk\.webp$/, 'homepage screenshot shown by default');
+  assert.match(before.src, /foa-home-desk-dark\.webp$/, 'homepage screenshot shown by default (page opens dark)');
   assert.match(before.pill, /HOMEPAGE · DESKTOP/, 'pill labels the default shot');
   await page.locator('.case:first-child .thumb:nth-child(2)').click();
   await page.waitForTimeout(200);
@@ -398,8 +398,8 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
     pressed: document.querySelector('.case:first-child .thumb:nth-child(2)').getAttribute('aria-pressed'),
     otherPill: document.querySelector('.case:last-child .pill').textContent,
   }));
-  assert.match(after.src, /foa-whatson-desk\.webp$/, 'main screenshot swaps to the chosen page');
-  assert.match(after.mobSrc, /foa-whatson-mob\.webp$/, 'mobile variant swaps too');
+  assert.match(after.src, /foa-whatson-desk-dark\.webp$/, 'main screenshot swaps to the chosen page');
+  assert.match(after.mobSrc, /foa-whatson-mob-dark\.webp$/, 'mobile variant swaps too');
   assert.match(after.pill, /WHAT’S ON · DESKTOP/, 'pill follows the choice');
   assert.equal(after.pressed, 'true', 'chosen thumbnail is pressed');
   assert.match(after.otherPill, /HOMEPAGE/, 'the other card is untouched');
@@ -424,7 +424,7 @@ test('showcase: mobile arrows and counter step and wrap through the same set', a
     cnt: document.querySelector(`${sel} .cnt`).textContent,
     pill: document.querySelector(`${sel} .pill`).textContent,
   }), first);
-  assert.match(state1.src, /foa-whatson-mob\.webp$/, 'next arrow swaps the mobile screenshot');
+  assert.match(state1.src, /foa-whatson-mob-dark\.webp$/, 'next arrow swaps the mobile screenshot');
   assert.equal(state1.cnt, '2 OF 3');
   assert.match(state1.pill, /MOBILE/, 'pill names the mobile set');
   await page.locator(`${first} .arr[data-step="-1"]`).click();
@@ -482,8 +482,8 @@ const initialPairLoaded = () => {
 };
 
 test('showcase: screenshot pair swaps atomically under uneven image latency', async ({ page }) => {
-  await page.route('**/assets/images/work/*-desk.webp', async (route) => { await new Promise((r) => setTimeout(r, 700)); await route.continue(); });
-  await page.route('**/assets/images/work/*-mob.webp', async (route) => { await new Promise((r) => setTimeout(r, 100)); await route.continue(); });
+  await page.route('**/assets/images/work/*-desk*.webp', async (route) => { await new Promise((r) => setTimeout(r, 700)); await route.continue(); });
+  await page.route('**/assets/images/work/*-mob*.webp', async (route) => { await new Promise((r) => setTimeout(r, 100)); await route.continue(); });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
@@ -522,7 +522,7 @@ test('showcase: rapid thumbnail changes settle on the latest choice', async ({ p
 });
 
 test('showcase: a failed screenshot does not block the pair swap', async ({ page }) => {
-  await page.route('**/assets/images/work/foa-fundraising-desk.webp', (route) => route.fulfill({ status: 404, body: '' }));
+  await page.route('**/assets/images/work/foa-fundraising-desk-dark.webp', (route) => route.fulfill({ status: 404, body: '' }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
@@ -536,6 +536,41 @@ test('showcase: a failed screenshot does not block the pair swap', async ({ page
   assert.ok(state.deskSrc.includes('fundraising-desk'), 'failed desktop image still commits its src');
   assert.match(state.deskAlt, /Fundraising/, 'alt text accompanies the failed image');
   assert.match(state.pill, /FUNDRAISING/);
+});
+
+test('showcase: screenshots follow the page light/dark theme', async ({ page }) => {
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/');
+  await settle(page);
+  const read = () => page.evaluate(() => {
+    const first = document.querySelector('.case:first-child');
+    const last = document.querySelector('.case:last-child');
+    return {
+      theme: document.body.dataset.theme,
+      foaDesk: first.querySelector('.shot-desk').currentSrc.split('/').pop(),
+      foaMob: first.querySelector('.shot-mob').currentSrc.split('/').pop(),
+      foaThumb: first.querySelector('.thumb.sel .thumb-desk').currentSrc.split('/').pop(),
+      samDesk: last.querySelector('.shot-desk').currentSrc.split('/').pop(),
+    };
+  });
+  const dark0 = await read();
+  assert.equal(dark0.theme, 'dark', 'page opens dark by default');
+  assert.equal(dark0.foaDesk, 'foa-home-desk-dark.webp', 'FOA shows its dark capture in dark mode');
+  assert.equal(dark0.foaMob, 'foa-home-mob-dark.webp', 'mobile shot follows too');
+  assert.equal(dark0.foaThumb, 'foa-home-desk-dark.webp', 'thumbnails follow the theme');
+  assert.equal(dark0.samDesk, 'sam-home-desk.webp', 'the Sam site has no dark mode: its single capture set stays');
+  await page.locator('button.theme-toggle').first().click();
+  await page.waitForTimeout(300);
+  const light = await read();
+  assert.equal(light.theme, 'light');
+  assert.equal(light.foaDesk, 'foa-home-desk.webp', 'FOA swaps to its light capture in light mode');
+  assert.equal(light.foaMob, 'foa-home-mob.webp');
+  assert.equal(light.foaThumb, 'foa-home-desk.webp');
+  assert.equal(light.samDesk, 'sam-home-desk.webp', 'Sam shots are unchanged by theme');
+  await page.locator('button.theme-toggle').first().click();
+  await page.waitForTimeout(300);
+  const dark1 = await read();
+  assert.equal(dark1.foaDesk, 'foa-home-desk-dark.webp', 'toggling back restores the dark captures');
 });
 
 test('CTA symbols stay with the end of their label at narrow widths and enlarged text', async ({ page }, testInfo) => {
