@@ -81,12 +81,34 @@ function runPage({ hostname, viewportWidth, stored = {} }) {
 }
 
 const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', ''];
-const DEPLOYED_HOSTNAMES = ['nicholascaplan.github.io', 'www.example.com'];
+const PREVIEW_HOSTNAMES = [
+  ...LOCAL_HOSTNAMES,
+  'deploy-preview-4--nickcaplan-profile.netlify.app',
+  'deploy-preview-123--another-site.netlify.app',
+];
+const DEPLOYED_HOSTNAMES = [
+  'nicholascaplan.github.io',
+  'www.example.com',
+  'nickcaplan-profile.netlify.app',
+  'deploy-preview-4--nickcaplan-profile.netlify.app.example.com',
+];
 
-test('local hosts keep the mobile preview toggle', () => {
-  for (const hostname of LOCAL_HOSTNAMES) {
+test('local hosts and Netlify deploy previews keep the mobile preview toggle', () => {
+  for (const hostname of PREVIEW_HOSTNAMES) {
     const { mobileToggle } = runPage({ hostname, viewportWidth: 1440 });
     assert.equal(mobileToggle.removed, false, `toggle should stay on ${hostname || 'file://'}`);
+  }
+});
+
+test('preview hosts default to the viewport and persist manual layout changes', () => {
+  for (const hostname of PREVIEW_HOSTNAMES) {
+    for (const viewportWidth of [390, 1440]) {
+      const page = runPage({ hostname, viewportWidth });
+      assert.equal(page.body.dataset.mobile, String(viewportWidth <= 1280));
+      page.mobileToggle.listeners.click();
+      assert.equal(page.body.dataset.mobile, String(viewportWidth > 1280));
+      assert.equal(page.store['nick-mobile'], String(viewportWidth > 1280));
+    }
   }
 });
 
@@ -132,8 +154,8 @@ test('deployed hosts follow breakpoint changes without reloading or persisting a
   }
 });
 
-test('local preview choices remain unchanged on resize and can still be toggled', () => {
-  for (const hostname of LOCAL_HOSTNAMES) {
+test('local and Netlify preview choices remain unchanged on resize and can still be toggled', () => {
+  for (const hostname of PREVIEW_HOSTNAMES) {
     for (const choice of ['true', 'false']) {
       const page = runPage({ hostname, viewportWidth: 1440, stored: { 'nick-mobile': choice } });
       page.resize(390);
