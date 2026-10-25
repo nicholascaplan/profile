@@ -29,6 +29,15 @@ themeToggle.addEventListener('click', () => {
   setTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark', true);
 });
 
+// Enable theme transitions only once the page has painted, so the initial
+// themed background appears instantly instead of fading in (some engines
+// animate the pre-stylesheet -> themed change otherwise).
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('load', () => {
+    requestAnimationFrame(() => { document.body.dataset.motion = 'on'; });
+  });
+}
+
 const isLocalEnvironment = ['localhost', '127.0.0.1', '[::1]', ''].includes(window.location.hostname);
 const isNetlifyDeployPreview = /^deploy-preview-\d+--[a-z0-9-]+\.netlify\.app$/.test(window.location.hostname);
 const allowsMobilePreview = isLocalEnvironment || isNetlifyDeployPreview;
