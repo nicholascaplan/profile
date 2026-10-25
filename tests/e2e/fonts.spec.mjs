@@ -21,13 +21,21 @@ for (const path of ['/', '/experience/', '/contact/']) {
       // Mobile projects keep their device viewport; desktop projects exercise
       // the full-sized headline.
       if (!isMobile) await page.setViewportSize({ width: 1440, height: 900 });
-      // Block the webfont outright for the "before" paint: an aborted request
-      // cannot satisfy document.fonts on any engine (a held request can race
-      // WebKit's font cache). The "after" phase reloads without the block.
-      let fontRequested = false;
+      // Hold the webfont request until the fallback has painted, then release
+      // it so the swap is measured in the SAME document. Every fulfill is
+      // no-store: WebKit's memory cache would otherwise serve the font across
+      // the per-variant navigations without a network request, silently
+      // defeating the hold (the preload and the CSS fetch share the cache).
+      let releaseFont;
+      const held = new Promise((resolve) => { releaseFont = resolve; });
+      let fontRequested;
+      const requested = new Promise((resolve) => { fontRequested = resolve; });
       await page.route('**/assets/fonts/dmsans.woff2', async (route) => {
-        fontRequested = true;
-        await route.abort();
+        fontRequested();
+        await held;
+        const response = await route.fetch();
+        const headers = { ...response.headers(), 'cache-control': 'no-store' };
+        await route.fulfill({ response, headers });
       });
 
       const measure = () => {
@@ -50,8 +58,7 @@ for (const path of ['/', '/experience/', '/contact/']) {
 
       try {
         await page.goto(path, { waitUntil: 'domcontentloaded' });
-        await page.waitForFunction(() => document.fonts.status === 'loaded');
-        assert.ok(fontRequested, 'page requested the DM Sans webfont');
+        await requested;
         const hasLocalFallback = await page.evaluate(async () => {
           // A rejected load means neither local face is installed. Do not make
           // a vertical-metric guarantee on platforms using generic sans-serif.
@@ -67,16 +74,14 @@ for (const path of ['/', '/experience/', '/contact/']) {
         }
         await paint();
         const before = await page.evaluate(measure);
-        assert.equal(before.fontReady, false, 'webfont is unavailable during the blocked first paint');
+        assert.equal(before.fontReady, false, 'webfont is still held after fallback paint');
         assert.ok(before.width > 0 && before.bottom > before.top, 'fallback text has visible geometry');
         assert.ok(before.text.length > 0, 'headline is readable before the font arrives');
         assert.ok(before.overflow <= 1, 'fallback does not introduce horizontal scrolling');
 
-        // A failed font load poisons the @font-face for the rest of the page
-        // lifetime (Chromium keeps rejecting later loads of the same face),
-        // so the "after" phase reloads the page without the block.
-        await page.unroute('**/assets/fonts/dmsans.woff2');
-        await page.reload({ waitUntil: 'domcontentloaded' });
+        // Release the held request: the swap now happens inside this same
+        // document, so before/after measure the real runtime font swap.
+        releaseFont();
         await page.evaluate(() => document.fonts.ready);
         await paint();
         const after = await page.evaluate(measure);
@@ -91,7 +96,8 @@ for (const path of ['/', '/experience/', '/contact/']) {
             `matched fallback keeps text bottom stable (${before.bottom} -> ${after.bottom})`);
         }
       } finally {
-        await page.unrouteAll({ behavior: 'ignoreErrors' });
+        releaseFont();
+        await page.unrouteAll({ behavior: 'wait' });
       }
     });
   }
