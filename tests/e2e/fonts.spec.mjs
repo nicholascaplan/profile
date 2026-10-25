@@ -74,7 +74,17 @@ for (const path of ['/', '/experience/', '/contact/']) {
         }
         await paint();
         const before = await page.evaluate(measure);
-        assert.equal(before.fontReady, false, 'webfont is still held after fallback paint');
+        // Diagnostics ride the failure message: CI engines where the hold does
+        // not gate the font (WebKit, mobile Chrome) need the FontFaceSet and
+        // resource-timing state to identify the bypass.
+        const diag = await page.evaluate(() => ({
+          faces: [...document.fonts].map((f) => `${f.family} ${f.weight} ${f.status}`),
+          dmsansEntries: performance.getEntriesByType('resource')
+            .filter((e) => e.name.includes('dmsans'))
+            .map((e) => `${e.initiatorType} size=${e.transferSize} dur=${Math.round(e.duration)}`),
+        }));
+        assert.equal(before.fontReady, false,
+          `webfont is still held after fallback paint ${JSON.stringify(diag)}`);
         assert.ok(before.width > 0 && before.bottom > before.top, 'fallback text has visible geometry');
         assert.ok(before.text.length > 0, 'headline is readable before the font arrives');
         assert.ok(before.overflow <= 1, 'fallback does not introduce horizontal scrolling');
