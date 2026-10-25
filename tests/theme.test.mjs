@@ -79,16 +79,16 @@ function expectDark({ body, themeToggle, themeLabel, themeIcon }) {
   assert.equal(themeIcon.textContent, '☀');
 }
 
-test('defaults to light with a light system and no stored choice', () => {
+test('defaults to dark with a light system and no stored choice', () => {
   const page = runPage({ prefersDark: false });
-  expectLight(page);
-  assert.equal(page.store['nick-theme'], 'light');
+  expectDark(page);
+  assert.equal('nick-theme' in page.store, false, 'no theme is written before a manual toggle');
 });
 
 test('defaults to dark when the system prefers dark and nothing is stored', () => {
   const page = runPage({ prefersDark: true });
   expectDark(page);
-  assert.equal(page.store['nick-theme'], 'dark');
+  assert.equal('nick-theme' in page.store, false, 'no theme is written before a manual toggle');
 });
 
 test('a stored dark choice wins over a light system preference', () => {
@@ -101,24 +101,51 @@ test('a stored light choice wins over a dark system preference', () => {
   expectLight(page);
 });
 
-test('toggling from light switches to dark and persists the choice', () => {
+test('toggling from the dark default switches to light and persists the choice', () => {
   const page = runPage({ prefersDark: false });
+  page.themeToggle.listeners.click();
+  expectLight(page);
+  assert.equal(page.store['nick-theme'], 'light');
+});
+
+test('toggling from a stored light choice switches to dark and persists the choice', () => {
+  const page = runPage({ stored: { 'nick-theme': 'light' } });
   page.themeToggle.listeners.click();
   expectDark(page);
   assert.equal(page.store['nick-theme'], 'dark');
 });
 
-test('toggling from dark switches to light and persists the choice', () => {
-  const page = runPage({ prefersDark: true });
+test('toggling twice returns to the original theme', () => {
+  const page = runPage({ stored: { 'nick-theme': 'light' } });
+  page.themeToggle.listeners.click();
   page.themeToggle.listeners.click();
   expectLight(page);
   assert.equal(page.store['nick-theme'], 'light');
 });
 
-test('toggling twice returns to the original theme', () => {
-  const page = runPage({ prefersDark: false });
-  page.themeToggle.listeners.click();
-  page.themeToggle.listeners.click();
-  expectLight(page);
-  assert.equal(page.store['nick-theme'], 'light');
+test('storage failures never break theme setup or toggling', () => {
+  const themeLabel = makeElement();
+  const themeIcon = makeElement();
+  const themeToggle = makeElement();
+  themeToggle.querySelector = (selector) => (selector === '.theme-label' ? themeLabel : themeIcon);
+  const document = {
+    body: { dataset: {} },
+    querySelector(selector) {
+      if (selector === '.theme-toggle') return themeToggle;
+      return makeElement();
+    },
+    querySelectorAll() { return []; },
+  };
+  const window = {
+    location: { hostname: 'nickcaplan.github.io' },
+    localStorage: {
+      getItem() { throw new Error('denied'); },
+      setItem() { throw new Error('denied'); },
+    },
+    matchMedia: () => ({ matches: false, addEventListener() {} }),
+  };
+  vm.runInNewContext(pageScript, { document, window }, { timeout: 1000 });
+  assert.equal(document.body.dataset.theme, 'dark', 'falls back to the dark default when storage is unavailable');
+  themeToggle.listeners.click();
+  assert.equal(document.body.dataset.theme, 'light', 'toggling still works without storage');
 });

@@ -105,6 +105,7 @@ test('preview hosts default to the viewport and persist manual layout changes', 
     for (const viewportWidth of [390, 1440]) {
       const page = runPage({ hostname, viewportWidth });
       assert.equal(page.body.dataset.mobile, String(viewportWidth <= 1280));
+      assert.equal('nick-mobile' in page.store, false, 'viewport default is not persisted before a manual toggle');
       page.mobileToggle.listeners.click();
       assert.equal(page.body.dataset.mobile, String(viewportWidth > 1280));
       assert.equal(page.store['nick-mobile'], String(viewportWidth > 1280));
@@ -172,10 +173,22 @@ test('local and Netlify preview choices remain unchanged on resize and can still
   }
 });
 
-test('theme still defaults to light and persists when toggled', () => {
+test('theme defaults to dark for new visitors and persists only manual choices', () => {
   const { body, themeToggle, store } = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 1440 });
+  assert.equal(body.dataset.theme, 'dark', 'new visitors get dark by default');
+  assert.equal('nick-theme' in store, false, 'no theme is written before a manual toggle');
+  themeToggle.listeners.click();
   assert.equal(body.dataset.theme, 'light');
+  assert.equal(store['nick-theme'], 'light');
   themeToggle.listeners.click();
   assert.equal(body.dataset.theme, 'dark');
   assert.equal(store['nick-theme'], 'dark');
+});
+
+test('a stored theme choice wins over the dark default', () => {
+  for (const theme of ['light', 'dark']) {
+    const { body, store } = runPage({ hostname: 'nickcaplan.github.io', viewportWidth: 1440, stored: { 'nick-theme': theme } });
+    assert.equal(body.dataset.theme, theme);
+    assert.equal(store['nick-theme'], theme, 'stored choice is left untouched');
+  }
 });

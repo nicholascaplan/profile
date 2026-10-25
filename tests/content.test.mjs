@@ -168,8 +168,11 @@ test('shared scripts parse', () => {
   }
 });
 
-test('pages carry no inline scripts (behaviour lives in shared files)', () => {
+test('pages carry no inline behaviour beyond the shared first-paint bootstrap', () => {
+  const bootstrap = read('index.html').match(/<script>(?!\s*<\/script>)[\s\S]*?<\/script>/)[0];
   for (const page of pages) {
-    assert.equal([...read(page).matchAll(/<script>(?!\s*<\/script>)/g)].length, 0, `${page} has no inline script`);
+    const inline = [...read(page).matchAll(/<script>(?!\s*<\/script>)[\s\S]*?<\/script>/g)].map((m) => m[0]);
+    assert.equal(inline.length, 1, `${page} carries exactly one inline bootstrap`);
+    assert.equal(inline[0], bootstrap, `${page} bootstrap matches the shared first-paint setup`);
   }
 });
