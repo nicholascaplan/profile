@@ -680,7 +680,8 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
   const waitForSelectedPair = (suffix) => page.waitForFunction((ending) => {
     const first = document.querySelector('.case:first-child');
     return first.querySelector('.shot-desk').currentSrc.endsWith(`foa-whatson-desk${ending}.webp`)
-      && first.querySelector('.shot-mob').currentSrc.endsWith(`foa-whatson-mob${ending}.webp`);
+      && first.querySelector('.shot-mob').currentSrc.endsWith(`foa-whatson-mob${ending}.webp`)
+      && document.querySelector('.case:last-child .shot-desk').currentSrc.endsWith(`sam-home-desk${ending}.webp`);
   }, suffix);
   await waitForSelectedPair('-dark');
 
