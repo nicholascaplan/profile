@@ -137,7 +137,7 @@ test('theme and layout apply before first paint, before external scripts run', a
     theme: document.body.dataset.theme,
     mobile: document.body.dataset.mobile,
     shellWidth: Math.round(document.querySelector('.site-shell').getBoundingClientRect().width),
-    siteJsRan: !!document.querySelector('.zoom-cue'),
+    siteJsRan: document.body.dataset.motion === 'on',
   });
   await page.route('**/assets/js/*.js', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 2500));
@@ -254,31 +254,6 @@ test('keyboard: Enter on a nav link navigates, Enter and Space toggle the theme'
   await page.keyboard.press('Space');
   await page.waitForTimeout(200);
   assert.equal(await page.evaluate(() => document.body.dataset.theme), 'dark', 'Space on the focused toggle switches back');
-});
-
-test('keyboard: screenshot lightbox opens, traps focus, closes and restores focus', async ({ page }) => {
-  await page.goto('/');
-  const cue = page.locator('.case-shot .zoom-cue').first();
-  await cue.focus();
-  await page.keyboard.press('Enter');
-  const dialog = page.locator('.shot-zoom[role="dialog"]');
-  await dialog.waitFor();
-  assert.equal(await dialog.getAttribute('aria-modal'), 'true', 'dialog is modal');
-  assert.equal(await dialog.getAttribute('aria-label'), 'Enlarged screenshot', 'dialog has an accessible name');
-  assert.equal(await page.evaluate(() => document.activeElement.className), 'z-close', 'focus moves to the close button');
-  await page.keyboard.press('Tab');
-  assert.equal(await page.evaluate(() => document.activeElement.className), 'z-close', 'Tab stays on the close button while the dialog is open');
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('.shot-zoom').count(), 0, 'Escape closes the lightbox');
-  assert.equal(await page.evaluate(() => document.activeElement.className), 'zoom-cue', 'focus returns to the enlarge button');
-  await page.keyboard.press('Space');
-  await page.locator('.shot-zoom[role="dialog"]').waitFor();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('.shot-zoom').count(), 0, 'Space also opens and Escape closes again');
-  await cue.click();
-  await page.locator('.shot-zoom[role="dialog"]').waitFor();
-  await page.locator('.shot-zoom .z-close').click();
-  assert.equal(await page.locator('.shot-zoom').count(), 0, 'pointer click opens and the close button closes');
 });
 
 test('keyboard: contact form can be completed and submitted by keyboard (submission intercepted)', async ({ page, isMobile }) => {
