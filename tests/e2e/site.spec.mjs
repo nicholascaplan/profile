@@ -449,15 +449,17 @@ test('showcase: thumbnails and main shot show the matching breakpoint imagery', 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await settle(page);
-  assert.deepEqual(await page.evaluate(visible), { deskShot: true, mobShot: false, deskThumb: true, mobThumb: false },
-    'desktop shows desktop screenshots only');
+  // mock branch: shots are composed (desktop frame + phone inset), so both are visible;
+  // thumbnails still follow the breakpoint.
+  assert.deepEqual(await page.evaluate(visible), { deskShot: true, mobShot: true, deskThumb: true, mobThumb: false },
+    'desktop shows the composed shot pair with desktop thumbnails');
   // the layout mode is chosen at load time, and on a local host a stored
   // preview choice wins over the viewport, so clear it and reload narrower
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => localStorage.clear());
   await page.goto('/');
   await settle(page);
-  assert.deepEqual(await page.evaluate(visible), { deskShot: false, mobShot: true, deskThumb: false, mobThumb: true },
+  assert.deepEqual(await page.evaluate(visible), { deskShot: true, mobShot: true, deskThumb: false, mobThumb: true },
     'mobile shows mobile screenshots only');
 });
 
