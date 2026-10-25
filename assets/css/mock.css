@@ -1,10 +1,22 @@
-/* MOCK ONLY - compact case-shot exploration. Not for production as-is. */
-.mock-bar { align-items: center; background: repeating-linear-gradient(45deg, rgba(120,120,120,.12), rgba(120,120,120,.12) 8px, transparent 8px, transparent 16px); border: 1px dashed var(--line); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; padding: 8px 10px; position: sticky; top: 8px; z-index: 40; }
-.mock-bar .mk { color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
-.mock-bar button { appearance: none; background: transparent; border: 1px solid var(--line); border-radius: 99px; color: var(--ink); cursor: pointer; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; padding: 4px 10px; }
-.mock-bar button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+/* MOCK ONLY - compact composed case-shot: desktop frame with a small phone
+   inset per site, tighter spacing. Not for production as-is. */
 
-/* Option A: 390/540 top crop (mobile only; desktop shot unchanged). */
-body[data-mobile="true"][data-shot="crop540"] .shot-mob { aspect-ratio: 390 / 540; height: auto; margin-inline: auto; max-height: none; max-width: min(430px, 100%); object-fit: cover; object-position: center top; width: 100%; }
-/* Option B: 390/430 top crop. */
-body[data-mobile="true"][data-shot="crop430"] .shot-mob { aspect-ratio: 390 / 430; height: auto; margin-inline: auto; max-height: none; max-width: min(430px, 100%); object-fit: cover; object-position: center top; width: 100%; }
+/* Show both shots, composed: desktop fills the card, phone sits inset. */
+.shot-desk { display: block; }
+.shot-mob { position: absolute; right: 4%; bottom: 9%; display: block; height: 66%; width: auto; max-width: none; max-height: none; margin-inline: 0; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); z-index: 2; }
+body[data-mobile="true"] .shot-desk { display: block; }
+body[data-mobile="true"] .shot-mob { position: absolute; right: 4%; bottom: 9%; height: 62%; width: auto; max-width: none; max-height: none; margin-inline: 0; object-fit: cover; object-position: center top; border-radius: 8px; z-index: 2; }
+
+/* The pill labels the composed pair. */
+.pill .dev-desk, .pill .dev-mob { display: none; }
+body[data-mobile="true"] .pill .dev-desk, body[data-mobile="true"] .pill .dev-mob { display: none; }
+.pill::after { content: 'DESKTOP + MOBILE'; }
+
+/* Zoom cue moves off the inset's corner. */
+.shot .zoom-cue { right: auto; left: 10px; }
+
+/* Tighter case spacing. */
+.case { gap: 28px; padding: 28px 0 24px; }
+.thumbs { margin-top: 10px; }
+body[data-mobile="true"] .case { padding: 18px 0 14px; }
+body[data-mobile="true"] .case .case-shot { margin-top: 14px; }
