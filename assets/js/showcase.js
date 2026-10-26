@@ -75,6 +75,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     Promise.all([ready(desk, srcD, 'Desk'), ready(mob, srcM, 'Mob')]).then((readyPair) => {
       if (mySeq !== swapSeq) return;
       if (!readyPair.every(Boolean)) {
+        // Keep the displayed pair as the theme-swap target after a failed
+        // swap; an explicit thumbnail click still retries the failed tab.
+        wanted = current;
         caseEl.dispatchEvent(new Event('showcase:swap-failed'));
         return;
       }
