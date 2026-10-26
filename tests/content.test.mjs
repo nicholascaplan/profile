@@ -205,3 +205,18 @@ test('analytics registers its cross-tab withdrawal handler only once', () => {
   const script = read('assets/js/analytics.js');
   assert.equal((script.match(/window\.addEventListener\('storage'/g) || []).length, 1);
 });
+
+
+test('experience page: pre-NatWest roles foreground website delivery', () => {
+  const html = read('experience/index.html');
+  const roles = [...html.matchAll(/<article class="role">[\s\S]*?<\/article>/g)].map((m) => m[0]);
+  const byTitle = (name) => roles.find((r) => (r.match(/<h3 class="role-title">([^<]+)<\/h3>/) || [])[1]?.includes(name)) || '';
+  // Nick's direction (26 October 2026): the earlier roles lead with the
+  // website-building angle; the 100,000+ visitors and 2-to-23 states figures
+  // come from his original CV copy. The NatWest Boxed entry stays unchanged.
+  assert.match(byTitle('Oddschecker'), /website serving 100,000\+ monthly visitors/);
+  assert.match(byTitle('Oddschecker'), /Scaled the website from 2 to 23 US state jurisdictions/);
+  assert.match(byTitle('Moogsoft'), /web platform/);
+  assert.match(byTitle('Alfa'), /enterprise web platform/);
+  assert.match(byTitle('NatWest Boxed'), /Core banking platforms, customer onboarding and account services/);
+});
