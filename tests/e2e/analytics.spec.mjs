@@ -53,12 +53,25 @@ test('production loader configures only this stream after consent and unloads on
   expect(queue[2]).toEqual(['config', 'G-TESTONLY123', { allow_google_signals: false, allow_ad_personalization_signals: false, page_location: 'https://websitesbynick.co.uk/', page_referrer: '' }]);
   await page.evaluate(() => { document.cookie = '_ga=test; path=/'; document.cookie = '_ga_TESTONLY123=test; path=/'; });
   await page.getByRole('button', { name: 'Cookie preferences', exact: true }).click();
+  const reloaded = page.waitForEvent('load');
   await page.locator('[data-cookie-choice="essential"]').click();
+  await reloaded;
   await expect(page.locator('#cookie-consent-panel')).toBeHidden();
+  expect(await page.evaluate(() => window.dataLayer === undefined && window.gtag === undefined)).toBe(true);
   expect(await page.evaluate(() => document.cookie)).not.toContain('_ga');
   expect(requests).toHaveLength(1);
   await page.reload();
   expect(requests).toHaveLength(1);
+  await page.getByRole('button', { name: 'Cookie preferences', exact: true }).click();
+  await page.locator('[data-cookie-choice="analytics"]').click();
+  await expect.poll(() => requests.length).toBe(2);
+  await page.evaluate(() => { Storage.prototype.setItem = function () { throw Error('writes now blocked'); }; });
+  let navigated = false;
+  page.on('framenavigated', () => { navigated = true; });
+  await page.getByRole('button', { name: 'Cookie preferences', exact: true }).click();
+  await page.locator('[data-cookie-choice="essential"]').click();
+  expect(await page.evaluate(() => window['ga-disable-G-TESTONLY123'])).toBe(true);
+  expect(navigated).toBe(false);
 });
 
 test('invalid saved values do not grant consent', async ({ page }) => {
