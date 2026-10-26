@@ -44,6 +44,10 @@ for (const page of pages) {
     assert.match(html, /<meta name="description" content="[^"]+"/);
   });
 
+  test(`${page}: GitHub footer uses the concise label and keeps its icon attached`, () => {
+    assert.match(html, /<span class="cta-label">Check it out on <span class="cta-end">GitHub <svg class="github-icon"/);
+  });
+
   test(`${page}: exactly one h1`, () => {
     assert.equal([...html.matchAll(/<h1\b/g)].length, 1);
   });

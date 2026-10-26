@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node scripts/serve-static.mjs",
+    "start": "npm run dev",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node --test tests/*.test.mjs",
     "test:e2e": "playwright test"

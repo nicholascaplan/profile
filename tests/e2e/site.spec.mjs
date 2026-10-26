@@ -218,6 +218,59 @@ test('navigation: every page is reachable by its real URL from the nav', async (
   await shot(page, 'browser-nav-roundtrip', testInfo.project.name);
 });
 
+test('footer privacy stays bottom right with consistent small-print typography', async ({ page }) => {
+  for (const path of ['/', '/experience/', '/contact/', '/privacy/']) {
+    for (const width of [320, 698, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(path);
+      await page.evaluate(() => document.fonts.ready);
+      const footer = await page.locator('.footer-bottom').evaluate((el) => {
+        const source = el.querySelector('.github-link');
+        const privacy = el.querySelector('a[href$="privacy/"]');
+        const rect = privacy.getBoundingClientRect();
+        const bounds = el.getBoundingClientRect();
+        const font = (node) => {
+          const style = getComputedStyle(node);
+          return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight, style.letterSpacing];
+        };
+        return {
+          right: rect.right,
+          edge: bounds.right,
+          bottom: rect.bottom,
+          sourceBottom: source.getBoundingClientRect().bottom,
+          fonts: [font(source), font(privacy)],
+          overflow: el.scrollWidth > el.clientWidth,
+        };
+      });
+      assert.ok(Math.abs(footer.right - footer.edge) < 1, `privacy is right-aligned on ${path} at ${width}px`);
+      assert.ok(footer.bottom >= footer.sourceBottom - 2, `privacy is on the bottom row on ${path} at ${width}px`);
+      assert.deepEqual(footer.fonts[0], footer.fonts[1], 'footer links share the same typography');
+      assert.equal(footer.overflow, false, 'footer does not overflow');
+    }
+  }
+});
+
+test('hero heading keeps earn and their on the same line', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  for (const width of [320, 390, 698, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const words = await page.locator('.hero h1').evaluate((heading) => {
+      const node = heading.firstChild;
+      return ['earn', 'their'].map((word) => {
+        const start = node.textContent.indexOf(word);
+        const range = document.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, start + word.length);
+        const rect = range.getBoundingClientRect();
+        return { top: rect.top, left: rect.left, right: rect.right };
+      });
+    });
+    assert.equal(words[0].top, words[1].top, `earn their stays together at ${width}px`);
+    assert.ok(words[0].left >= 0 && words[1].right <= width, `earn their fits at ${width}px`);
+  }
+});
+
 test('keyboard: full page tab order reaches nav, toggles and hero actions', async ({ page, isMobile }) => {
   desktopOnly(isMobile);
   await page.setViewportSize(DESKTOP);
