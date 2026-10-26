@@ -186,3 +186,12 @@ test('pages carry no inline behaviour beyond the shared first-paint bootstrap', 
     assert.equal(inline[0], bootstrap, `${page} bootstrap matches the shared first-paint setup`);
   }
 });
+
+
+test('every public page uses the approved portfolio stream, never the FOA stream', () => {
+  for (const page of pages) {
+    const html = read(page);
+    assert.match(html, /<script src="(?:\.\.\/)?assets\/js\/analytics\.js" defer data-measurement-id="G-J3J3NS19ZS"><\/script>/);
+    assert.doesNotMatch(html, /G-V2X8ZMQ5XZ/);
+  }
+});
