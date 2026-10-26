@@ -24,7 +24,7 @@ for (const page of pages) {
   const dir = dirname(join(root, page));
   const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
   const anchors = [...html.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
-  const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+  const images = [...html.replace(/<template\b[\s\S]*?<\/template>/g, '').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
 
   test(`${page}: document shell - doctype, language, title and viewport`, () => {
     assert.match(html, /^<!doctype html>/i);
@@ -142,7 +142,7 @@ for (const page of pages) {
 
 test('home page carries the showcase imagery', () => {
   const html = read('index.html');
-  const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+  const images = [...html.replace(/<template\b[\s\S]*?<\/template>/g, '').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
   assert.equal(images.filter((tag) => /class="shot-img shot-desk"/.test(tag)).length, 2, 'each project has a desktop overview');
   assert.equal(images.filter((tag) => /class="shot-img shot-mob"/.test(tag)).length, 2, 'each project has a phone inset');
   assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 6, 'three labelled page choices per project');
