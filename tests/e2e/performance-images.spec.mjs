@@ -66,6 +66,29 @@ test('paired screenshot changes wait for both decoded candidates', async ({ page
 });
 
 
+test('theme change during a pending selection keeps the requested screenshots', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
+  await page.evaluate(() => {
+    window.decodeReleases = [];
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
+    };
+  });
+  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.waitForFunction(() => window.decodeReleases.length === 2);
+  // The theme flips while the requested pair is still decoding; the pending
+  // choice must survive, reloading the same selection for the new theme.
+  await page.evaluate(() => { document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'; });
+  await page.waitForFunction(() => window.decodeReleases.length >= 4);
+  await page.evaluate(() => window.decodeReleases.splice(0).forEach((release) => release()));
+  await expect(page.locator('.case:first-child .thumb:nth-child(2)')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.case:first-child .pill-label')).toHaveText(/What.s On/);
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-whatson-desk(-dark)?\.webp$/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-whatson-mob(-dark)?\.webp$/);
+});
+
 test('screenshot activation preserves the reserved layout before scripts run', async ({ page }) => {
   let release;
   const gate = new Promise((resolve) => { release = resolve; });
