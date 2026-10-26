@@ -92,3 +92,18 @@ for (const theme of ['light', 'dark']) test(`consent contrast and enlarged-text 
   await reject.click();
   await expect(page.locator('#cookie-consent-panel')).toBeHidden();
 });
+
+
+test('readable but unwritable storage cannot restore a stale Allow', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('websites-by-nick-cookie-preferences', 'analytics');
+    Storage.prototype.setItem = function () { throw Error('writes blocked'); };
+  });
+  await page.goto('/privacy/');
+  await expect(page.locator('#cookie-consent-panel')).toBeVisible();
+  await expect(page.locator('[data-google-analytics]')).toHaveCount(0);
+  await page.locator('[data-cookie-choice="essential"]').click();
+  await page.reload();
+  await expect(page.locator('#cookie-consent-panel')).toBeVisible();
+  await expect(page.locator('[data-google-analytics]')).toHaveCount(0);
+});
