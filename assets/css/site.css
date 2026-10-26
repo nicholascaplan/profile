@@ -463,3 +463,6 @@ body[data-mobile="true"][data-style="atelier"] .role { display: block; }
 body[data-mobile="true"] .contact-form { max-width: none; }
 
 .wordmark { white-space: nowrap; }
+
+/* The phone-layout preview control is useful only above the phone breakpoint. */
+@media (max-width: 600px) { .mobile-toggle { display: none; } }
