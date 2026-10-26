@@ -55,3 +55,5 @@ Cookie preferences uses explicit theme colours rather than native button default
 
 Consent panel stays compact: short optional-analytics explanation, side-by-side equal-weight Allow/Reject controls with 44px touch targets. Mobile standard-text panel should use less than 25% of an 844px viewport; enlarged text remains scrollable without horizontal clipping.
 Desktop consent uses a 420px bottom-right card with a 24px edge gap, not a full-width bar. Mobile retains the compact full-width bottom panel. Choices remain equal weight.
+
+- Update (26 October 2026): failed withdrawal saves remove any stale Allow where possible and record rejection independently in a first-party essential fallback cookie and session storage. BroadcastChannel propagates withdrawal even when no localStorage event fires. Rejection markers take precedence on startup and are cleared only by a fresh explicit Allow. A failed-save status explains the limit when all browser storage/messaging is blocked. Preserve in-page re-opt-in by re-enabling the existing tag without duplicate loading/configuration.
