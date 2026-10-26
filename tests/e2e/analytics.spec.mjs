@@ -142,3 +142,25 @@ test('withdrawal in another tab unloads an active tag in this tab', async ({ pag
   await expect(other.locator('[data-google-analytics]')).toHaveCount(0);
   await other.close();
 });
+
+for (const theme of ['light', 'dark']) test(`privacy preference label has contrast in every state in ${theme}`, async ({ page }) => {
+  await page.addInitScript(t => { localStorage.setItem('nick-theme', t); localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'); }, theme);
+  await page.goto('/privacy/');
+  const button = page.locator('[data-cookie-preferences]');
+  await expect(button).toHaveText('Cookie preferences');
+  await button.scrollIntoViewIfNeeded();
+  for (const state of ['default', 'hover', 'focus']) {
+    if (state === 'hover') await button.hover();
+    if (state === 'focus') { await page.mouse.move(0, 0); await button.focus(); }
+    // Sample after the existing colour transition finishes.
+    await page.waitForTimeout(300);
+    const contrast = await button.evaluate(el => {
+      const lum = c => { const rgb = c.match(/[\d.]+/g).slice(0, 3).map(Number).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722; };
+      const s = getComputedStyle(el), a = lum(s.color), b = lum(s.backgroundColor);
+      return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+    });
+    expect(contrast, state).toBeGreaterThanOrEqual(4.5);
+  }
+  await button.click();
+  await expect(page.locator('#cookie-consent-panel')).toBeVisible();
+});
