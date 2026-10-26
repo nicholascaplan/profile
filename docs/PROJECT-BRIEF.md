@@ -42,6 +42,8 @@ Personal profile page for Nick Caplan, live at [websitesbynick.co.uk](https://we
 
 - Update (25 October 2026): the Netlify site's main address (nickcaplan-profile.netlify.app) is switched from serving a second copy of `main` to redirecting every path to the same path on the GitHub Pages site, a change Nick approved. The redirect ships through a production-context-only build command in `netlify.toml`, which writes a `_redirects` rule into production deploys only; PR previews build without it and are unaffected. The rule uses 302 (temporary) rather than 301 so browsers don't cache the redirect permanently and the change stays easy to reverse. GitHub Pages remains the live host; Netlify remains for PR previews. Verified on this change's own deploy preview before merge: with the rule temporarily applied to the preview context, the root and sub-paths redirected correctly; with the final production-only version, the preview served the site normally.
 
+- Update (26 October 2026): Nick selected the smiling, centred burgundy-shirt portrait after comparing shirt colours in both themes. Keep the circular CSS crop and existing portrait placement; the image is a photo edit based on his supplied references. Only the finished solo portrait belongs in the public repository, not the private source photographs. The export stays 600px square to limit page weight.
+
 ## Optional analytics (26 October 2026)
 
 - Follow the FOA consent model, adapted to this static site: Google Analytics stays off until an explicit Allow choice; rejection is remembered. Both choices have equal weight. Privacy & cookies is reachable from every footer and offers consent withdrawal.
