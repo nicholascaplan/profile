@@ -8,7 +8,12 @@
   var measurementId = script && script.dataset.measurementId;
   var canTrack = /^(www\.)?websitesbynick\.co\.uk$/.test(location.hostname) && /^G-[A-Z0-9]+$/.test(measurementId || '');
   var preference = null;
-  try { preference = localStorage.getItem(storageKey); } catch (error) {}
+  try {
+    // Never trust a saved Allow if a later withdrawal cannot be persisted.
+    localStorage.setItem(storageKey + '-check', '1');
+    localStorage.removeItem(storageKey + '-check');
+    preference = localStorage.getItem(storageKey);
+  } catch (error) {}
   var returnFocus = null;
   var loaded = false;
   var panel = document.createElement('aside');
