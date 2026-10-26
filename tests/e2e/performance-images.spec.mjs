@@ -81,7 +81,7 @@ test('theme change during a pending selection keeps the requested screenshots', 
   // The theme flips while the requested pair is still decoding; the pending
   // choice must survive, reloading the same selection for the new theme.
   await page.evaluate(() => { document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'; });
-  await page.waitForFunction(() => window.decodeReleases.length >= 4);
+  await page.waitForFunction(() => window.decodeReleases.length >= 6);
   await page.evaluate(() => window.decodeReleases.splice(0).forEach((release) => release()));
   await expect(page.locator('.case:first-child .thumb:nth-child(2)')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.case:first-child .pill-label')).toHaveText(/What.s On/);
