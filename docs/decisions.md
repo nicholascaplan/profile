@@ -6,9 +6,9 @@ Entry format: date, decision, reason, and what it rules out.
 
 ## 26 October 2026: Experience page focuses on website building
 
-Nick directed that the pre-NatWest roles foreground website delivery. Oddschecker leads with the high-traffic US website, restoring the 100,000+ monthly visitors and 2 to 23 US states figures from his original CV copy. Moogsoft and Alfa describe their web platforms explicitly. The NatWest Boxed entry is unchanged.
+At Nick's request, the pre-NatWest roles foreground website delivery. Oddschecker leads with the high-traffic US website, restoring the 100,000+ monthly visitors and 2 to 23 US states figures from his original CV copy. Moogsoft and Alfa describe their web platforms explicitly. The NatWest Boxed entry is unchanged.
 
-Reason: the site exists to win website work, so the supporting experience should show website delivery. Existing approved facts were reworded only, with no new projects, responsibilities or results.
+Reason: the site exists to win website work, so the supporting experience should show website delivery. Existing facts from his original CV copy were reworded only, with no new projects, responsibilities or results.
 
 ## 26 October 2026: Optional analytics
 
@@ -18,11 +18,11 @@ Reason: visitors must be able to refuse and withdraw reliably, and the privacy p
 
 ## 26 October 2026: Portrait
 
-Nick chose the smiling, centred burgundy-shirt portrait after comparing options in both themes. It stays a circular CSS crop at 600px square to limit page weight.
+The smiling, centred burgundy-shirt portrait was selected after comparing shirt colours in both themes. It stays a circular CSS crop at 600px square to limit page weight.
 
 ## 26 October 2026: Screenshot page selector style
 
-Quiet text labels on one baseline with a terracotta underline on the selected view (option B), rather than boxed buttons. Page navigation chips and live-site calls to action are unchanged because they sit higher in the action hierarchy.
+Quiet text labels on one baseline with a terracotta underline on the selected view (option B, chosen from alternatives), rather than boxed buttons. Page navigation chips and live-site calls to action are unchanged because they sit higher in the action hierarchy.
 
 ## 25 October 2026: Screenshots are teasers
 
@@ -44,7 +44,7 @@ Reason: fewer cross-origin connections, no render-blocking third-party styleshee
 
 ## 25 October 2026: Theme set before first paint, dark by default
 
-One tiny inline script per page, identical on every page, sets the theme before first paint. This is the only exception to the no-inline-scripts rule, approved by Nick, and a content test enforces exactly one per page. Dark is the default for new visitors; a saved choice wins.
+One tiny inline script per page, identical on every page, sets the theme before first paint. This is the only exception to the no-inline-scripts rule, and a content test enforces exactly one per page. Dark is the default for new visitors; a saved choice wins.
 
 Reason: removes the light-to-dark flash on load.
 
