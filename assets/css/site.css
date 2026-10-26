@@ -389,13 +389,17 @@ body[data-mobile="true"] .nav-chips a { align-items: center; background: var(--s
 body[data-mobile="true"] .nav-chips a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 700; }
 body[data-mobile="true"] .hero { padding: 24px 20px 30px; }
 body[data-mobile="true"] .hero h1 { font-size: clamp(38px, 11cqi, 48px); letter-spacing: -.065em; line-height: .98; margin: 14px 0 22px; }
-/* Leave the first three headline lines full-width, then wrap around the
-   portrait. The 148px top margin keeps the portrait clear of "Websites that",
-   "earn their" and "place on the" (each wider than the beside-float measure
-   at 320px, and text ink overhangs the 0.98 line-height), so the layout holds
-   even where shape-outside is not honoured. */
+/* Leave the first three headline lines full-width, then wrap them around the
+   portrait. WebKit ignores shape-outside and excludes a float's whole margin
+   box, so a top margin on the float itself would shorten every headline line.
+   Instead an in-flow spacer drops the float's static position by 148px (below
+   "Websites that", "earn their" and "place on the", each wider than the
+   beside-float measure at 320px) and the negative margin pulls the text back
+   up over the spacer. Plain CSS2.1 float behaviour in every engine. */
 body[data-mobile="true"] .hero-grid { display: flow-root; }
-body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 148px 0 12px 14px; shape-outside: inset(148px 0 0 0) margin-box; width: clamp(88px, 28cqi, 130px); }
+body[data-mobile="true"] .hero-grid::before { content: ""; display: block; height: 148px; }
+body[data-mobile="true"] .hero-grid .hero-text { margin-top: -148px; }
+body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 0 0 12px 14px; width: clamp(88px, 28cqi, 130px); }
 body[data-mobile="true"] .hero-intro { font-size: 17px; }
 body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin-top: 26px; }
 body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
