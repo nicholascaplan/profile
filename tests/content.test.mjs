@@ -195,3 +195,9 @@ test('every public page uses the approved portfolio stream, never the FOA stream
     assert.doesNotMatch(html, /G-V2X8ZMQ5XZ/);
   }
 });
+
+
+test('analytics registers its cross-tab withdrawal handler only once', () => {
+  const script = read('assets/js/analytics.js');
+  assert.equal((script.match(/window\.addEventListener\('storage'/g) || []).length, 1);
+});
