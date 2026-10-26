@@ -542,7 +542,7 @@ test('showcase: mobile page choices are readable, keyboard-accessible and indepe
       other: document.querySelector('.case:last-child .shot-mob').currentSrc,
     }));
     assert.deepEqual(state.pressed, [0, 1, 2].map((j) => String(j === index)));
-    assert.match(state.other, /sam-home-mob-dark\.webp$/, 'choosing a page does not change the other project');
+    assert.match(state.other, /sam-home-mob-dark(?:-\d+w)?\.webp$/, 'choosing a page does not change the other project');
   }
   await shot(page, 'browser-showcase-mobile-choices', testInfo.project.name);
 });
@@ -575,8 +575,8 @@ test('showcase: composed overviews have a single readable set of controls at eve
 // windows open; assertions are on observable behaviour, not timing internals.
 const pageOf = (file) => (file.match(/foa-(home|whatson|fundraising)-/) || [])[1] || '';
 const shotPair = (page) => page.evaluate(() => ({
-  desk: document.querySelector('.case:first-child .shot-desk').currentSrc.split('/').pop(),
-  mob: document.querySelector('.case:first-child .shot-mob').currentSrc.split('/').pop(),
+  desk: document.querySelector('.case:first-child .shot-desk').currentSrc.split('/').pop().replace(/-\d+w(?=\.webp$)/, ''),
+  mob: document.querySelector('.case:first-child .shot-mob').currentSrc.split('/').pop().replace(/-\d+w(?=\.webp$)/, ''),
 }));
 const initialPairLoaded = () => {
   const d = document.querySelector('.case:first-child .shot-desk');
@@ -650,10 +650,10 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
     const last = document.querySelector('.case:last-child');
     return {
       theme: document.body.dataset.theme,
-      foaDesk: first.querySelector('.shot-desk').currentSrc.split('/').pop(),
-      foaMob: first.querySelector('.shot-mob').currentSrc.split('/').pop(),
+      foaDesk: first.querySelector('.shot-desk').currentSrc.split('/').pop().replace(/-\d+w(?=\.webp$)/, ''),
+      foaMob: first.querySelector('.shot-mob').currentSrc.split('/').pop().replace(/-\d+w(?=\.webp$)/, ''),
       foaSelected: first.querySelector('.thumb.sel').textContent.trim(),
-      samDesk: last.querySelector('.shot-desk').currentSrc.split('/').pop(),
+      samDesk: last.querySelector('.shot-desk').currentSrc.split('/').pop().replace(/-\d+w(?=\.webp$)/, ''),
     };
   });
   const dark0 = await read();
@@ -679,9 +679,9 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
   await page.locator('.case:first-child .thumb:nth-child(2)').click();
   const waitForSelectedPair = (suffix) => page.waitForFunction((ending) => {
     const first = document.querySelector('.case:first-child');
-    return first.querySelector('.shot-desk').currentSrc.endsWith(`foa-whatson-desk${ending}.webp`)
-      && first.querySelector('.shot-mob').currentSrc.endsWith(`foa-whatson-mob${ending}.webp`)
-      && document.querySelector('.case:last-child .shot-desk').currentSrc.endsWith(`sam-home-desk${ending}.webp`);
+    return first.querySelector('.shot-desk').currentSrc.replace(/-\d+w(?=\.webp$)/, '').endsWith(`foa-whatson-desk${ending}.webp`)
+      && first.querySelector('.shot-mob').currentSrc.replace(/-\d+w(?=\.webp$)/, '').endsWith(`foa-whatson-mob${ending}.webp`)
+      && document.querySelector('.case:last-child .shot-desk').currentSrc.replace(/-\d+w(?=\.webp$)/, '').endsWith(`sam-home-desk${ending}.webp`);
   }, suffix);
   await waitForSelectedPair('-dark');
 
