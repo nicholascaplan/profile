@@ -1,0 +1,12 @@
+/* Contact feedback uses the site's existing surface, typography and spacing. */
+.contact-fields { display: grid; gap: 16px; min-width: 0; }
+.contact-fields[hidden], .contact-form [hidden] { display: none; }
+.contact-form { --error-ink: #a52c20; }
+body[data-theme="dark"] .contact-form { --error-ink: #ffb4a8; }
+.form-error { color: var(--error-ink); font-size: 15px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
+.form-error:empty, .form-status:empty { display: none; }
+.contact-form [aria-invalid="true"] { border: 2px solid var(--error-ink); }
+.form-status { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent-ink); border-radius: 4px; color: var(--ink); font-size: 16px; line-height: 1.6; margin: 0; padding: 14px 16px; overflow-wrap: anywhere; }
+.form-status[data-state="error"] { border-left-color: var(--error-ink); }
+.form-status:focus { outline: 2px solid var(--accent-ink); outline-offset: 4px; }
+.contact-form .button:disabled { cursor: wait; opacity: .7; transform: none; }
