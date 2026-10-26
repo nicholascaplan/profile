@@ -44,6 +44,10 @@ for (const page of pages) {
     assert.match(html, /<meta name="description" content="[^"]+"/);
   });
 
+  test(`${page}: GitHub footer uses the concise label and keeps its icon attached`, () => {
+    assert.match(html, /<span class="cta-label">Check it out on <span class="cta-end">GitHub <svg class="github-icon"/);
+  });
+
   test(`${page}: exactly one h1`, () => {
     assert.equal([...html.matchAll(/<h1\b/g)].length, 1);
   });
@@ -148,7 +152,7 @@ test('home page carries the showcase imagery', () => {
   assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 6, 'three labelled page choices per project');
   assert.doesNotMatch(html, /class="(?:m-step|teaser)"|Tap to enlarge|thumb-desk|thumb-mob/, 'no duplicate gallery controls or closing contact panel');
   assert.match(html, /class="intro-contact" href="contact\/"/, 'an early enquiry link is present');
-  assert.equal([...html.matchAll(/class="case-role"/g)].length, 2, 'each project explains Nick’s role');
+  assert.doesNotMatch(html, /class="case-role"|My role:/, 'projects omit the redundant role copy');
   for (const article of html.matchAll(/<article class="case[^\"]*"[\s\S]*?<\/article>/g)) {
     assert.match(article[0], /<header class="case-heading">[\s\S]*?<h2[\s\S]*?<div class="case-shot">[\s\S]*?<div class="case-copy">/, 'project reading order is heading, imagery, details');
   }
