@@ -501,7 +501,7 @@ test('contact: mobile fields avoid focus zoom and the message hint is accessible
     hint: document.querySelector('#message-hint').textContent,
   }));
   assert.ok(state.fonts.every((size) => size >= 16), 'all input text is at least 16px');
-  assert.equal(state.describedBy, 'message-hint');
+  assert.deepEqual(state.describedBy.split(/\s+/), ['message-hint', 'contact-message-error']);
   assert.match(state.hint, /what would you like the website to achieve/);
 });
 
