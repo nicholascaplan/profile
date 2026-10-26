@@ -492,3 +492,6 @@ body[data-theme] .privacy-details [data-cookie-preferences] { background: var(--
 
 /* The phone-layout preview control is useful only above the phone breakpoint. */
 @media (max-width: 600px) { .mobile-toggle { display: none; } }
+
+/* Failed consent saves remain visible after the choice panel closes. */
+.cookie-save-warning { position: fixed; z-index: 1000; top: 0; left: 0; right: 0; margin: 0; padding: 12px 20px; background: var(--bg); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 14px; }
