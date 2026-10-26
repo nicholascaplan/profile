@@ -464,5 +464,34 @@ body[data-mobile="true"] .contact-form { max-width: none; }
 
 .wordmark { white-space: nowrap; }
 
+/* Consent controls use the site themes and equal-weight choices.
+   Both choices have equal visual weight and remain reachable at enlarged text. */
+.cookie-banner[hidden] { display: none; }
+.cookie-banner { background: var(--surface); color: var(--ink); border-top: 1px solid var(--line); padding: 14px max(20px, calc((100vw - 1176px) / 2)); }
+.cookie-banner h2 { font: 600 18px/1.3 var(--body); margin: 0 0 6px; }
+.cookie-banner p { font-size: 14px; line-height: 1.45; max-width: 65ch; margin: 0 0 10px; overflow-wrap: anywhere; }
+.cookie-banner a, .privacy-details a { text-decoration: underline; text-underline-offset: .2em; }
+.cookie-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cookie-actions .button { background: var(--surface-strong); color: var(--ink); border: 1px solid var(--line); height: auto; min-height: 44px; min-width: 0; padding: 10px 14px; white-space: normal; text-align: center; max-width: 100%; font-size: 14px; overflow-wrap: anywhere; }
+.cookie-actions .button:focus-visible, [data-cookie-preferences]:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.privacy-details { max-width: 760px; margin: 0 auto; padding: 0 32px 64px; overflow-wrap: anywhere; font-size: 16px; }
+.privacy-details h2 { font: 600 24px/1.3 var(--body); margin: 32px 0 16px; }
+.privacy-details [data-cookie-preferences] { white-space: normal; max-width: 100%; height: auto; min-height: 48px; }
+/* Keep first-visit consent visible without shifting the portfolio content. */
+.cookie-banner { position: fixed; z-index: 20; inset: auto 0 0; max-height: 70vh; overflow-y: auto; box-shadow: var(--shadow); }
+body[data-theme] .cookie-actions .button { background: var(--surface-strong); color: var(--ink); border-color: var(--line); }
+
+/* Native buttons need explicit theme colours, including preference reopening. */
+body[data-theme] .privacy-details [data-cookie-preferences] { background: var(--surface-strong); color: var(--ink); border-color: var(--line); }
+
+@media (max-width: 600px) { .cookie-actions .button { flex: 1 1 0; } }
+@media (min-width: 601px) {
+  .cookie-banner { inset: auto 24px 24px auto; width: 420px; max-width: calc(100vw - 48px); padding: 18px; border: 1px solid var(--line); border-radius: 16px; }
+  .cookie-actions .button { flex: 1 1 0; }
+}
+
 /* The phone-layout preview control is useful only above the phone breakpoint. */
 @media (max-width: 600px) { .mobile-toggle { display: none; } }
+
+/* Failed consent saves remain visible after the choice panel closes. */
+.cookie-save-warning { position: relative; margin: 0; padding: 12px 20px; background: var(--bg); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 14px; }

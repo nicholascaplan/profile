@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const pages = ['index.html', 'experience/index.html', 'contact/index.html'];
+const pages = ['index.html', 'experience/index.html', 'contact/index.html', 'privacy/index.html'];
 const read = (page) => readFileSync(join(root, page), 'utf8');
 
 function attr(tag, name) {
@@ -111,7 +111,8 @@ for (const page of pages) {
   });
 
   test(`${page}: nav marks the current page`, () => {
-    assert.match(html, /aria-current="page"/);
+    if (page !== 'privacy/index.html') assert.match(html, /aria-current="page"/);
+    else assert.match(html, /Privacy &amp; cookies/);
   });
 
   test(`${page}: nav chips match across pages - no subtitles`, () => {
@@ -172,7 +173,7 @@ test('contact page: form posts securely and every field is labelled and required
 });
 
 test('shared scripts parse', () => {
-  for (const script of ['assets/js/site.js', 'assets/js/showcase.js']) {
+  for (const script of ['assets/js/site.js', 'assets/js/showcase.js', 'assets/js/analytics.js']) {
     new vm.Script(readFileSync(join(root, script), 'utf8'), { filename: script });
   }
 });
@@ -184,4 +185,19 @@ test('pages carry no inline behaviour beyond the shared first-paint bootstrap', 
     assert.equal(inline.length, 1, `${page} carries exactly one inline bootstrap`);
     assert.equal(inline[0], bootstrap, `${page} bootstrap matches the shared first-paint setup`);
   }
+});
+
+
+test('every public page uses the approved portfolio stream, never the FOA stream', () => {
+  for (const page of pages) {
+    const html = read(page);
+    assert.match(html, /<script src="(?:\.\.\/)?assets\/js\/analytics\.js" defer data-measurement-id="G-J3J3NS19ZS"><\/script>/);
+    assert.doesNotMatch(html, /G-V2X8ZMQ5XZ/);
+  }
+});
+
+
+test('analytics registers its cross-tab withdrawal handler only once', () => {
+  const script = read('assets/js/analytics.js');
+  assert.equal((script.match(/window\.addEventListener\('storage'/g) || []).length, 1);
 });
