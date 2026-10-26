@@ -83,3 +83,28 @@ test('screenshot activation preserves the reserved layout before scripts run', a
   expect(Math.abs(after.height - before.height)).toBeLessThan(1);
   expect(Math.abs(after.y - before.y)).toBeLessThan(1);
 });
+
+
+test('first desktop capture has high priority before sources are assigned', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.initialCapturePriority = [];
+    for (const property of ['srcset', 'src']) {
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, property);
+      Object.defineProperty(HTMLImageElement.prototype, property, {
+        ...descriptor,
+        set(value) {
+          if (this.matches('.case:first-child .shot-desk')) {
+            window.initialCapturePriority.push({ property, priority: this.fetchPriority });
+          }
+          descriptor.set.call(this, value);
+        },
+      });
+    }
+  });
+  await page.goto('/');
+  await expect(page.locator('.shot-img')).toHaveCount(4);
+  expect(await page.evaluate(() => window.initialCapturePriority.slice(0, 2))).toEqual([
+    { property: 'srcset', priority: 'high' },
+    { property: 'src', priority: 'high' },
+  ]);
+});
