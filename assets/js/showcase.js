@@ -51,13 +51,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   let current = 0;
   let swapSeq = 0;
   function select(index) {
-    current = (index + thumbs.length) % thumbs.length;
-    thumbs.forEach((thumb, j) => {
-      thumb.classList.toggle('sel', j === current);
-      thumb.setAttribute('aria-pressed', String(j === current));
-    });
-    const chosen = thumbs[current];
-    pillLabel.textContent = chosen.dataset.label;
+    const requested = (index + thumbs.length) % thumbs.length;
+    const chosen = thumbs[requested];
     // Swap the two shots atomically: only once BOTH new images have loaded,
     // so the desktop and mobile screenshots never visibly change at
     // different times. The latest choice wins if thumbnails are clicked
@@ -70,14 +65,21 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const ready = (img, src, kind) => new Promise((resolve) => {
       const pre = new Image();
       pre.onload = () => {
-        if (typeof pre.decode === 'function') pre.decode().then(resolve, resolve);
-        else resolve();
+        if (typeof pre.decode === 'function') pre.decode().then(() => resolve(true), () => resolve(false));
+        else resolve(true);
       };
-      pre.onerror = resolve;
+      pre.onerror = () => resolve(false);
       apply(pre, src, kind);
     });
-    Promise.all([ready(desk, srcD, 'Desk'), ready(mob, srcM, 'Mob')]).then(() => {
-      if (mySeq !== swapSeq) return;
+    Promise.all([ready(desk, srcD, 'Desk'), ready(mob, srcM, 'Mob')]).then((readyPair) => {
+      if (mySeq !== swapSeq || !readyPair.every(Boolean)) return;
+      current = requested;
+      thumbs.forEach((thumb, j) => {
+        thumb.classList.toggle('sel', j === current);
+        thumb.setAttribute('aria-pressed', String(j === current));
+      });
+      pillLabel.textContent = chosen.dataset.label;
+
       apply(desk, srcD, 'Desk');
       desk.alt = chosen.dataset.altDesk;
       apply(mob, srcM, 'Mob');
