@@ -50,3 +50,5 @@ Personal profile page for Nick Caplan, live at [websitesbynick.co.uk](https://we
 - Advertising storage, user data and personalisation consent remain denied; Google signals and advertising personalisation are disabled. The initial page location omits query strings and fragments; the referrer is omitted. Do not add analytics of form contents or personal information. Disable enhanced-measurement form interactions in the web stream before release.
 - The bottom consent panel has a bounded, scrollable height. While visible, equivalent bottom space lets footer controls scroll clear. Recheck narrow screens and enlarged text when changing it.
 - The Privacy page describes actual website behaviour and existing Formspree use; it makes no invented retention promises.
+
+Cookie preferences uses explicit theme colours rather than native button defaults, with readable labels in light/dark and hover/focus states.
