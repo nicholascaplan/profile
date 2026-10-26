@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How this website uses enquiries and optional analytics cookies.">
+  <title>Privacy &amp; cookies | Nick Caplan</title>
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://websitesbynick.co.uk/privacy/">
+  <meta property="og:title" content="Privacy &amp; cookies | Nick Caplan">
+  <meta property="og:description" content="How this website uses enquiries and optional analytics cookies.">
+  <meta property="og:image" content="https://websitesbynick.co.uk/assets/images/profile-picture.jpeg">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Privacy &amp; cookies | Nick Caplan">
+  <meta name="twitter:description" content="How this website uses enquiries and optional analytics cookies.">
+  <meta name="twitter:image" content="https://websitesbynick.co.uk/assets/images/profile-picture.jpeg">
+  <link rel="preload" href="../assets/fonts/dmsans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/dmmono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/dmmono-500.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../assets/css/fonts.css">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body data-style="atelier" data-theme="dark">
+  <script>
+    // Apply the saved theme and layout before first paint so the page never
+    // flashes the wrong theme or frame.
+    (function () {
+      var body = document.body;
+      var theme = null;
+      try { theme = window.localStorage.getItem('nick-theme'); } catch (error) {}
+      body.dataset.theme = theme === 'light' || theme === 'dark' ? theme : 'dark';
+      var host = window.location.hostname;
+      var allowsPreview = ['localhost', '127.0.0.1', '[::1]', ''].indexOf(host) !== -1 || /^deploy-preview-\d+--[a-z0-9-]+\.netlify\.app$/.test(host);
+      var storedMobile = null;
+      if (allowsPreview) { try { storedMobile = window.localStorage.getItem('nick-mobile'); } catch (error) {} }
+      body.dataset.preview = String(allowsPreview && storedMobile === 'true');
+      body.dataset.mobile = String(storedMobile === null ? window.matchMedia('(max-width: 600px)').matches : storedMobile === 'true');
+    })();
+  </script>
+  <div class="site-shell">
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="wordmark" href="../">Nick <span>Caplan</span></a>
+      <div class="nav-links">
+        <a href="../">Work</a>
+        <a href="../experience/">Experience</a>
+        <a href="./" >Contact</a>
+        <a class="nav-contact" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
+        <button class="mobile-toggle" type="button" aria-label="Switch to mobile mode" aria-pressed="false" title="Switch to mobile mode"><svg class="mobile-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 18h4"/></svg></button>
+        <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark mode</span></button>
+      </div>
+    </nav>
+    <div class="nav-chips" aria-label="Pages">
+      <a href="../">Work</a>
+      <a href="../experience/">Experience</a>
+      <a href="./" >Contact</a>
+    </div>
+
+    <main id="top" class="privacy-copy">
+      <section class="page-hero">
+        <div class="eyebrow">Privacy &amp; cookies</div>
+        <h1>Your information.<br><em>Your choice.</em></h1>
+        <p>This notice explains how this website uses information and optional analytics cookies.</p>
+      </section>
+      <section class="privacy-details">
+        <h2>Website enquiries</h2>
+        <p>Nick Caplan uses the information you send through the <a href="../contact/">contact form</a> to read your enquiry and respond. The form sends your name, email address and message to Formspree. Please do not include unnecessary sensitive information.</p>
+        <p>Read <a href="https://formspree.io/legal/privacy-policy/">Formspree's privacy policy</a> for information about its service.</p>
+        <h2 id="cookie-settings">Cookie settings</h2>
+        <p>Google Analytics is optional. It is not loaded and no analytics requests are made unless you choose <strong>Allow analytics cookies</strong>. You can reject cookies and still use the whole site.</p>
+        <button class="button button-secondary" type="button" data-cookie-preferences aria-controls="cookie-consent-panel">Cookie preferences</button>
+        <noscript><p>Analytics stays off without JavaScript.</p></noscript>
+        <h2>Analytics cookies</h2>
+        <p>With your permission, Google Analytics measures visits and page use to help improve this website. It uses cookies such as <code>_ga</code> to recognise returning browsers. Advertising features are disabled. This site does not deliberately send contact form fields to Google Analytics.</p>
+        <p>Read <a href="https://policies.google.com/privacy">Google's privacy policy</a> for information about how Google handles data.</p>
+        <p>Your choice is remembered in this browser's local storage. To change it or withdraw consent, use Cookie preferences above, available through Privacy &amp; cookies in every page's footer. Withdrawing consent removes this site's analytics cookies and reloads the page to stop the loaded analytics script. It does not delete information already sent to Google.</p>
+        <h2>Display preferences</h2>
+        <p>Your light or dark theme choice is stored locally in your browser. It is not used for analytics. Local and development previews can also remember a display-size choice. Clearing this site's browser data removes these preferences and your cookie choice.</p>
+        <h2>Questions</h2>
+        <p>Use the <a href="../contact/">contact form</a> to ask Nick about this notice or the information you have provided, including access, correction or deletion.</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="section-kicker">Have a website in mind?</div>
+        <h2><a class="footer-cta" href="../contact/">Let&rsquo;s Make It <em><span class="cta-end">Happen.<span class="cta-icon" aria-hidden="true">&rarr;</span></span></em></a></h2>
+        <div class="footer-bottom"><span>Nick Caplan / Senior Engineering Leader</span><span><a class="github-link" href="https://github.com/nickcaplan/websites-by-nick" target="_blank" rel="noreferrer"><span class="cta-label">Curious how this page works? Explore the source on <span class="cta-end">GitHub <svg class="github-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.26c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.83 1.23 1.83 1.23 1.07 1.83 2.8 1.3 3.48 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.94 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.76.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.64-5.49 5.93.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z"/></svg></span></span></a></span><span><a href="../privacy/">Privacy &amp; cookies</a></span><span>Designed for the web / 2026</span></div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js"></script>
+  <script src="../assets/js/analytics.js" defer data-measurement-id=""></script>
+</body>
+</html>
