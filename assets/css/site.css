@@ -436,7 +436,7 @@ body[data-mobile="true"] .contact-form { margin-top: 28px; }
 body[data-mobile="true"] .footer { padding: 28px 20px 18px; }
 body[data-mobile="true"] .footer h2 { font-size: 48px; line-height: .95; margin-bottom: 18px; }
 body[data-mobile="true"] .footer-intro { font-size: 16px; margin: 0 0 28px; }
-body[data-mobile="true"] .footer-bottom { grid-template-areas: "source" "privacy"; grid-template-columns: minmax(0, 1fr); }
+body[data-mobile="true"] .footer-bottom { grid-template-areas: "source privacy"; grid-template-columns: minmax(0, 1fr) auto; }
 body[data-mobile="true"] .footer-bottom > span:first-child,
 body[data-mobile="true"] .footer-bottom > span:last-child { display: none; }
 body[data-mobile="true"][data-style="atelier"] .role { display: block; }
