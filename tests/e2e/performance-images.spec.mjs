@@ -1,0 +1,44 @@
+import { test, expect } from '@playwright/test';
+
+for (const theme of ['dark', 'light']) {
+  test(`image requests start in the saved ${theme} theme without the other capture set`, async ({ page }) => {
+    await page.addInitScript((value) => localStorage.setItem('nick-theme', value), theme);
+    const requests = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/images/work/')) requests.push(request.url());
+    });
+    await page.goto('/');
+    await expect(page.locator('.shot-img')).toHaveCount(4);
+    await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
+    expect(requests).toHaveLength(4);
+    for (const url of requests) expect(/-dark(?:-\d+w)?\.webp$/.test(url)).toBe(theme === 'dark');
+    expect(requests.some((url) => /-\d+w\.webp$/.test(url))).toBeTruthy();
+    expect(await page.locator('.case:first-child .shot-desk').getAttribute('fetchpriority')).toBe('high');
+  });
+}
+
+test('responsive captures retain enough detail at phone, tablet and desktop widths', async ({ page }) => {
+  for (const width of [320, 390, 768, 960, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page.waitForFunction(() => [...document.querySelectorAll('.shot-img, .portrait')].every((i) => i.complete && i.naturalWidth > 0));
+    const images = await page.locator('.shot-img, .portrait').evaluateAll((images) => images.map((img) => {
+      const candidate = Number(img.currentSrc.match(/-(\d+)w\.webp$/)?.[1] || (img.classList.contains('shot-desk') ? 1280 : 600));
+      return { candidate, required: img.getBoundingClientRect().width * devicePixelRatio, src: img.currentSrc };
+    }));
+    for (const image of images) {
+      // Original capture resolution is the upper bound, never upscale or invent detail.
+      const maximum = image.src.includes('-desk') ? 1280 : 600;
+      expect(image.candidate, `${image.src} at ${width}px`).toBeGreaterThanOrEqual(Math.min(maximum, image.required) * 0.9);
+    }
+  }
+});
+
+test('static no-JavaScript homepage retains all showcase images', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto(baseURL);
+  await expect(page.locator('.shot-img')).toHaveCount(4);
+  for (const image of await page.locator('.shot-img').all()) await expect(image).toBeVisible();
+  await context.close();
+});
