@@ -57,6 +57,10 @@ for (const [label, status, body, contentType, message] of [
   ['rate limit', 429, '{}', 'application/json', 'Too many attempts'],
   ['server failure', 500, '{}', 'application/json', 'could not confirm'],
   ['invalid response', 200, '<html>Unexpected page</html>', 'text/html', 'could not confirm'],
+  ['JSON null', 200, 'null', 'application/json', 'could not confirm'],
+  ['JSON array', 200, '[]', 'application/json', 'could not confirm'],
+  ['JSON primitive', 200, 'true', 'application/json', 'could not confirm'],
+  ['error on 2xx', 200, '{"error":"rejected"}', 'application/json', 'could not confirm'],
   ['form rejection', 422, '{"errors":[{"code":"INACTIVE"}]}', 'application/json', 'could not be sent'],
 ]) {
   test(`${label}: retained input, no false success, retry possible`, async ({ page }) => {
@@ -117,5 +121,15 @@ for (const theme of ['dark', 'light']) {
     const border = await page.locator('#contact-email').evaluate(el => getComputedStyle(el).borderTopColor);
     const errorInk = await page.locator('#contact-email-error').evaluate(el => getComputedStyle(el).color);
     expect(border).toBe(errorInk);
+  });
+}
+
+for (const body of ['{}', '{"next":null}']) {
+  test(`successful JSON without a redirect (${body}) confirms once`, async ({ page }) => {
+    await page.route(endpoint, route => route.fulfill({ status: 200, contentType: 'application/json', body }));
+    await complete(page);
+    await page.getByRole('button', { name: 'Send message', exact: true }).click();
+    await expect(page.locator('#contact-status')).toContainText('your message has been sent');
+    await expect(page.locator('[type="submit"]')).toBeHidden();
   });
 }
