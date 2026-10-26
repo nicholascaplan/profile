@@ -45,9 +45,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   };
   // Populate initial sources in one pass, already matching the saved theme.
   const initial = thumbs[0];
+  if (caseEl === document.querySelector('.case')) desk.fetchPriority = 'high';
   apply(desk, variant(initial, 'Desk'), 'Desk');
   apply(mob, variant(initial, 'Mob'), 'Mob');
-  if (caseEl === document.querySelector('.case')) desk.fetchPriority = 'high';
   let current = 0;
   let swapSeq = 0;
   function select(index) {
