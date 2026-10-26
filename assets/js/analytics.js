@@ -24,9 +24,11 @@
   var privacyURL = new URL('../../privacy/', script.src).href;
   panel.innerHTML = '<div><h2 id="cookie-banner-title">Analytics cookies</h2><p>I would like to use Google Analytics to understand how visitors use this site. It stays off unless you allow it. <a href="' + privacyURL + '">Privacy notice</a></p></div><div class="cookie-actions"><button type="button" class="button button-primary" data-cookie-choice="analytics">Allow analytics cookies</button><button type="button" class="button button-secondary" data-cookie-choice="essential">Reject analytics cookies</button></div>';
   document.body.appendChild(panel);
+  /** Keep footer controls scrollable above the visible consent panel. */
   function reserveSpace() { document.body.style.paddingBottom = panel.hidden ? '' : panel.getBoundingClientRect().height + 'px'; }
   new ResizeObserver(reserveSpace).observe(panel);
 
+  /** Remove GA cookies on this host and its apex domain. */
   function removeCookies() {
     var host = location.hostname;
     var domains = ['', host, host.replace(/^www\./, '')];
@@ -38,6 +40,7 @@
       });
     });
   }
+  /** Load this production stream once, after an explicit opt-in. */
   function loadAnalytics() {
     if (!canTrack || loaded || preference !== 'analytics') return;
     loaded = true;
@@ -63,7 +66,11 @@
   panel.querySelectorAll('[data-cookie-choice]').forEach(function (button) {
     button.addEventListener('click', function () {
       preference = button.dataset.cookieChoice;
-      try { localStorage.setItem(storageKey, preference); } catch (error) {}
+      var preferenceStored = false;
+      try {
+        localStorage.setItem(storageKey, preference);
+        preferenceStored = true;
+      } catch (error) {}
       panel.hidden = true;
       reserveSpace();
       if (returnFocus) returnFocus.focus();
@@ -73,7 +80,7 @@
         if (measurementId) window['ga-disable-' + measurementId] = true;
         removeCookies();
         // Do not send denied-consent pings: unload the script entirely.
-        if (loaded) location.reload();
+        if (loaded && preferenceStored) location.reload();
       }
     });
   });
