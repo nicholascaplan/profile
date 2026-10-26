@@ -1,6 +1,6 @@
 # Working in this repo
 
-Guidance for anyone contributing changes, including automated contributors. Product and design decisions are recorded in `docs/PROJECT-BRIEF.md`; this file covers how to work here.
+Guidance for anyone contributing changes, including automated contributors. The requirements are in `docs/project-brief.md` and important decisions are logged in `docs/decisions.md`; this file covers how to work here.
 
 ## What the site is
 
@@ -26,6 +26,11 @@ npm run test:e2e       # browser checks: npx playwright test
 1. Work happens on a branch and a pull request. Every push and PR runs `.github/workflows/test.yml`: the unit checks plus the full Playwright matrix (Chromium, Firefox, WebKit, mobile Chrome) in the official Playwright container. All checks must be green before a change is presented as ready.
 2. Each PR gets a Netlify deploy preview. Verify the change on the preview - real pages, phone and desktop widths - before calling it ready.
 3. Only `main` deploys the live site (`.github/workflows/pages.yml` -> GitHub Pages). After any merge to `main`, check the live site once to confirm the deploy landed as intended.
+
+## Documentation
+
+- `docs/project-brief.md` describes what the site must do. Update it only when the project's direction or requirements change, not for each change.
+- `docs/decisions.md` records important decisions and the reason for each, newest first. Add an entry only when a choice would otherwise be questioned or reversed later. Small fixes and implementation details belong in the pull request.
 
 ## House rules
 
