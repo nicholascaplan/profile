@@ -4,6 +4,22 @@ Personal profile page for Nick Caplan, hosted on GitHub Pages.
 
 Website: [websitesbynick.co.uk](https://websitesbynick.co.uk/)
 
+## Run locally
+
+```sh
+npm run dev
+```
+
+Open **http://127.0.0.1:8080**. No build or dependency install is needed to
+serve the site. Refresh the browser after editing a file, and press Ctrl+C to
+stop the server. `npm start` runs the same server.
+
+To use another port:
+
+```sh
+npm run dev -- --port 3000
+```
+
 ## Technical Details
 
 - Three-page static site: home (`index.html`), `experience/` and `contact/`, each a real URL.
