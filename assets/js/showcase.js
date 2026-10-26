@@ -69,9 +69,12 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     // fall back to load/error events where decode is unavailable.
     const ready = (img, src, kind) => new Promise((resolve) => {
       const pre = new Image();
-      pre.onload = pre.onerror = () => resolve();
+      pre.onload = () => {
+        if (typeof pre.decode === 'function') pre.decode().then(resolve, resolve);
+        else resolve();
+      };
+      pre.onerror = resolve;
       apply(pre, src, kind);
-      if (typeof pre.decode === 'function') pre.decode().then(resolve, resolve);
     });
     Promise.all([ready(desk, srcD, 'Desk'), ready(mob, srcM, 'Mob')]).then(() => {
       if (mySeq !== swapSeq) return;
