@@ -8,12 +8,21 @@
   var measurementId = script && script.dataset.measurementId;
   var canTrack = /^(www\.)?websitesbynick\.co\.uk$/.test(location.hostname) && /^G-[A-Z0-9]+$/.test(measurementId || '');
   var preference = null;
+  var storageReady = false;
+  var rejectionCookie = 'websites-by-nick-analytics-rejected';
+  var sessionRejection = false;
+  try { sessionRejection = sessionStorage.getItem(storageKey) === 'essential'; } catch (error) {}
+  var cookieRejection = document.cookie.split(';').some(function (cookie) { return cookie.trim() === rejectionCookie + '=1'; });
   try {
     // Never trust a saved Allow if a later withdrawal cannot be persisted.
     localStorage.setItem(storageKey + '-check', '1');
     localStorage.removeItem(storageKey + '-check');
     preference = localStorage.getItem(storageKey);
+    storageReady = true;
   } catch (error) {}
+  if (storageReady && (sessionRejection || cookieRejection)) preference = 'essential';
+  var channel = null;
+  try { channel = new BroadcastChannel(storageKey); } catch (error) {}
   var returnFocus = null;
   var loaded = false;
   var panel = document.createElement('aside');
@@ -39,6 +48,28 @@
         document.cookie = name + '=; Max-Age=0; path=/; SameSite=Lax' + (domain ? '; domain=' + domain : '');
       });
     });
+  }
+  /** Persist a rejection through independent browser stores when a write fails. */
+  function rememberRejection() {
+    var saved = false;
+    try { localStorage.setItem(storageKey, 'essential'); saved = true; } catch (error) {
+      try { localStorage.removeItem(storageKey); saved = true; } catch (error) {}
+    }
+    try { sessionStorage.setItem(storageKey, 'essential'); } catch (error) {}
+    document.cookie = rejectionCookie + '=1; Max-Age=31536000; path=/; SameSite=Lax; Secure';
+    return saved || document.cookie.split(';').some(function (cookie) { return cookie.trim() === rejectionCookie + '=1'; });
+  }
+  /** Explain a failed save without suggesting that every browser store worked. */
+  function showSaveWarning() {
+    var warning = document.getElementById('cookie-save-warning');
+    if (!warning) {
+      warning = document.createElement('p');
+      warning.id = 'cookie-save-warning';
+      warning.className = 'cookie-save-warning';
+      warning.setAttribute('role', 'status');
+      warning.textContent = 'Your browser could not save your cookie choice normally. Analytics is off here. If you block all browser storage, close other tabs and check your choice when you return.';
+      document.body.appendChild(warning);
+    }
   }
   /** Enable this production stream after opt-in, loading the tag only once. */
   function loadAnalytics() {
@@ -77,10 +108,18 @@
       reserveSpace();
       if (returnFocus) returnFocus.focus();
       returnFocus = null;
-      if (preference === 'analytics') loadAnalytics();
+      if (preference === 'analytics') {
+        try { sessionStorage.removeItem(storageKey); } catch (error) {}
+        document.cookie = rejectionCookie + '=; Max-Age=0; path=/; SameSite=Lax; Secure';
+        var warning = document.getElementById('cookie-save-warning');
+        if (warning) warning.remove();
+        loadAnalytics();
+      }
       else {
         if (measurementId) window['ga-disable-' + measurementId] = true;
         removeCookies();
+        if (!preferenceStored) { rememberRejection(); showSaveWarning(); }
+        if (channel) channel.postMessage('essential');
         // Do not send denied-consent pings: unload the script entirely.
         if (loaded && preferenceStored) location.reload();
       }
@@ -103,6 +142,15 @@
     removeCookies();
     if (loaded) location.reload();
   });
+  if (channel) channel.onmessage = function (event) {
+    if (event.data !== 'essential') return;
+    preference = 'essential';
+    if (measurementId) window['ga-disable-' + measurementId] = true;
+    removeCookies();
+    var saved = rememberRejection();
+    if (loaded && saved) location.reload();
+    else if (loaded) showSaveWarning();
+  };
   if (preference === 'analytics') loadAnalytics();
   else if (preference === 'essential') removeCookies();
   else panel.hidden = false;
