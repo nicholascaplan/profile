@@ -10,3 +10,6 @@ body[data-theme="dark"] .contact-form { --error-ink: #ffb4a8; }
 .form-status[data-state="error"] { border-left-color: var(--error-ink); }
 .form-status:focus { outline: 2px solid var(--accent-ink); outline-offset: 4px; }
 .contact-form .button:disabled { cursor: wait; opacity: .7; transform: none; }
+body[data-style="atelier"][data-theme="dark"] .contact-form [aria-invalid="true"] { border-color: var(--error-ink); }
+#contact-another { background: var(--accent); color: var(--bg); }
+#contact-another:hover, #contact-another:focus-visible { background: var(--ink); color: var(--bg); }
