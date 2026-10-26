@@ -44,6 +44,10 @@ for (const page of pages) {
     assert.match(html, /<meta name="description" content="[^"]+"/);
   });
 
+  test(`${page}: GitHub footer uses the concise label and keeps its icon attached`, () => {
+    assert.match(html, /<span class="cta-label">Check it out on <span class="cta-end">GitHub <svg class="github-icon"/);
+  });
+
   test(`${page}: exactly one h1`, () => {
     assert.equal([...html.matchAll(/<h1\b/g)].length, 1);
   });
@@ -148,7 +152,7 @@ test('home page carries the showcase imagery', () => {
   assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 6, 'three labelled page choices per project');
   assert.doesNotMatch(html, /class="(?:m-step|teaser)"|Tap to enlarge|thumb-desk|thumb-mob/, 'no duplicate gallery controls or closing contact panel');
   assert.match(html, /class="intro-contact" href="contact\/"/, 'an early enquiry link is present');
-  assert.equal([...html.matchAll(/class="case-role"/g)].length, 2, 'each project explains Nick’s role');
+  assert.doesNotMatch(html, /class="case-role"|My role:/, 'projects omit the redundant role copy');
   for (const article of html.matchAll(/<article class="case[^\"]*"[\s\S]*?<\/article>/g)) {
     assert.match(article[0], /<header class="case-heading">[\s\S]*?<h2[\s\S]*?<div class="case-shot">[\s\S]*?<div class="case-copy">/, 'project reading order is heading, imagery, details');
   }
@@ -200,4 +204,19 @@ test('every public page uses the approved portfolio stream, never the FOA stream
 test('analytics registers its cross-tab withdrawal handler only once', () => {
   const script = read('assets/js/analytics.js');
   assert.equal((script.match(/window\.addEventListener\('storage'/g) || []).length, 1);
+});
+
+
+test('experience page: pre-NatWest roles foreground website delivery', () => {
+  const html = read('experience/index.html');
+  const roles = [...html.matchAll(/<article class="role">[\s\S]*?<\/article>/g)].map((m) => m[0]);
+  const byTitle = (name) => roles.find((r) => (r.match(/<h3 class="role-title">([^<]+)<\/h3>/) || [])[1]?.includes(name)) || '';
+  // Nick's direction (26 October 2026): the earlier roles lead with the
+  // website-building angle; the 100,000+ visitors and 2-to-23 states figures
+  // come from his original CV copy. The NatWest Boxed entry stays unchanged.
+  assert.match(byTitle('Oddschecker'), /website serving 100,000\+ monthly visitors/);
+  assert.match(byTitle('Oddschecker'), /Scaled the website from 2 to 23 US state jurisdictions/);
+  assert.match(byTitle('Moogsoft'), /web platform/);
+  assert.match(byTitle('Alfa'), /enterprise web platform/);
+  assert.match(byTitle('NatWest Boxed'), /Core banking platforms, customer onboarding and account services/);
 });

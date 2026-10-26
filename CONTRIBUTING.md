@@ -8,6 +8,9 @@ Three-page static site (`index.html`, `experience/`, `contact/`) with shared CSS
 
 ## Running the checks locally
 
+For local development, run `npm run dev` and open http://127.0.0.1:8080.
+There is no build step; refresh the browser after editing. `npm start` is an alias.
+
 ```
 npm ci                 # one-time setup (Playwright only; the unit checks need no dependencies)
 npm run test:unit      # fast DOM and content checks: node --test tests/*.test.mjs

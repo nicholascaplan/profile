@@ -145,7 +145,9 @@ button { color: inherit; font: inherit; }
 
 /* Home hero: the portrait sits beside the headline; the intro below runs full width. */
 .hero-grid { align-items: center; display: grid; gap: 48px; grid-template-columns: minmax(0, 1fr) auto; }
-.hero-grid .portrait-wrap { width: 250px; }
+.hero-grid .portrait-wrap { width: clamp(250px, 25vw, 320px); }
+.hero-text { grid-column: 1; grid-row: 1; }
+.hero-grid .portrait-wrap { grid-column: 2; grid-row: 1; }
 
 /* Project headings precede the imagery in reading order. Desktop uses a
    two-column composition; smaller layouts follow the same natural DOM order. */
@@ -180,8 +182,6 @@ button { color: inherit; font: inherit; }
 .case-copy .kicker, .kicker { color: var(--accent-ink); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .case-heading h2 { font-family: var(--display); font-size: 32px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: 10px 0 0; }
 .case-copy p { color: var(--muted); font-size: 16.5px; line-height: 1.55; margin: 8px 0 0; }
-.case-copy .case-role { font-size: 14px; margin-top: 14px; }
-.case-role strong { color: var(--ink); }
 .case-copy .button { margin-top: 22px; }
 
 /* "Built by an engineering leader" strip linking to the experience page. */
@@ -258,7 +258,13 @@ body[data-style="atelier"][data-theme="dark"] .form-field textarea:focus { borde
 .footer-cta .cta-icon { display: inline-block; font-size: .42em; line-height: 1; margin-left: .14em; vertical-align: middle; transform: translateY(-.22em); transition: transform .25s var(--ease); }
 .footer-cta:hover .cta-icon, .footer-cta:focus-visible .cta-icon { transform: translate(6px, -.22em); }
 .footer-links { display: none; }
-.footer-bottom { border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: flex; font-family: var(--mono); font-size: 9px; justify-content: space-between; padding-top: 18px; text-transform: uppercase; }
+.footer-bottom { align-items: end; border-top: 1px solid rgba(244, 240, 232, .18); color: rgba(244, 240, 232, .55); display: grid; font-family: var(--mono); font-size: 9px; font-weight: 400; gap: 12px 20px; grid-template-areas: "identity credit" "source privacy"; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); line-height: 2; padding-top: 18px; text-transform: uppercase; }
+.footer-bottom > span { min-width: 0; }
+.footer-bottom > span:first-child { grid-area: identity; }
+.footer-bottom > span:nth-child(2) { grid-area: source; }
+.footer-bottom > span:nth-child(3) { grid-area: privacy; text-align: right; }
+.footer-bottom > span:last-child { grid-area: credit; text-align: right; }
+.footer-bottom a { align-items: center; display: inline-flex; font: inherit; letter-spacing: inherit; }
 .github-link { align-items: center; display: inline-flex; gap: 7px; }
 .github-icon { display: block; fill: currentColor; height: 15px; width: 15px; }
 body[data-style="atelier"] .footer .section-kicker { color: #fff; }
@@ -369,8 +375,6 @@ body[data-style="atelier"][data-theme="dark"] .credstrip { background: #101711; 
   .contact-grid { display: block; }
   .contact-form { margin-top: 34px; }
   .footer { padding: 60px 20px 24px; }
-  .footer-bottom { display: block; line-height: 2; }
-  .footer-bottom > span { display: block; }
   .credstrip { width: calc(100% - 40px); }
   body[data-style="atelier"] .role { display: block; }
 }
@@ -388,8 +392,17 @@ body[data-mobile="true"] .nav-chips a { align-items: center; background: var(--s
 body[data-mobile="true"] .nav-chips a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 700; }
 body[data-mobile="true"] .hero { padding: 24px 20px 30px; }
 body[data-mobile="true"] .hero h1 { font-size: clamp(38px, 11cqi, 48px); letter-spacing: -.065em; line-height: .98; margin: 14px 0 22px; }
-body[data-mobile="true"] .hero-grid { gap: 14px; }
-body[data-mobile="true"] .hero-grid .portrait-wrap { width: clamp(76px, 23cqi, 110px); }
+/* Leave the first headline line full-width, then wrap the rest around the
+   portrait. WebKit ignores shape-outside and excludes a float's whole margin
+   box, so a top margin on the float itself would shorten every headline line.
+   Instead an in-flow spacer drops the float's static position by 72px (below
+   "Websites that", the only line wider than the beside-float measure at
+   320px) and the negative margin pulls the text back up over the spacer.
+   Plain CSS2.1 float behaviour in every engine. */
+body[data-mobile="true"] .hero-grid { display: flow-root; }
+body[data-mobile="true"] .hero-grid::before { content: ""; display: block; height: 72px; }
+body[data-mobile="true"] .hero-grid .hero-text { margin-top: -72px; }
+body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 0 0 12px 14px; width: clamp(88px, 28cqi, 130px); }
 body[data-mobile="true"] .hero-intro { font-size: 17px; }
 body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin-top: 26px; }
 body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
@@ -406,7 +419,6 @@ body[data-mobile="true"] .shot-mob { border-radius: 8px; }
 body[data-mobile="true"] .thumb { padding: 10px 8px; }
 body[data-mobile="true"] .case-heading h2 { font-size: 26px; margin: 8px 0 0; }
 body[data-mobile="true"] .case-copy p { font-size: 16px; line-height: 1.55; margin-top: 0; }
-body[data-mobile="true"] .case-copy .case-role { margin-top: 14px; }
 body[data-mobile="true"] .case-copy .button { display: flex; margin: 18px 0 0; }
 body[data-mobile="true"] .credstrip { align-items: flex-start; border-radius: 12px; flex-direction: column; gap: 10px; margin: 22px 20px 40px; padding: 18px; width: calc(100% - 40px); }
 body[data-mobile="true"] .credstrip .l { font-size: 13px; }
@@ -426,8 +438,7 @@ body[data-mobile="true"] .contact-form { margin-top: 28px; }
 body[data-mobile="true"] .footer { padding: 28px 20px 18px; }
 body[data-mobile="true"] .footer h2 { font-size: 48px; line-height: .95; margin-bottom: 18px; }
 body[data-mobile="true"] .footer-intro { font-size: 16px; margin: 0 0 28px; }
-body[data-mobile="true"] .footer-bottom { display: block; line-height: 2; }
-body[data-mobile="true"] .footer-bottom > span { display: block; }
+body[data-mobile="true"] .footer-bottom { grid-template-areas: "source privacy"; grid-template-columns: minmax(0, 1fr) auto; }
 body[data-mobile="true"] .footer-bottom > span:first-child,
 body[data-mobile="true"] .footer-bottom > span:last-child { display: none; }
 body[data-mobile="true"][data-style="atelier"] .role { display: block; }
@@ -442,7 +453,14 @@ body[data-mobile="true"][data-style="atelier"] .role { display: block; }
 @media (max-width: 15rem) {
   .hero h1, body[data-mobile="true"] .hero h1 { font-size: min(3.5rem, 13vw); }
   .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .hero-grid .portrait-wrap { grid-column: 1; grid-row: 2; }
   .hero-grid .portrait-wrap { width: 160px; }
+  /* Genuine enlarged text: undo the mobile float wrap and stack the portrait
+     below the headline, as the grid placement above intends. */
+  body[data-mobile="true"] .hero-grid { display: grid; }
+  body[data-mobile="true"] .hero-grid::before { content: none; }
+  body[data-mobile="true"] .hero-grid .hero-text { margin-top: 0; }
+  body[data-mobile="true"] .hero-grid .portrait-wrap { float: none; margin: 0; width: 160px; }
   .page-hero h1, body[data-mobile="true"] .page-hero h1 { font-size: min(2.8rem, 12vw); }
   .footer h2, body[data-mobile="true"] .footer h2 { font-size: min(2.8rem, 12vw); }
   body[data-mobile="true"] .nav-chips a { line-height: 1.4; }
