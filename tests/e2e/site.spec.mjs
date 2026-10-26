@@ -237,6 +237,8 @@ test('footer privacy stays bottom right with consistent small-print typography',
           right: rect.right,
           edge: bounds.right,
           bottom: rect.bottom,
+          top: rect.top,
+          sourceTop: source.getBoundingClientRect().top,
           sourceBottom: source.getBoundingClientRect().bottom,
           fonts: [font(source), font(privacy)],
           overflow: el.scrollWidth > el.clientWidth,
@@ -244,6 +246,7 @@ test('footer privacy stays bottom right with consistent small-print typography',
       });
       assert.ok(Math.abs(footer.right - footer.edge) < 1, `privacy is right-aligned on ${path} at ${width}px`);
       assert.ok(footer.bottom >= footer.sourceBottom - 2, `privacy is on the bottom row on ${path} at ${width}px`);
+      assert.ok(Math.abs(footer.top - footer.sourceTop) < 4, `source and privacy sit in line on ${path} at ${width}px`);
       assert.deepEqual(footer.fonts[0], footer.fonts[1], 'footer links share the same typography');
       assert.equal(footer.overflow, false, 'footer does not overflow');
     }
