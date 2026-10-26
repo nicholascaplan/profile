@@ -22,7 +22,7 @@
   panel.hidden = true;
   panel.setAttribute('aria-labelledby', 'cookie-banner-title');
   var privacyURL = new URL('../../privacy/', script.src).href;
-  panel.innerHTML = '<div><h2 id="cookie-banner-title">Analytics cookies</h2><p>I would like to use Google Analytics to understand how visitors use this site. It stays off unless you allow it. <a href="' + privacyURL + '">Privacy notice</a></p></div><div class="cookie-actions"><button type="button" class="button button-primary" data-cookie-choice="analytics">Allow analytics cookies</button><button type="button" class="button button-secondary" data-cookie-choice="essential">Reject analytics cookies</button></div>';
+  panel.innerHTML = '<div><h2 id="cookie-banner-title">Analytics cookies</h2><p>Optional Google Analytics stays off unless you allow it. <a href="' + privacyURL + '">Privacy notice</a></p></div><div class="cookie-actions"><button type="button" class="button button-primary" data-cookie-choice="analytics">Allow analytics</button><button type="button" class="button button-secondary" data-cookie-choice="essential">Reject analytics</button></div>';
   document.body.appendChild(panel);
   /** Keep footer controls scrollable above the visible consent panel. */
   function reserveSpace() { document.body.style.paddingBottom = panel.hidden ? '' : panel.getBoundingClientRect().height + 'px'; }
