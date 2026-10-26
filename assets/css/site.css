@@ -485,3 +485,7 @@ body[data-theme] .cookie-actions .button { background: var(--surface-strong); co
 body[data-theme] .privacy-details [data-cookie-preferences] { background: var(--surface-strong); color: var(--ink); border-color: var(--line); }
 
 @media (max-width: 600px) { .cookie-actions .button { flex: 1 1 0; } }
+@media (min-width: 601px) {
+  .cookie-banner { inset: auto 24px 24px auto; width: 420px; max-width: calc(100vw - 48px); padding: 18px; border: 1px solid var(--line); border-radius: 16px; }
+  .cookie-actions .button { flex: 1 1 0; }
+}
