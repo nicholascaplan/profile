@@ -75,7 +75,16 @@
       reserveSpace();
       if (returnFocus) returnFocus.focus();
       returnFocus = null;
-      if (preference === 'analytics') loadAnalytics();
+      // Withdrawal applies to every open tab, including localStorage.clear().
+  window.addEventListener('storage', function (event) {
+    if (event.storageArea !== localStorage || (event.key !== storageKey && event.key !== null)) return;
+    if (event.newValue === 'analytics') return;
+    preference = event.newValue;
+    if (measurementId) window['ga-disable-' + measurementId] = true;
+    removeCookies();
+    if (loaded) location.reload();
+  });
+  if (preference === 'analytics') loadAnalytics();
       else {
         if (measurementId) window['ga-disable-' + measurementId] = true;
         removeCookies();
@@ -91,6 +100,15 @@
       reserveSpace();
       panel.querySelector('button').focus();
     });
+  });
+  // Withdrawal applies to every open tab, including localStorage.clear().
+  window.addEventListener('storage', function (event) {
+    if (event.storageArea !== localStorage || (event.key !== storageKey && event.key !== null)) return;
+    if (event.newValue === 'analytics') return;
+    preference = event.newValue;
+    if (measurementId) window['ga-disable-' + measurementId] = true;
+    removeCookies();
+    if (loaded) location.reload();
   });
   if (preference === 'analytics') loadAnalytics();
   else if (preference === 'essential') removeCookies();
