@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const pages = ['index.html', 'experience/index.html', 'contact/index.html'];
+const pages = ['index.html', 'experience/index.html', 'contact/index.html', 'privacy/index.html'];
 const read = (page) => readFileSync(join(root, page), 'utf8');
 
 function attr(tag, name) {
@@ -111,7 +111,8 @@ for (const page of pages) {
   });
 
   test(`${page}: nav marks the current page`, () => {
-    assert.match(html, /aria-current="page"/);
+    if (page !== 'privacy/index.html') assert.match(html, /aria-current="page"/);
+    else assert.match(html, /Privacy &amp; cookies/);
   });
 
   test(`${page}: nav chips match across pages - no subtitles`, () => {
@@ -172,7 +173,7 @@ test('contact page: form posts securely and every field is labelled and required
 });
 
 test('shared scripts parse', () => {
-  for (const script of ['assets/js/site.js', 'assets/js/showcase.js']) {
+  for (const script of ['assets/js/site.js', 'assets/js/showcase.js', 'assets/js/analytics.js']) {
     new vm.Script(readFileSync(join(root, script), 'utf8'), { filename: script });
   }
 });
