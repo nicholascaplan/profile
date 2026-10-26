@@ -120,3 +120,25 @@ test('readable but unwritable storage cannot restore a stale Allow', async ({ pa
   await expect(page.locator('#cookie-consent-panel')).toBeVisible();
   await expect(page.locator('[data-google-analytics]')).toHaveCount(0);
 });
+
+
+test('withdrawal in another tab unloads an active tag in this tab', async ({ page, context }) => {
+  await context.route('https://websitesbynick.co.uk/**', route => {
+    if (route.request().url().endsWith('analytics.js')) return route.fulfill({ contentType: 'text/javascript', body: source });
+    return route.fulfill({ contentType: 'text/html', body: '<button data-cookie-preferences>Cookie preferences</button><script defer src="/assets/js/analytics.js" data-measurement-id="G-TESTONLY123"></script>' });
+  });
+  await context.route('https://www.googletagmanager.com/**', route => route.fulfill({ body: '' }));
+  await page.goto('https://websitesbynick.co.uk/');
+  await page.locator('[data-cookie-choice="analytics"]').click();
+  const other = await context.newPage();
+  await other.goto('https://websitesbynick.co.uk/');
+  expect(await other.evaluate(() => typeof window.gtag)).toBe('function');
+  await page.getByRole('button', { name: 'Cookie preferences', exact: true }).click();
+  const unloaded = other.waitForEvent('load');
+  await page.locator('[data-cookie-choice="essential"]').click();
+  await unloaded;
+  expect(await other.evaluate(() => window.gtag === undefined)).toBe(true);
+  expect(await other.evaluate(() => localStorage.getItem('websites-by-nick-cookie-preferences'))).toBe('essential');
+  await expect(other.locator('[data-google-analytics]')).toHaveCount(0);
+  await other.close();
+});
