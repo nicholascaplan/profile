@@ -40,11 +40,13 @@
       });
     });
   }
-  /** Load this production stream once, after an explicit opt-in. */
+  /** Enable this production stream after opt-in, loading the tag only once. */
   function loadAnalytics() {
-    if (!canTrack || loaded || preference !== 'analytics') return;
-    loaded = true;
+    if (!canTrack || preference !== 'analytics') return;
+    // An unsaved withdrawal leaves the existing tag loaded but disabled.
     window['ga-disable-' + measurementId] = false;
+    if (loaded) return;
+    loaded = true;
     window.dataLayer = window.dataLayer || [];
     // gtag expects Arguments objects, not arrays.
     window.gtag = function () { window.dataLayer.push(arguments); };

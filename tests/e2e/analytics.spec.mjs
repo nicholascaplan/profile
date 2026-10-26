@@ -72,6 +72,15 @@ test('production loader configures only this stream after consent and unloads on
   await page.locator('[data-cookie-choice="essential"]').click();
   expect(await page.evaluate(() => window['ga-disable-G-TESTONLY123'])).toBe(true);
   expect(navigated).toBe(false);
+  const queueLength = await page.evaluate(() => window.dataLayer.length);
+  await page.getByRole('button', { name: 'Cookie preferences', exact: true }).click();
+  await page.locator('[data-cookie-choice="analytics"]').click();
+  expect(await page.evaluate(() => window['ga-disable-G-TESTONLY123'])).toBe(false);
+  await expect(page.locator('#cookie-consent-panel')).toBeHidden();
+  await expect(page.locator('[data-google-analytics]')).toHaveCount(1);
+  expect(await page.evaluate(() => window.dataLayer.length)).toBe(queueLength);
+  expect(requests).toHaveLength(2);
+  expect(navigated).toBe(false);
 });
 
 test('invalid saved values do not grant consent', async ({ page }) => {
