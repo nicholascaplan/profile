@@ -114,5 +114,8 @@ for (const theme of ['dark', 'light']) {
     });
     expect(checks.width).toBeLessThanOrEqual(checks.viewport);
     expect(checks.ratio).toBeGreaterThanOrEqual(4.5);
+    const border = await page.locator('#contact-email').evaluate(el => getComputedStyle(el).borderTopColor);
+    const errorInk = await page.locator('#contact-email-error').evaluate(el => getComputedStyle(el).color);
+    expect(border).toBe(errorInk);
   });
-                                                     }
+}
