@@ -164,3 +164,18 @@ for (const theme of ['light', 'dark']) test(`privacy preference label has contra
   await button.click();
   await expect(page.locator('#cookie-consent-panel')).toBeVisible();
 });
+
+test('mobile consent is compact with both choices immediately visible', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const panel = await page.locator('#cookie-consent-panel').boundingBox();
+  expect(panel.height).toBeLessThan(211);
+  for (const choice of ['analytics', 'essential']) {
+    const button = await page.locator(`[data-cookie-choice="${choice}"]`).boundingBox();
+    expect(button.height).toBeGreaterThanOrEqual(44);
+    expect(button.y).toBeGreaterThanOrEqual(panel.y);
+    expect(button.y + button.height).toBeLessThanOrEqual(844);
+    expect(button.x).toBeGreaterThanOrEqual(0);
+    expect(button.x + button.width).toBeLessThanOrEqual(390);
+  }
+});
