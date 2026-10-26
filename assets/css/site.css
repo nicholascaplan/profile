@@ -168,12 +168,13 @@ button { color: inherit; font: inherit; }
 /* The composed shot is an overview, not a miniature interactive website.
    Keep a single, readable set of page selectors and let visitors explore live. */
 .shot-mob { position: absolute; right: 7%; bottom: 2%; display: block; height: 80%; width: auto; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
-.thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.thumb { background: transparent; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; flex: 1 1 auto; min-height: 44px; margin: 0; padding: 10px 12px; text-align: center; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 0; margin-top: 12px; border-bottom: 1px solid var(--line); }
+/* Screenshot choices are quieter than page navigation and live-site actions. */
+.thumb { position: relative; background: transparent; border: 0; border-radius: 0; box-shadow: none; cursor: pointer; flex: 1 1 auto; min-height: 44px; margin: 0; padding: 10px 8px; text-align: center; }
 .thumb span { color: var(--muted); display: block; font-size: 13px; line-height: 1.4; }
-.thumb:hover { border-color: var(--accent); }
-.thumb.sel { background: var(--surface); border-color: var(--accent); box-shadow: inset 0 -2px var(--accent); }
-.thumb.sel span { color: var(--accent-ink); font-weight: 700; }
+.thumb:hover span { color: var(--ink); }
+.thumb.sel::after { content: ""; position: absolute; bottom: -1px; left: 12px; right: 12px; height: 2px; background: var(--accent); }
+.thumb.sel span { color: var(--accent-ink); font-weight: 600; }
 .case-copy .kicker, .kicker { color: var(--accent-ink); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .case-heading h2 { font-family: var(--display); font-size: 32px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: 10px 0 0; }
 .case-copy p { color: var(--muted); font-size: 16.5px; line-height: 1.55; margin: 8px 0 0; }
@@ -400,7 +401,7 @@ body[data-mobile="true"] .shotbar { padding: 8px 10px; }
 body[data-mobile="true"] .shotbar .t { font-size: 9.5px; max-width: 170px; }
 body[data-mobile="true"] .shotbar .pill { font-size: 8.5px; letter-spacing: .1em; padding: 2px 7px; }
 body[data-mobile="true"] .shot-mob { border-radius: 8px; }
-body[data-mobile="true"] .thumb { padding: 10px; }
+body[data-mobile="true"] .thumb { padding: 10px 8px; }
 body[data-mobile="true"] .case-heading h2 { font-size: 26px; margin: 8px 0 0; }
 body[data-mobile="true"] .case-copy p { font-size: 16px; line-height: 1.55; margin-top: 0; }
 body[data-mobile="true"] .case-copy .case-role { margin-top: 14px; }
