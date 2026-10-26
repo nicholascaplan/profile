@@ -2,7 +2,7 @@
 
 Personal profile page for Nick Caplan, hosted on GitHub Pages.
 
-Website: [nickcaplan.github.io/websites-by-nick](https://nickcaplan.github.io/websites-by-nick/)
+Website: [websitesbynick.co.uk](https://websitesbynick.co.uk/)
 
 ## Technical Details
 
