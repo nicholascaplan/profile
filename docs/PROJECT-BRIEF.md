@@ -54,3 +54,4 @@ Personal profile page for Nick Caplan, live at [websitesbynick.co.uk](https://we
 Cookie preferences uses explicit theme colours rather than native button defaults, with readable labels in light/dark and hover/focus states.
 
 Consent panel stays compact: short optional-analytics explanation, side-by-side equal-weight Allow/Reject controls with 44px touch targets. Mobile standard-text panel should use less than 25% of an 844px viewport; enlarged text remains scrollable without horizontal clipping.
+Desktop consent uses a 420px bottom-right card with a 24px edge gap, not a full-width bar. Mobile retains the compact full-width bottom panel. Choices remain equal weight.
