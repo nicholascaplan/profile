@@ -142,7 +142,9 @@
     preference = event.newValue;
     if (measurementId) window['ga-disable-' + measurementId] = true;
     removeCookies();
-    if (loaded) location.reload();
+    var saved = rememberRejection();
+    if (loaded && saved) location.reload();
+    else if (loaded) showSaveWarning();
   });
   if (channel) channel.onmessage = function (event) {
     if (event.data !== 'essential') return;
