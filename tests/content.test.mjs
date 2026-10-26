@@ -152,7 +152,7 @@ test('home page carries the showcase imagery', () => {
   assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 6, 'three labelled page choices per project');
   assert.doesNotMatch(html, /class="(?:m-step|teaser)"|Tap to enlarge|thumb-desk|thumb-mob/, 'no duplicate gallery controls or closing contact panel');
   assert.match(html, /class="intro-contact" href="contact\/"/, 'an early enquiry link is present');
-  assert.equal([...html.matchAll(/class="case-role"/g)].length, 2, 'each project explains Nick’s role');
+  assert.doesNotMatch(html, /class="case-role"|My role:/, 'projects omit the redundant role copy');
   for (const article of html.matchAll(/<article class="case[^\"]*"[\s\S]*?<\/article>/g)) {
     assert.match(article[0], /<header class="case-heading">[\s\S]*?<h2[\s\S]*?<div class="case-shot">[\s\S]*?<div class="case-copy">/, 'project reading order is heading, imagery, details');
   }

@@ -177,8 +177,6 @@ button { color: inherit; font: inherit; }
 .case-copy .kicker, .kicker { color: var(--accent-ink); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .case-heading h2 { font-family: var(--display); font-size: 32px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: 10px 0 0; }
 .case-copy p { color: var(--muted); font-size: 16.5px; line-height: 1.55; margin: 8px 0 0; }
-.case-copy .case-role { font-size: 14px; margin-top: 14px; }
-.case-role strong { color: var(--ink); }
 .case-copy .button { margin-top: 22px; }
 
 /* "Built by an engineering leader" strip linking to the experience page. */
@@ -407,7 +405,6 @@ body[data-mobile="true"] .shot-mob { border-radius: 8px; }
 body[data-mobile="true"] .thumb { padding: 10px; }
 body[data-mobile="true"] .case-heading h2 { font-size: 26px; margin: 8px 0 0; }
 body[data-mobile="true"] .case-copy p { font-size: 16px; line-height: 1.55; margin-top: 0; }
-body[data-mobile="true"] .case-copy .case-role { margin-top: 14px; }
 body[data-mobile="true"] .case-copy .button { display: flex; margin: 18px 0 0; }
 body[data-mobile="true"] .credstrip { align-items: flex-start; border-radius: 12px; flex-direction: column; gap: 10px; margin: 22px 20px 40px; padding: 18px; width: calc(100% - 40px); }
 body[data-mobile="true"] .credstrip .l { font-size: 13px; }
