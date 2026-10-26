@@ -179,3 +179,17 @@ test('mobile consent is compact with both choices immediately visible', async ({
     expect(button.x + button.width).toBeLessThanOrEqual(390);
   }
 });
+
+test('desktop consent uses a compact bottom-corner card', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const card = await page.locator('#cookie-consent-panel').boundingBox();
+  expect(card.width).toBeLessThanOrEqual(420);
+  expect(card.x).toBeGreaterThan(950);
+  expect(card.height).toBeLessThan(220);
+  for (const choice of ['analytics', 'essential']) {
+    const button = await page.locator(`[data-cookie-choice="${choice}"]`).boundingBox();
+    expect(button.height).toBeGreaterThanOrEqual(44);
+    expect(button.y + button.height).toBeLessThan(900);
+  }
+});
