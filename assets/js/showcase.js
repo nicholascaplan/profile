@@ -49,10 +49,11 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   apply(desk, variant(initial, 'Desk'), 'Desk');
   apply(mob, variant(initial, 'Mob'), 'Mob');
   let current = 0;
+  let wanted = 0;
   let swapSeq = 0;
   function select(index) {
-    const requested = (index + thumbs.length) % thumbs.length;
-    const chosen = thumbs[requested];
+    wanted = (index + thumbs.length) % thumbs.length;
+    const chosen = thumbs[wanted];
     // Swap the two shots atomically: only once BOTH new images have loaded,
     // so the desktop and mobile screenshots never visibly change at
     // different times. The latest choice wins if thumbnails are clicked
@@ -77,7 +78,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         caseEl.dispatchEvent(new Event('showcase:swap-failed'));
         return;
       }
-      current = requested;
+      current = wanted;
       thumbs.forEach((thumb, j) => {
         thumb.classList.toggle('sel', j === current);
         thumb.setAttribute('aria-pressed', String(j === current));
@@ -101,7 +102,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   }
   new MutationObserver((records) => {
     if (records.some((r) => r.attributeName === 'data-theme')) {
-      select(current);
+      select(wanted);
     }
   }).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
 
