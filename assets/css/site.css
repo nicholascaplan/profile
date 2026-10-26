@@ -145,7 +145,7 @@ button { color: inherit; font: inherit; }
 
 /* Home hero: the portrait sits beside the headline; the intro below runs full width. */
 .hero-grid { align-items: center; display: grid; gap: 48px; grid-template-columns: minmax(0, 1fr) auto; }
-.hero-grid .portrait-wrap { width: 250px; }
+.hero-grid .portrait-wrap { width: clamp(250px, 25vw, 320px); }
 
 /* Project headings precede the imagery in reading order. Desktop uses a
    two-column composition; smaller layouts follow the same natural DOM order. */

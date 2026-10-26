@@ -250,6 +250,15 @@ test('footer privacy stays bottom right with consistent small-print typography',
   }
 });
 
+test('hero portrait grows on desktop without changing the tablet size', async ({ page }) => {
+  for (const [width, expected] of [[1440, 320], [1024, 256], [768, 190]]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const size = await page.locator('.hero-grid .portrait-wrap').evaluate((el) => el.getBoundingClientRect().width);
+    assert.equal(size, expected, `portrait width at ${width}px`);
+  }
+});
+
 test('hero heading keeps earn and their on the same line', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
