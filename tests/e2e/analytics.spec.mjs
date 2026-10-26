@@ -203,3 +203,37 @@ test('desktop consent uses a compact bottom-corner card', async ({ page }) => {
     expect(button.y + button.height).toBeLessThan(900);
   }
 });
+
+test('failed withdrawal cannot restore a stale Allow after storage recovers', async ({ page }) => {
+  await page.route('https://websitesbynick.co.uk/**', route => route.fulfill({ contentType: route.request().url().endsWith('.js') ? 'text/javascript' : 'text/html', body: route.request().url().endsWith('.js') ? source : '<button data-cookie-preferences>Cookie preferences</button><script defer src="/assets/js/analytics.js" data-measurement-id="G-TESTONLY123"></script>' }));
+  let requests = 0;
+  await page.route('https://www.googletagmanager.com/**', route => { requests++; return route.fulfill({ body: '' }); });
+  await page.goto('https://websitesbynick.co.uk/');
+  await page.locator('[data-cookie-choice="analytics"]').click();
+  await expect.poll(() => requests).toBe(1);
+  await page.evaluate(() => { Storage.prototype.setItem = Storage.prototype.removeItem = function () { throw Error('blocked writes'); }; });
+  await page.getByRole('button', { name: 'Cookie preferences' }).click();
+  await page.locator('[data-cookie-choice="essential"]').click();
+  await expect(page.getByRole('status')).toContainText('could not save');
+  await page.reload();
+  await expect(page.locator('[data-google-analytics]')).toHaveCount(0);
+  expect(requests).toBe(1);
+  await page.getByRole('button', { name: 'Cookie preferences' }).click();
+  await page.locator('[data-cookie-choice="analytics"]').click();
+  await expect.poll(() => requests).toBe(2);
+});
+
+test('failed withdrawal reaches an already opted-in tab without a storage event', async ({ context, page }) => {
+  await context.route('https://websitesbynick.co.uk/**', route => route.fulfill({ contentType: route.request().url().endsWith('.js') ? 'text/javascript' : 'text/html', body: route.request().url().endsWith('.js') ? source : '<button data-cookie-preferences>Cookie preferences</button><script defer src="/assets/js/analytics.js" data-measurement-id="G-TESTONLY123"></script>' }));
+  await context.route('https://www.googletagmanager.com/**', route => route.fulfill({ body: '' }));
+  await page.goto('https://websitesbynick.co.uk/');
+  await page.locator('[data-cookie-choice="analytics"]').click();
+  const other = await context.newPage();
+  await other.goto('https://websitesbynick.co.uk/');
+  await expect(other.locator('[data-google-analytics]')).toHaveCount(1);
+  await page.evaluate(() => { Storage.prototype.setItem = Storage.prototype.removeItem = function () { throw Error('blocked writes'); }; });
+  await page.getByRole('button', { name: 'Cookie preferences' }).click();
+  await page.locator('[data-cookie-choice="essential"]').click();
+  await expect(other.locator('[data-google-analytics]')).toHaveCount(0);
+  await other.close();
+});
