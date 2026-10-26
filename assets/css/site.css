@@ -389,12 +389,13 @@ body[data-mobile="true"] .nav-chips a { align-items: center; background: var(--s
 body[data-mobile="true"] .nav-chips a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 700; }
 body[data-mobile="true"] .hero { padding: 24px 20px 30px; }
 body[data-mobile="true"] .hero h1 { font-size: clamp(38px, 11cqi, 48px); letter-spacing: -.065em; line-height: .98; margin: 14px 0 22px; }
-/* Leave the first two headline lines full-width, then wrap around the
-   portrait. The 96px top margin keeps the portrait clear of "Websites that"
-   and "earn their" (both wider than the beside-float measure at 320px), so the
-   layout holds even where shape-outside is not honoured. */
+/* Leave the first three headline lines full-width, then wrap around the
+   portrait. The 148px top margin keeps the portrait clear of "Websites that",
+   "earn their" and "place on the" (each wider than the beside-float measure
+   at 320px, and text ink overhangs the 0.98 line-height), so the layout holds
+   even where shape-outside is not honoured. */
 body[data-mobile="true"] .hero-grid { display: flow-root; }
-body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 96px 0 12px 14px; shape-outside: inset(96px 0 0 0) margin-box; width: clamp(88px, 28cqi, 130px); }
+body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 148px 0 12px 14px; shape-outside: inset(148px 0 0 0) margin-box; width: clamp(88px, 28cqi, 130px); }
 body[data-mobile="true"] .hero-intro { font-size: 17px; }
 body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin-top: 26px; }
 body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
