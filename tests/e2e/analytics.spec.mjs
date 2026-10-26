@@ -237,3 +237,21 @@ test('failed withdrawal reaches an already opted-in tab without a storage event'
   await expect(other.locator('[data-google-analytics]')).toHaveCount(0);
   await other.close();
 });
+
+test('storage removal preserves rejection when tab messaging and cookies are unavailable', async ({ context, page }) => {
+  await context.addInitScript(() => { window.BroadcastChannel = undefined; Object.defineProperty(document, 'cookie', { get() { return ''; }, set() {} }); });
+  await context.route('https://websitesbynick.co.uk/**', route => route.fulfill({ contentType: route.request().url().endsWith('.js') ? 'text/javascript' : 'text/html', body: route.request().url().endsWith('.js') ? source : '<button data-cookie-preferences>Cookie preferences</button><script defer src="/assets/js/analytics.js" data-measurement-id="G-TESTONLY123"></script>' }));
+  await context.route('https://www.googletagmanager.com/**', route => route.fulfill({ body: '' }));
+  await page.goto('https://websitesbynick.co.uk/');
+  await page.locator('[data-cookie-choice="analytics"]').click();
+  const other = await context.newPage();
+  await other.goto('https://websitesbynick.co.uk/');
+  await expect(other.locator('[data-google-analytics]')).toHaveCount(1);
+  const reloaded = other.waitForEvent('load');
+  await page.evaluate(() => localStorage.removeItem('websites-by-nick-cookie-preferences'));
+  await reloaded;
+  await expect(other.locator('#cookie-consent-panel')).toBeHidden();
+  expect(await other.evaluate(() => localStorage.getItem('websites-by-nick-cookie-preferences'))).toBe('essential');
+  await expect(other.locator('[data-google-analytics]')).toHaveCount(0);
+  await other.close();
+});
