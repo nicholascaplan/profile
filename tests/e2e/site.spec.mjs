@@ -739,6 +739,15 @@ test('showcase: a failed screenshot preserves the displayed pair and allows retr
   assert.deepEqual(await shotPair(page), before, 'a failed replacement cannot discard either working screenshot');
   assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
   assert.equal(await page.locator('.case:first-child .thumb.sel').textContent(), 'Homepage');
+  // After a failed swap the displayed pair stays the theme-swap target (the
+  // brief: keep the working pair and its selected label): a theme change
+  // re-themes the working pair rather than retrying the failed tab.
+  await page.evaluate(() => { document.body.dataset.theme = 'light'; });
+  await page.waitForFunction(() => {
+    const src = document.querySelector('.case:first-child .shot-mob').currentSrc;
+    return src.includes('foa-home-mob') && !src.includes('-dark');
+  });
+  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
   fail = false;
   await page.click('.case:first-child .thumb:nth-child(3)');
   await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fundraising-mob'));
