@@ -146,6 +146,8 @@ button { color: inherit; font: inherit; }
 /* Home hero: the portrait sits beside the headline; the intro below runs full width. */
 .hero-grid { align-items: center; display: grid; gap: 48px; grid-template-columns: minmax(0, 1fr) auto; }
 .hero-grid .portrait-wrap { width: clamp(250px, 25vw, 320px); }
+.hero-text { grid-column: 1; grid-row: 1; }
+.hero-grid .portrait-wrap { grid-column: 2; grid-row: 1; }
 
 /* Project headings precede the imagery in reading order. Desktop uses a
    two-column composition; smaller layouts follow the same natural DOM order. */
@@ -387,8 +389,11 @@ body[data-mobile="true"] .nav-chips a { align-items: center; background: var(--s
 body[data-mobile="true"] .nav-chips a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 700; }
 body[data-mobile="true"] .hero { padding: 24px 20px 30px; }
 body[data-mobile="true"] .hero h1 { font-size: clamp(38px, 11cqi, 48px); letter-spacing: -.065em; line-height: .98; margin: 14px 0 22px; }
-body[data-mobile="true"] .hero-grid { gap: 14px; }
-body[data-mobile="true"] .hero-grid .portrait-wrap { width: clamp(88px, 28cqi, 130px); }
+/* Leave the first headline line full-width, then wrap around the portrait.
+   The shape excludes the float's top margin so it does not reserve an empty
+   portrait column above the image. */
+body[data-mobile="true"] .hero-grid { display: flow-root; }
+body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 72px 0 12px 14px; shape-outside: inset(72px 0 0 0) margin-box; width: clamp(88px, 28cqi, 130px); }
 body[data-mobile="true"] .hero-intro { font-size: 17px; }
 body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin-top: 26px; }
 body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
@@ -439,6 +444,7 @@ body[data-mobile="true"][data-style="atelier"] .role { display: block; }
 @media (max-width: 15rem) {
   .hero h1, body[data-mobile="true"] .hero h1 { font-size: min(3.5rem, 13vw); }
   .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .hero-grid .portrait-wrap { grid-column: 1; grid-row: 2; }
   .hero-grid .portrait-wrap { width: 160px; }
   .page-hero h1, body[data-mobile="true"] .page-hero h1 { font-size: min(2.8rem, 12vw); }
   .footer h2, body[data-mobile="true"] .footer h2 { font-size: min(2.8rem, 12vw); }

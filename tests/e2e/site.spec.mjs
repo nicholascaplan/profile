@@ -390,9 +390,15 @@ test('portrait: headline and portrait share the hero without overlap or horizont
       const h1 = document.querySelector('.hero h1');
       const p = document.querySelector('.hero .portrait');
       if (!h1 || !p || p.offsetParent === null) return { missing: true };
-      const a = h1.getBoundingClientRect();
       const b = p.getBoundingClientRect();
-      const overlap = !(b.right <= a.left || b.left >= a.right || b.bottom <= a.top || b.top >= a.bottom);
+      const walker = document.createTreeWalker(h1, NodeFilter.SHOW_TEXT);
+      const lines = [];
+      while (walker.nextNode()) {
+        const range = document.createRange();
+        range.selectNodeContents(walker.currentNode);
+        lines.push(...range.getClientRects());
+      }
+      const overlap = lines.some((a) => !(b.right <= a.left || b.left >= a.right || b.bottom <= a.top || b.top >= a.bottom));
       return {
         overlap,
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -436,7 +442,7 @@ test('responsive public layout: tablet and laptop widths stay fluid on every pag
 });
 
 test('phone: work appears before details, body text is readable and headline wraps comfortably', async ({ page }) => {
-  for (const width of [320, 360, 390, 600]) {
+  for (const width of [320, 360, 390, 430, 600]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
@@ -448,15 +454,24 @@ test('phone: work appears before details, body text is readable and headline wra
       const h1 = document.querySelector('.hero h1');
       const range = document.createRange();
       range.selectNodeContents(h1);
-      const text = range.getBoundingClientRect();
+      const walker = document.createTreeWalker(h1, NodeFilter.SHOW_TEXT);
+      const lines = [];
+      while (walker.nextNode()) {
+        range.selectNodeContents(walker.currentNode);
+        lines.push(...range.getClientRects());
+      }
       const portrait = document.querySelector('.portrait').getBoundingClientRect();
+      const opening = document.createRange();
+      opening.setStart(h1.firstChild, 0);
+      opening.setEnd(h1.firstChild, 'Websites that'.length);
       return {
         headingBeforeImage: heading.bottom <= image.top,
         imageBeforeDetails: image.bottom <= details.top,
         imageTop: image.top,
         font: parseFloat(getComputedStyle(caseEl.querySelector('p')).fontSize),
         headlineLines: h1.getBoundingClientRect().height / parseFloat(getComputedStyle(h1).lineHeight),
-        portraitBeside: portrait.left >= text.right - 1,
+        portraitBeside: lines.every((line) => line.bottom <= portrait.top || line.top >= portrait.bottom || line.right <= portrait.left),
+        openingLines: opening.getClientRects().length,
         portraitWidth: portrait.width,
         contactLink: document.querySelector('.intro-contact').getBoundingClientRect().height,
       };
@@ -465,6 +480,7 @@ test('phone: work appears before details, body text is readable and headline wra
     assert.ok(state.font >= 16, `project body copy is at least 16px at ${width}px`);
     assert.ok(state.headlineLines <= 5.1, `headline has at most five lines at ${width}px (saw ${state.headlineLines})`);
     assert.ok(state.portraitBeside, `portrait remains beside the painted headline at ${width}px`);
+    assert.equal(state.openingLines, 1, `Websites that uses the full first line at ${width}px`);
     assert.ok(state.imageTop < 800, `first project image appears within 800px at ${width}px (saw ${state.imageTop})`);
     assert.ok(state.contactLink >= 44, 'early enquiry link has a comfortable target');
     if (width === 320) assert.ok(state.portraitWidth < 90, 'portrait scales down on narrow screens');
@@ -520,11 +536,15 @@ test('desktop mobile preview: content fits the frame and matches a phone layout'
       return { display: css.display, columns: css.gridTemplateColumns };
     });
     const hero = document.querySelector('.hero');
-    const range = document.createRange();
-    range.selectNodeContents(hero.querySelector('h1'));
-    const text = range.getBoundingClientRect();
+    const walker = document.createTreeWalker(hero.querySelector('h1'), NodeFilter.SHOW_TEXT);
+    const lines = [];
+    while (walker.nextNode()) {
+      const range = document.createRange();
+      range.selectNodeContents(walker.currentNode);
+      lines.push(...range.getClientRects());
+    }
     const portrait = hero.querySelector('.portrait').getBoundingClientRect();
-    const overlap = !(portrait.right <= text.left || portrait.left >= text.right || portrait.bottom <= text.top || portrait.top >= text.bottom);
+    const overlap = lines.some((text) => !(portrait.right <= text.left || portrait.left >= text.right || portrait.bottom <= text.top || portrait.top >= text.bottom));
     return { width: shell.width, clipped, structures, overlap };
   };
   await page.setViewportSize(DESKTOP);
