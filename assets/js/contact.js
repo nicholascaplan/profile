@@ -59,7 +59,7 @@ if (form && window.fetch && window.FormData && window.AbortController) {
         method: 'POST', body, headers: { Accept: 'application/json' }, signal: controller.signal,
       });
       const data = await response.json().catch(() => null);
-      if (response.ok && data && data.ok === true) {
+      if (response.ok && data && typeof data.next === 'string' && !data.errors && !data.error) {
         sent = true;
         form.querySelector('.contact-fields').hidden = true;
         submit.hidden = true;
