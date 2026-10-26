@@ -108,3 +108,55 @@ test('first desktop capture has high priority before sources are assigned', asyn
     { property: 'src', priority: 'high' },
   ]);
 });
+
+test('a rejected decode retains both displayed images and selected label', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
+  const before = await page.locator('.case:first-child .shot-img').evaluateAll((images) => images.map((i) => i.currentSrc));
+  await page.evaluate(() => {
+    const decode = HTMLImageElement.prototype.decode;
+    let rejected = false;
+    HTMLImageElement.prototype.decode = function () {
+      return decode.call(this).then(() => {
+        if (!rejected) { rejected = true; throw new Error('synthetic decode failure'); }
+      });
+    };
+    window.failedDecodeSwap = new Promise((resolve) => document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true }));
+  });
+  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.evaluate(() => window.failedDecodeSwap);
+  expect(await page.locator('.case:first-child .shot-img').evaluateAll((images) => images.map((i) => i.currentSrc))).toEqual(before);
+  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Homepage');
+  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Homepage');
+});
+
+test('an older decoded pair cannot overwrite a newer selection', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
+  await page.evaluate(() => {
+    const decode = HTMLImageElement.prototype.decode;
+    window.olderDecodeReleases = [];
+    window.olderDecodesCompleted = 0;
+    HTMLImageElement.prototype.decode = function () {
+      return decode.call(this).then(() => {
+        if (this.src.includes('foa-whatson-')) return new Promise((resolve) => window.olderDecodeReleases.push(resolve)).then(() => { window.olderDecodesCompleted++; });
+      });
+    };
+  });
+  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.waitForFunction(() => window.olderDecodeReleases.length === 2);
+  await page.locator('.case:first-child .thumb:nth-child(3)').click();
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-fundraising-desk/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-fundraising-mob/);
+  await page.evaluate(async () => {
+    window.olderDecodeReleases.forEach((release) => release());
+    // A task boundary lets all promise continuations, including the pair's
+    // Promise.all commit callback, finish before preservation is checked.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(await page.evaluate(() => window.olderDecodesCompleted)).toBe(2);
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-fundraising-desk/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-fundraising-mob/);
+  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Fundraising');
+  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Fundraising');
+});
