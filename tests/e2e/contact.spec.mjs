@@ -35,7 +35,7 @@ test('accepted message stays on site; pending prevents duplicates; fresh-message
     requests++;
     expect(route.request().headers().accept).toBe('application/json');
     await gate;
-    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"next":"/thanks"}' });
   });
   await complete(page);
   await page.getByRole('button', { name: 'Send message', exact: true }).click();
@@ -76,7 +76,7 @@ test('connection failure retains message and can be retried successfully', async
   await page.getByRole('button', { name: 'Send message', exact: true }).click();
   await expect(page.locator('#contact-status')).toContainText('Check your connection');
   await expect(page.locator('#contact-message')).not.toHaveValue('');
-  await page.route(endpoint, route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
+  await page.route(endpoint, route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"next":"/thanks"}' }));
   await page.getByRole('button', { name: 'Send message', exact: true }).click();
   await expect(page.locator('#contact-status')).toContainText('your message has been sent');
 });
