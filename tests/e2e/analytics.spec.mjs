@@ -186,6 +186,7 @@ test('desktop consent uses a compact bottom-corner card', async ({ page }) => {
   const card = await page.locator('#cookie-consent-panel').boundingBox();
   expect(card.width).toBeLessThanOrEqual(420);
   expect(card.x).toBeGreaterThan(950);
+  expect(card.x + card.width).toBeLessThanOrEqual(1440);
   expect(card.height).toBeLessThan(220);
   for (const choice of ['analytics', 'essential']) {
     const button = await page.locator(`[data-cookie-choice="${choice}"]`).boundingBox();
