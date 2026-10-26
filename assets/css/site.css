@@ -261,7 +261,7 @@ body[data-style="atelier"][data-theme="dark"] .form-field textarea:focus { borde
 .footer-bottom > span:nth-child(2) { grid-area: source; }
 .footer-bottom > span:nth-child(3) { grid-area: privacy; text-align: right; }
 .footer-bottom > span:last-child { grid-area: credit; text-align: right; }
-.footer-bottom a { font: inherit; letter-spacing: inherit; }
+.footer-bottom a { align-items: center; display: inline-flex; font: inherit; letter-spacing: inherit; }
 .github-link { align-items: center; display: inline-flex; gap: 7px; }
 .github-icon { display: block; fill: currentColor; height: 15px; width: 15px; }
 body[data-style="atelier"] .footer .section-kicker { color: #fff; }
@@ -389,11 +389,12 @@ body[data-mobile="true"] .nav-chips a { align-items: center; background: var(--s
 body[data-mobile="true"] .nav-chips a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 700; }
 body[data-mobile="true"] .hero { padding: 24px 20px 30px; }
 body[data-mobile="true"] .hero h1 { font-size: clamp(38px, 11cqi, 48px); letter-spacing: -.065em; line-height: .98; margin: 14px 0 22px; }
-/* Leave the first headline line full-width, then wrap around the portrait.
-   The shape excludes the float's top margin so it does not reserve an empty
-   portrait column above the image. */
+/* Leave the first two headline lines full-width, then wrap around the
+   portrait. The 96px top margin keeps the portrait clear of "Websites that"
+   and "earn their" (both wider than the beside-float measure at 320px), so the
+   layout holds even where shape-outside is not honoured. */
 body[data-mobile="true"] .hero-grid { display: flow-root; }
-body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 72px 0 12px 14px; shape-outside: inset(72px 0 0 0) margin-box; width: clamp(88px, 28cqi, 130px); }
+body[data-mobile="true"] .hero-grid .portrait-wrap { float: right; margin: 96px 0 12px 14px; shape-outside: inset(96px 0 0 0) margin-box; width: clamp(88px, 28cqi, 130px); }
 body[data-mobile="true"] .hero-intro { font-size: 17px; }
 body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin-top: 26px; }
 body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
@@ -429,7 +430,7 @@ body[data-mobile="true"] .contact-form { margin-top: 28px; }
 body[data-mobile="true"] .footer { padding: 28px 20px 18px; }
 body[data-mobile="true"] .footer h2 { font-size: 48px; line-height: .95; margin-bottom: 18px; }
 body[data-mobile="true"] .footer-intro { font-size: 16px; margin: 0 0 28px; }
-body[data-mobile="true"] .footer-bottom { grid-template-areas: "source privacy"; }
+body[data-mobile="true"] .footer-bottom { grid-template-areas: "source" "privacy"; grid-template-columns: minmax(0, 1fr); }
 body[data-mobile="true"] .footer-bottom > span:first-child,
 body[data-mobile="true"] .footer-bottom > span:last-child { display: none; }
 body[data-mobile="true"][data-style="atelier"] .role { display: block; }
