@@ -52,3 +52,5 @@ Personal profile page for Nick Caplan, live at [websitesbynick.co.uk](https://we
 - The Privacy page describes actual website behaviour and existing Formspree use; it makes no invented retention promises.
 
 Cookie preferences uses explicit theme colours rather than native button defaults, with readable labels in light/dark and hover/focus states.
+
+Consent panel stays compact: short optional-analytics explanation, side-by-side equal-weight Allow/Reject controls with 44px touch targets. Mobile standard-text panel should use less than 25% of an 844px viewport; enlarged text remains scrollable without horizontal clipping.
