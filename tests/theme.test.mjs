@@ -48,7 +48,7 @@ function runPage({ prefersDark = false, stored = {} }) {
     },
   };
   const window = {
-    location: { hostname: 'nickcaplan.github.io' },
+    location: { hostname: 'websitesbynick.co.uk' },
     localStorage: {
       getItem: (key) => (key in store ? store[key] : null),
       setItem: (key, value) => { store[key] = String(value); },
@@ -137,7 +137,7 @@ test('storage failures never break theme setup or toggling', () => {
     querySelectorAll() { return []; },
   };
   const window = {
-    location: { hostname: 'nickcaplan.github.io' },
+    location: { hostname: 'websitesbynick.co.uk' },
     localStorage: {
       getItem() { throw new Error('denied'); },
       setItem() { throw new Error('denied'); },
