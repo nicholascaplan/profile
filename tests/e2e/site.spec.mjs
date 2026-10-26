@@ -471,6 +471,7 @@ test('phone: work appears before details, body text is readable and headline wra
         font: parseFloat(getComputedStyle(caseEl.querySelector('p')).fontSize),
         headlineLines: h1.getBoundingClientRect().height / parseFloat(getComputedStyle(h1).lineHeight),
         portraitBeside: lines.every((line) => line.bottom <= portrait.top || line.top >= portrait.bottom || line.right <= portrait.left),
+        linesBesidePortrait: lines.filter((line) => line.bottom > portrait.top && line.top < portrait.bottom && line.right <= portrait.left).length,
         openingLines: opening.getClientRects().length,
         portraitWidth: portrait.width,
         contactLink: document.querySelector('.intro-contact').getBoundingClientRect().height,
@@ -480,6 +481,7 @@ test('phone: work appears before details, body text is readable and headline wra
     assert.ok(state.font >= 16, `project body copy is at least 16px at ${width}px`);
     assert.ok(state.headlineLines <= 5.1, `headline has at most five lines at ${width}px (saw ${state.headlineLines})`);
     assert.ok(state.portraitBeside, `portrait remains beside the painted headline at ${width}px`);
+    assert.ok(state.linesBesidePortrait >= 2, `at least two painted headline lines wrap beside the portrait at ${width}px (saw ${state.linesBesidePortrait})`);
     assert.equal(state.openingLines, 1, `Websites that uses the full first line at ${width}px`);
     assert.ok(state.imageTop < 800, `first project image appears within 800px at ${width}px (saw ${state.imageTop})`);
     assert.ok(state.contactLink >= 44, 'early enquiry link has a comfortable target');
