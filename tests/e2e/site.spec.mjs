@@ -259,6 +259,15 @@ test('hero portrait grows on desktop without changing the tablet size', async ({
   }
 });
 
+test('phone portrait is larger while still scaling down for narrow screens', async ({ page }) => {
+  for (const [width, expected] of [[320, 89.6], [390, 109.2], [430, 120.4], [600, 130]]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const size = await page.locator('.hero-grid .portrait-wrap').evaluate((el) => el.getBoundingClientRect().width);
+    assert.ok(Math.abs(size - expected) < 1, `portrait is about ${expected}px at ${width}px`);
+  }
+});
+
 test('hero heading keeps earn and their on the same line', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);

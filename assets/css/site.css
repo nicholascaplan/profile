@@ -388,7 +388,7 @@ body[data-mobile="true"] .nav-chips a[aria-current="page"] { background: var(--a
 body[data-mobile="true"] .hero { padding: 24px 20px 30px; }
 body[data-mobile="true"] .hero h1 { font-size: clamp(38px, 11cqi, 48px); letter-spacing: -.065em; line-height: .98; margin: 14px 0 22px; }
 body[data-mobile="true"] .hero-grid { gap: 14px; }
-body[data-mobile="true"] .hero-grid .portrait-wrap { width: clamp(76px, 23cqi, 110px); }
+body[data-mobile="true"] .hero-grid .portrait-wrap { width: clamp(88px, 28cqi, 130px); }
 body[data-mobile="true"] .hero-intro { font-size: 17px; }
 body[data-mobile="true"] .hero-actions { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin-top: 26px; }
 body[data-mobile="true"] .hero-actions .button { min-width: 0; width: 100%; }
