@@ -64,3 +64,21 @@ test('paired screenshot changes wait for both decoded candidates', async ({ page
   await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-whatson-desk/);
   await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-whatson-mob/);
 });
+
+
+test('screenshot activation preserves the reserved layout before scripts run', async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await page.route('**/assets/js/showcase.js', async (route) => { await gate; await route.continue(); });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/', { waitUntil: 'commit' });
+  await page.evaluate(() => document.fonts.ready);
+  const box = () => page.locator('.case:first-child .shot').boundingBox();
+  const before = await box();
+  expect(before.height).toBeGreaterThan(300);
+  release();
+  await expect(page.locator('.shot-img')).toHaveCount(4);
+  const after = await box();
+  expect(Math.abs(after.height - before.height)).toBeLessThan(1);
+  expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+});
