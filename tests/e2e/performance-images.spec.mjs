@@ -42,3 +42,25 @@ test('static no-JavaScript homepage retains all showcase images', async ({ brows
   for (const image of await page.locator('.shot-img').all()) await expect(image).toBeVisible();
   await context.close();
 });
+
+test('paired screenshot changes wait for both decoded candidates', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
+  await page.evaluate(() => {
+    window.decodeReleases = [];
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
+    };
+  });
+  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.waitForFunction(() => window.decodeReleases.length === 2);
+  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-home-desk');
+  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-home-mob');
+  await page.evaluate(() => window.decodeReleases[0]());
+  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-home-desk');
+  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-home-mob');
+  await page.evaluate(() => window.decodeReleases[1]());
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-whatson-desk/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-whatson-mob/);
+});
