@@ -68,7 +68,9 @@
       warning.className = 'cookie-save-warning';
       warning.setAttribute('role', 'status');
       warning.textContent = 'Your browser could not save your cookie choice normally. Analytics is off here. If you block all browser storage, close other tabs and check your choice when you return.';
-      document.body.insertBefore(warning, document.body.firstChild);
+      panel.insertBefore(warning, panel.firstChild);
+      panel.hidden = false;
+      reserveSpace();
     }
   }
   /** Enable this production stream after opt-in, loading the tag only once. */
