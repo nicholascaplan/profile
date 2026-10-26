@@ -632,8 +632,14 @@ test('showcase: a failed screenshot preserves the displayed pair and allows retr
   await page.waitForFunction(initialPairLoaded);
   const before = await shotPair(page);
   const failedResponse = page.waitForResponse((response) => response.url().includes('fundraising-desk-dark.webp') && response.status() === 404);
+  await page.evaluate(() => {
+    window.failedShowcaseSwap = new Promise((resolve) => {
+      document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true });
+    });
+  });
   await page.click('.case:first-child .thumb:nth-child(3)');
   await failedResponse;
+  await page.evaluate(() => window.failedShowcaseSwap);
   assert.deepEqual(await shotPair(page), before, 'a failed replacement cannot discard either working screenshot');
   assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
   assert.equal(await page.locator('.case:first-child .thumb.sel').textContent(), 'Homepage');
