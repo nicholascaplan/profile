@@ -62,12 +62,10 @@ Desktop consent uses a 420px bottom-right card with a 24px edge gap, not a full-
 
 - Update (26 October 2026, approved option B): screenshot page choices use quiet text labels on one thin baseline with a terracotta underline for the selected view, rather than enclosing boxes. Preserve the existing screenshot switching, aria-pressed state, keyboard focus ring and at least44px hit targets. Keep page navigation chips and live-site CTAs unchanged: they have a different place in the action hierarchy.
 
-<<<<<<< perf/responsive-theme-images
 ## Image delivery (26 October 2026)
 
 Preserve the approved composition and sharp screenshot text. Initial screenshots are created from inert templates after the saved theme is known, so a light-theme visit never downloads the dark set first. Noscript keeps complete static dark captures. Responsive homepage screenshot and portrait candidates let the browser choose detail for its viewport and pixel density; original full-size captures remain the upper-resolution fallback and non-home tab captures. A small explicit source manifest maps those candidates to their stable asset filenames. Load/decode both selected screenshot candidates before committing a tab or theme swap, preserving the atomic pair and latest-selection behaviour. Keep the first Friends of Ashley desktop capture eager and high priority because it can be the mobile largest-contentful-paint element. Do not trade retina sharpness, no-JS content, theme first paint or consent for a performance score.
 
 If a replacement screenshot cannot load or decode, keep the existing working pair and its selected label. A later choice or retry must still work; never replace a working pair with a broken image.
-=======
+
 - Update (26 October 2026): at Nick's direction the Experience page's pre-NatWest roles foreground website delivery. Oddschecker is presented as the high-traffic website it was - the 100,000+ monthly visitors and 2-to-23 US state figures are restored from his original CV copy - and the Moogsoft and Alfa entries describe their web platforms explicitly. The NatWest Boxed entry is unchanged. No new projects, responsibilities or results were introduced; existing approved facts were reworded only.
->>>>>>> main
