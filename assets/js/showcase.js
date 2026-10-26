@@ -72,7 +72,11 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       apply(pre, src, kind);
     });
     Promise.all([ready(desk, srcD, 'Desk'), ready(mob, srcM, 'Mob')]).then((readyPair) => {
-      if (mySeq !== swapSeq || !readyPair.every(Boolean)) return;
+      if (mySeq !== swapSeq) return;
+      if (!readyPair.every(Boolean)) {
+        caseEl.dispatchEvent(new Event('showcase:swap-failed'));
+        return;
+      }
       current = requested;
       thumbs.forEach((thumb, j) => {
         thumb.classList.toggle('sel', j === current);
