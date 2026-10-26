@@ -624,20 +624,29 @@ test('showcase: rapid thumbnail changes settle on the latest choice', async ({ p
   assert.equal(state.selected, 'Fundraising', 'selected label follows the latest choice');
 });
 
-test('showcase: a failed screenshot does not block the pair swap', async ({ page }) => {
-  await page.route('**/assets/images/work/foa-fundraising-desk-dark.webp', (route) => route.fulfill({ status: 404, body: '' }));
+test('showcase: a failed screenshot preserves the displayed pair and allows retry', async ({ page }) => {
+  let fail = true;
+  await page.route('**/assets/images/work/foa-fundraising-desk-dark.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
+  const before = await shotPair(page);
+  const failedResponse = page.waitForResponse((response) => response.url().includes('fundraising-desk-dark.webp') && response.status() === 404);
   await page.click('.case:first-child .thumb:nth-child(3)');
-  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fundraising-mob'), { timeout: 8000 });
+  await failedResponse;
+  assert.deepEqual(await shotPair(page), before, 'a failed replacement cannot discard either working screenshot');
+  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
+  assert.equal(await page.locator('.case:first-child .thumb.sel').textContent(), 'Homepage');
+  fail = false;
+  await page.click('.case:first-child .thumb:nth-child(3)');
+  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fundraising-mob'));
   const state = await page.evaluate(() => ({
     deskSrc: document.querySelector('.case:first-child .shot-desk').src,
     deskAlt: document.querySelector('.case:first-child .shot-desk').alt,
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
-  assert.ok(state.deskSrc.includes('fundraising-desk'), 'failed desktop image still commits its src');
-  assert.match(state.deskAlt, /Fundraising/, 'alt text accompanies the failed image');
+  assert.ok(state.deskSrc.includes('fundraising-desk'), 'retry commits the working replacement');
+  assert.match(state.deskAlt, /Fundraising/);
   assert.equal(state.pill, 'Fundraising');
 });
 
