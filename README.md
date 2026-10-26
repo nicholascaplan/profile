@@ -29,7 +29,7 @@ npm run dev -- --port 3000
 - Includes light and dark themes with the selected theme persisted in `localStorage`.
 - Includes a mobile preview mode that can be toggled from the page navigation locally or on Netlify deploy previews. Only an explicit preview choice creates a 430px phone frame; the public site stays fluid, with phone styling at 600px and below and stacked project layouts up to 960px. Without a manual override, previews also follow viewport changes.
 - Responsive CSS adapts the layout for narrow screens and mobile preview mode.
-- Behaviour checks run with `node --test` (see `tests/`) - no dependencies. Product and design decisions are recorded in `docs/PROJECT-BRIEF.md`.
+- Behaviour checks run with `node --test` (see `tests/`) - no dependencies. Requirements are in `docs/project-brief.md` and important decisions in `docs/decisions.md`.
 - GitHub Pages deployment is handled by `.github/workflows/pages.yml` on pushes to `main`.
 
 ## Contributing
