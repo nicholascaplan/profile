@@ -40,6 +40,8 @@ Every page has the same navigation, visible at all screen sizes, and the same fo
 
 - Pages load quickly on a throttled mobile connection. Fonts are self-hosted, images are optimised and sized for where they appear, and there is no render-blocking third-party code.
 - Optimisation must not visibly reduce image sharpness.
+- Project screenshots are delivered responsively. Initial screenshots are created from inert templates once the saved theme is known, so a light-theme visit never downloads the dark set first. Homepage screenshot and portrait candidates let the browser choose detail for the viewport and pixel density, with the original full-size captures as the upper-resolution fallback and as the non-home tab captures; noscript keeps complete static dark captures. The first Friends of Ashley desktop capture stays eager and high priority because it can be the mobile largest-contentful-paint element. Retina sharpness, no-JS content, theme first paint and consent are never traded for a performance score.
+- Both selected screenshot candidates load and decode before a tab or theme swap commits, preserving the atomic pair and latest-selection behaviour. If a replacement cannot load or decode, the existing working pair and its selected label stay; a later choice or retry must still work.
 
 ## Privacy and analytics
 

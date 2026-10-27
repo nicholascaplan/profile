@@ -163,6 +163,8 @@ button { color: inherit; font: inherit; }
 .shotbar { align-items: center; background: #10131a; display: flex; gap: 8px; padding: 10px 14px; }
 .shotbar .t { color: #edf1ed; font-family: var(--body); font-size: 12px; letter-spacing: .06em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shotbar .pill { background: #3d4a41; border-radius: 99px; color: #d8e0d8; flex: none; font-family: var(--body); font-size: 10.5px; letter-spacing: .12em; margin-left: auto; padding: 3px 9px; }
+/* Reserve screenshot space before its theme-aware template is activated. */
+.shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: block; aspect-ratio: 1280 / 713; width: 100%; }
 .shot-img { display: block; object-fit: cover; width: 100%; }
 .shot-desk { aspect-ratio: 1280 / 713; }
 .shot-mob { aspect-ratio: 390 / 844; }
