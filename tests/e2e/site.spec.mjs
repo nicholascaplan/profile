@@ -663,8 +663,11 @@ test('showcase: composed overviews have a single readable set of controls at eve
 });
 
 // Desktop composition (Nick, 26 October 2026): on desktop widths the phone
-// capture sits beside the desktop capture at the same height instead of
-// overlaying it; stacked and phone layouts keep the overlay inset.
+// capture sits beside the desktop capture instead of overlaying it; stacked
+// and phone layouts keep the overlay inset. Nick, 27 October 2026: the pair
+// must not read as the same screen - the phone capture is bottom-aligned,
+// shorter than the desktop capture, and carries a visible device frame
+// (rounded corners, rim and bezel ring) so it reads as a phone.
 const shotGeometry = (page, caseSel = '.case:first-child') => page.evaluate((cs) => {
   const rectOf = (sel) => {
     const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
@@ -673,10 +676,13 @@ const shotGeometry = (page, caseSel = '.case:first-child') => page.evaluate((cs)
   const desk = rectOf('.shot-desk');
   const mob = rectOf('.shot-mob');
   const card = rectOf('.shot');
-  const mobPosition = getComputedStyle(document.querySelector(`${cs} .shot-mob`)).position;
+  const mobStyle = getComputedStyle(document.querySelector(`${cs} .shot-mob`));
+  const mobPosition = mobStyle.position;
+  const mobRadius = parseFloat(mobStyle.borderTopLeftRadius);
+  const mobHasBezel = mobStyle.boxShadow.includes('inset');
   const overlap = Math.max(0, Math.min(desk.right, mob.right) - Math.max(desk.left, mob.left))
     * Math.max(0, Math.min(desk.bottom, mob.bottom) - Math.max(desk.top, mob.top));
-  return { card, desk, mob, mobPosition, overlap };
+  return { card, desk, mob, mobPosition, mobRadius, mobHasBezel, overlap };
 }, caseSel);
 
 test('showcase: desktop pairs the phone capture beside the desktop capture; smaller layouts keep the overlay', async ({ page, isMobile }) => {
@@ -689,8 +695,11 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
       const g = await shotGeometry(page, caseSel);
       assert.equal(g.mobPosition, 'static', `${caseSel} phone capture sits in the card row at ${width}px`);
       assert.ok(g.mob.left >= g.desk.right - 1, `${caseSel} phone capture starts where the desktop capture ends at ${width}px`);
-      assert.ok(Math.abs(g.mob.top - g.desk.top) <= 1, `${caseSel} captures share a top edge at ${width}px`);
-      assert.ok(Math.abs(g.mob.height - g.desk.height) <= 2, `${caseSel} captures share a height at ${width}px (desk ${g.desk.height.toFixed(1)}, mob ${g.mob.height.toFixed(1)})`);
+      assert.ok(Math.abs(g.mob.bottom - g.desk.bottom) <= 1, `${caseSel} captures share a baseline at ${width}px`);
+      const ratio = g.mob.height / g.desk.height;
+      assert.ok(ratio >= 0.75 && ratio <= 0.92, `${caseSel} phone capture is the shorter device at ${width}px (ratio ${ratio.toFixed(3)})`);
+      assert.ok(g.mobRadius >= 14, `${caseSel} phone capture has device corners at ${width}px`);
+      assert.ok(g.mobHasBezel, `${caseSel} phone capture has a bezel ring at ${width}px`);
       assert.ok(g.mob.right <= g.card.right + 1 && g.desk.left >= g.card.left - 1, `${caseSel} both captures stay inside the card at ${width}px`);
       assert.equal(g.overlap, 0, `${caseSel} no overlap at ${width}px`);
     }
