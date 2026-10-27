@@ -184,6 +184,7 @@ button { color: inherit; font: inherit; }
   body:not([data-mobile="true"]) .shot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.216fr); column-gap: 14px; align-items: end; padding: 14px; }
   body:not([data-mobile="true"]) .shotbar { grid-column: 1; border: 1px solid #454c54; border-bottom: 0; border-radius: 12px 12px 0 0; }
   body:not([data-mobile="true"]) .shot-desk { grid-column: 1; border: 1px solid #454c54; border-top: 0; border-radius: 0 0 12px 12px; box-shadow: 0 12px 24px rgba(0, 0, 0, .45); }
+  body:not([data-mobile="true"]) .shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { grid-column: 1; }
   body:not([data-mobile="true"]) .shot-mob { position: static; height: auto; width: 100%; border-color: #454c54; border-radius: 20px; box-shadow: inset 0 0 0 6px #17191c, 0 12px 24px rgba(0, 0, 0, .45); }
   body:not([data-mobile="true"]) .shot-tag { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .16em; padding: 8px 2px 0; text-transform: uppercase; }
   /* Anchored to the right with an inset: enlarged text grows the word
