@@ -198,6 +198,8 @@ button { color: inherit; font: inherit; }
      Nick, 27 October 2026 (PR #24 comment 6447346709). */
   body:not([data-mobile="true"]) .shot-phone .shot-mob, body:not([data-mobile="true"]) .shot-phone > noscript { position: absolute; inset: 0; height: 100%; width: auto; margin: 0 auto; border-color: #454c54; border-radius: 20px; box-shadow: inset 0 0 0 6px #17191c, 0 12px 24px rgba(0, 0, 0, .45); }
   body:not([data-mobile="true"]) .shot-phone > noscript > .shot-mob { height: 100%; width: auto; }
+  /* Paint the bezel above the opaque capture without changing its geometry. */
+  body:not([data-mobile="true"]) .shot-phone::after { content: ""; position: absolute; inset: 0; height: 100%; width: auto; aspect-ratio: 390 / 844; margin: 0 auto; border: 6px solid #17191c; border-radius: 20px; box-sizing: border-box; pointer-events: none; z-index: 1; }
   body:not([data-mobile="true"]) .shot-tag { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .16em; padding: 8px 2px 0; text-transform: uppercase; }
   /* Anchored to the right with an inset: enlarged text grows the word
      leftward into the column gap, never toward the card's clipped rounded

@@ -726,7 +726,8 @@ const shotGeometry = (page, caseSel = '.case:first-child') => page.evaluate((cs)
   const mobPosition = mobStyle.position;
   const phonePosition = phoneEl ? getComputedStyle(phoneEl).position : null;
   const mobRadius = parseFloat(mobStyle.borderTopLeftRadius);
-  const mobHasBezel = mobStyle.boxShadow.includes('inset');
+  const bezel = getComputedStyle(phoneEl, '::after');
+  const mobHasBezel = bezel.content === '""' && bezel.position === 'absolute' && bezel.borderTopWidth === '6px' && bezel.borderTopColor === 'rgb(23, 25, 28)' && bezel.zIndex === '1' && bezel.pointerEvents === 'none';
   const overlap = Math.max(0, Math.min(desk.right, mob.right) - Math.max(desk.left, mob.left))
     * Math.max(0, Math.min(desk.bottom, mob.bottom) - Math.max(desk.top, mob.top));
   return { card, bar, desk, mob, phone, mobPosition, phonePosition, mobRadius, mobHasBezel, overlap };
