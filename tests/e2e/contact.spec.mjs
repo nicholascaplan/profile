@@ -153,7 +153,11 @@ test('status panel keeps a uniform border; outline follows input modality', asyn
   await page.getByLabel('Name', { exact: true }).fill('Test visitor');
   await page.getByLabel('Email', { exact: true }).fill('visitor@example.com');
   await page.getByLabel('Message', { exact: true }).fill('Second enquiry, intercepted in this test.');
-  await page.getByRole('button', { name: 'Send message', exact: true }).focus();
+  // A real keyboard user reaches the button with Tab. Script-focusing the
+  // button after mouse input is a mix no visitor produces, and Firefox keeps
+  // pointer modality there, so the panel would wrongly lose its outline.
+  await page.getByLabel('Message', { exact: true }).press('Tab');
+  await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(status).toContainText('your message has been sent');
   await expect(status).toBeFocused();
