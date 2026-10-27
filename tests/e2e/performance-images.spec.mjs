@@ -75,12 +75,12 @@ test('responsive captures retain enough detail at phone, tablet and desktop widt
     await page.goto('/');
     await page.waitForFunction(() => [...document.querySelectorAll('.shot-img, .portrait')].every((i) => i.complete && i.naturalWidth > 0));
     const images = await page.locator('.shot-img, .portrait').evaluateAll((images) => images.map((img) => {
-      const candidate = Number(img.currentSrc.match(/-(\d+)w\.webp$/)?.[1] || (img.classList.contains('shot-desk') ? 1280 : 600));
+      const candidate = Number(img.currentSrc.match(/-(\d+)w\.webp$/)?.[1] || (img.classList.contains('shot-desk') ? 1280 : 1170));
       return { candidate, required: img.getBoundingClientRect().width * devicePixelRatio, src: img.currentSrc };
     }));
     for (const image of images) {
       // Original capture resolution is the upper bound, never upscale or invent detail.
-      const maximum = image.src.includes('-desk') ? 1280 : 600;
+      const maximum = image.src.includes('-desk') ? 1280 : image.src.includes('/work/') ? 1170 : 600;
       expect(image.candidate, `${image.src} at ${width}px`).toBeGreaterThanOrEqual(Math.min(maximum, image.required) * 0.9);
     }
   }
@@ -270,6 +270,27 @@ test('mobile 390 at 1x uses the sufficient 320w capture', async ({ browser }) =>
     const state = await image.evaluate(i => ({ src: i.currentSrc, width: i.getBoundingClientRect().width }));
     expect(state.width).toBeLessThanOrEqual(300);
     expect(state.src).toMatch(/-320w\.webp$/);
+  }
+  await context.close();
+});
+
+
+test('every declared mobile capture candidate matches its decoded pixel dimensions', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 900 }, deviceScaleFactor: 3 });
+  const page = await context.newPage(); await page.goto(baseURL);
+  const candidates = await page.locator('.thumb').evaluateAll(bs => bs.flatMap(b => [b.dataset.srcMob,b.dataset.srcMobDark]));
+  const manifest = await (await page.request.get(new URL('assets/images/work/mobile-captures.json', baseURL).href)).json();
+  for (const capture of Object.values(manifest)) for (const [width,file] of Object.entries(capture.variants)) {
+    const actual = await page.evaluate(async f => { const image = new Image();image.src='assets/images/work/'+f;await image.decode();return image.naturalWidth; },file);
+    expect(actual,file).toBe(Number(width));
+  }
+  for (const src of new Set(candidates)) {
+    const dimensions = await page.evaluate(async (src) => { const i = new Image(); i.src = src; await i.decode(); return [i.naturalWidth,i.naturalHeight]; }, src);
+    expect(dimensions[0], src).toBe(1170); expect(dimensions[1], src).toBe(2106);
+  }
+  for (const image of await page.locator('.shot-mob').all()) {
+    const result = await image.evaluate(async i => { const candidate = new Image(); candidate.src = i.currentSrc; await candidate.decode(); const descriptor = i.srcset.split(',').map(s=>s.trim().split(/\s+/)).find(([u])=>new URL(u,location.href).href===i.currentSrc);return {actual:candidate.naturalWidth,declared:Number(descriptor[1].replace('w','')),need:i.getBoundingClientRect().width*devicePixelRatio};});
+    expect(result.actual).toBe(result.declared);expect(result.actual).toBeGreaterThanOrEqual(result.need);
   }
   await context.close();
 });

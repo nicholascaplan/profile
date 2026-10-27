@@ -33,10 +33,177 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   "sam-home-mob-dark-160w.webp": "11-19-sam-home-mob-dark-160w.webp",
   "sam-home-mob-dark-320w.webp": "12-20-sam-home-mob-dark-320w.webp"
 };
+  const mobileCaptures = {
+  "foa-fundraising-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-fundraising-mob-160w.webp",
+      "320": "foa-fundraising-mob-320w.webp",
+      "600": "foa-fundraising-mob-600w.webp",
+      "960": "foa-fundraising-mob-960w.webp"
+    }
+  },
+  "foa-fundraising-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-fundraising-mob-dark-160w.webp",
+      "320": "foa-fundraising-mob-dark-320w.webp",
+      "600": "foa-fundraising-mob-dark-600w.webp",
+      "960": "foa-fundraising-mob-dark-960w.webp"
+    }
+  },
+  "foa-fireworks-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-fireworks-mob-160w.webp",
+      "320": "foa-fireworks-mob-320w.webp",
+      "600": "foa-fireworks-mob-600w.webp",
+      "960": "foa-fireworks-mob-960w.webp"
+    }
+  },
+  "foa-fireworks-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-fireworks-mob-dark-160w.webp",
+      "320": "foa-fireworks-mob-dark-320w.webp",
+      "600": "foa-fireworks-mob-dark-600w.webp",
+      "960": "foa-fireworks-mob-dark-960w.webp"
+    }
+  },
+  "foa-home-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-home-mob-160w.webp",
+      "320": "foa-home-mob-320w.webp",
+      "600": "foa-home-mob-600w.webp",
+      "960": "foa-home-mob-960w.webp"
+    }
+  },
+  "foa-home-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-home-mob-dark-160w.webp",
+      "320": "foa-home-mob-dark-320w.webp",
+      "600": "foa-home-mob-dark-600w.webp",
+      "960": "foa-home-mob-dark-960w.webp"
+    }
+  },
+  "foa-whatson-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-whatson-mob-160w.webp",
+      "320": "foa-whatson-mob-320w.webp",
+      "600": "foa-whatson-mob-600w.webp",
+      "960": "foa-whatson-mob-960w.webp"
+    }
+  },
+  "foa-whatson-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-whatson-mob-dark-160w.webp",
+      "320": "foa-whatson-mob-dark-320w.webp",
+      "600": "foa-whatson-mob-dark-600w.webp",
+      "960": "foa-whatson-mob-dark-960w.webp"
+    }
+  },
+  "foa-menu-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-menu-mob-160w.webp",
+      "320": "foa-menu-mob-320w.webp",
+      "600": "foa-menu-mob-600w.webp",
+      "960": "foa-menu-mob-960w.webp"
+    }
+  },
+  "foa-menu-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "foa-menu-mob-dark-160w.webp",
+      "320": "foa-menu-mob-dark-320w.webp",
+      "600": "foa-menu-mob-dark-600w.webp",
+      "960": "foa-menu-mob-dark-960w.webp"
+    }
+  },
+  "2-sam-home-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "2-sam-home-mob-160w.webp",
+      "320": "2-sam-home-mob-320w.webp",
+      "600": "2-sam-home-mob-600w.webp",
+      "960": "2-sam-home-mob-960w.webp"
+    }
+  },
+  "1-sam-home-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "1-sam-home-mob-dark-160w.webp",
+      "320": "1-sam-home-mob-dark-320w.webp",
+      "600": "1-sam-home-mob-dark-600w.webp",
+      "960": "1-sam-home-mob-dark-960w.webp"
+    }
+  },
+  "sam-works-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-works-mob-160w.webp",
+      "320": "sam-works-mob-320w.webp",
+      "600": "sam-works-mob-600w.webp",
+      "960": "sam-works-mob-960w.webp"
+    }
+  },
+  "sam-works-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-works-mob-dark-160w.webp",
+      "320": "sam-works-mob-dark-320w.webp",
+      "600": "sam-works-mob-dark-600w.webp",
+      "960": "sam-works-mob-dark-960w.webp"
+    }
+  },
+  "sam-bio-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-160w.webp",
+      "320": "sam-bio-mob-320w.webp",
+      "600": "sam-bio-mob-600w.webp",
+      "960": "sam-bio-mob-960w.webp"
+    }
+  },
+  "sam-bio-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-dark-160w.webp",
+      "320": "sam-bio-mob-dark-320w.webp",
+      "600": "sam-bio-mob-dark-600w.webp",
+      "960": "sam-bio-mob-dark-960w.webp"
+    }
+  }
+};
   const sources = (src, kind) => {
-    const widths = !/-(home|fireworks|fundraising|menu)-/.test(src) ? [] : kind === 'Desk' ? [400, 800] : [160, 320];
-    const fullWidth = kind === 'Desk' ? 1280 : 600;
-    return [...widths.map((w) => `${src.slice(0, src.lastIndexOf('/') + 1)}${(responsiveFiles[src.split('/').pop().replace(/^\d+-/, '').replace('.webp', `-${w}w.webp`)] || src.split('/').pop().replace('.webp', `-${w}w.webp`))} ${w}w`), `${src} ${fullWidth}w`].join(', ');
+    const filename = src.split('/').pop();
+    const directory = src.slice(0, src.lastIndexOf('/') + 1);
+    const capture = mobileCaptures[filename];
+    if (kind === 'Mob' && capture) {
+      return [...Object.entries(capture.variants).map(([width, file]) => `${directory}${file} ${width}w`), `${src} ${capture.width}w`].join(', ');
+    }
+    const widths = !/-(home|fireworks|fundraising)-/.test(src) ? [] : [400, 800];
+    return [...widths.map((w) => `${directory}${responsiveFiles[filename.replace(/^\d+-/, '').replace('.webp', `-${w}w.webp`)] || filename.replace('.webp', `-${w}w.webp`)} ${w}w`), `${src} 1280w`].join(', ');
   };
   // The desktop mobile preview renders the phone capture at the small-screen
   // solo size; its hint follows the toggle so the preview stays sharp.
