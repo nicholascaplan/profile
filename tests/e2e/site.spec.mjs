@@ -501,7 +501,7 @@ test('contact: mobile fields avoid focus zoom and the message hint is accessible
     hint: document.querySelector('#message-hint').textContent,
   }));
   assert.ok(state.fonts.every((size) => size >= 16), 'all input text is at least 16px');
-  assert.equal(state.describedBy, 'message-hint');
+  assert.deepEqual(state.describedBy.split(/\s+/), ['message-hint', 'contact-message-error']);
   assert.match(state.hint, /what would you like the website to achieve/);
 });
 
@@ -728,7 +728,10 @@ test('showcase: a failed screenshot does not block the pair swap', async ({ page
   await page.click('.case:first-child .thumb:nth-child(3)');
   await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fundraising-mob'), { timeout: 8000 });
   const state = await page.evaluate(() => ({
-    deskSrc: document.querySelector('.case:first-child .shot-desk').currentSrc,
+    // src, not currentSrc: the swap commits both src attributes atomically, but
+    // Firefox only updates currentSrc for a failed image after the 404 settles,
+    // which can lag the successful mobile shot and made this assertion flaky.
+    deskSrc: document.querySelector('.case:first-child .shot-desk').src,
     deskAlt: document.querySelector('.case:first-child .shot-desk').alt,
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
