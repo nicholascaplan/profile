@@ -1,5 +1,23 @@
 import { test, expect } from '@playwright/test';
 
+// Evaluates a sizes attribute at a viewport width: (max-width: Npx) conditions
+// with Npx / Nvw / calc(Avw +/- Bpx) lengths. Defaults to 100vw per spec.
+function resolveSizes(sizes, viewportWidth) {
+  for (const part of sizes.split(',').map((s) => s.trim())) {
+    const match = part.match(/^(?:\(max-width:\s*(\d+)px\)\s+)?(.+)$/);
+    if (!match) continue;
+    const [, condition, length] = match;
+    if (condition && viewportWidth > Number(condition)) continue;
+    const calc = length.match(/^calc\(\s*([\d.]+)vw\s*([+-])\s*([\d.]+)px\s*\)$/);
+    if (calc) return (Number(calc[1]) / 100) * viewportWidth + (calc[2] === '+' ? 1 : -1) * Number(calc[3]);
+    const vw = length.match(/^([\d.]+)vw$/);
+    if (vw) return (Number(vw[1]) / 100) * viewportWidth;
+    const px = length.match(/^([\d.]+)px$/);
+    if (px) return Number(px[1]);
+  }
+  return viewportWidth;
+}
+
 for (const theme of ['dark', 'light']) {
   test(`image requests start in the saved ${theme} theme without the other capture set`, async ({ page }) => {
     await page.addInitScript((value) => localStorage.setItem('nick-theme', value), theme);
@@ -12,7 +30,40 @@ for (const theme of ['dark', 'light']) {
     await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
     expect(requests).toHaveLength(4);
     for (const url of requests) expect(/-dark(?:-\d+w)?\.webp$/.test(url)).toBe(theme === 'dark');
-    expect(requests.some((url) => /-\d+w\.webp$/.test(url))).toBeTruthy();
+    // Width-appropriateness (user-approved replacement for the variant-picked
+    // proxy): the sizes hint must track the rendered width, and the requested
+    // file must be the smallest srcset candidate covering that need - or at
+    // most one bucket step above it for UA selection heuristics - so captures
+    // are never oversized fetches and downscaled variants stay available.
+    const dpr = await page.evaluate(() => devicePixelRatio);
+    const viewportWidth = page.viewportSize().width;
+    for (const img of await page.locator('.shot-img').all()) {
+      const { current, srcset, sizes, renderWidth } = await img.evaluate((i) => ({
+        current: i.currentSrc, srcset: i.srcset, sizes: i.sizes,
+        renderWidth: i.getBoundingClientRect().width,
+      }));
+      const sourceSize = resolveSizes(sizes, viewportWidth);
+      // Hint fidelity: within [0.9x, 1.5x] of the rendered width. Under-declaring
+      // risks soft captures; the upper bound covers the capped-width transition
+      // (max measured 1.375x at the 600px viewport where the 240px cap binds).
+      expect(sourceSize / renderWidth, `${sizes} vs ${renderWidth}px render`).toBeGreaterThanOrEqual(0.9);
+      expect(sourceSize / renderWidth, `${sizes} vs ${renderWidth}px render`).toBeLessThanOrEqual(1.5);
+      const candidates = srcset.split(',').map((s) => s.trim().split(/\s+/))
+        .map(([url, d]) => ({ url, w: Number(d.replace('w', '')) }))
+        .sort((a, b) => a.w - b.w);
+      // Srcset availability: downscaled variants remain offered below the full capture.
+      expect(candidates.filter((c) => c.w < candidates[candidates.length - 1].w).length, `${current} offers downscaled variants`).toBeGreaterThanOrEqual(1);
+      const need = sourceSize * dpr;
+      const fitting = candidates.filter((c) => c.w >= need - 0.5);
+      const optimal = fitting.length ? fitting[0] : candidates[candidates.length - 1];
+      const optimalIndex = candidates.indexOf(optimal);
+      const pickedIndex = candidates.findIndex((c) => current.split('/').pop().endsWith(c.url.split('/').pop()));
+      expect(pickedIndex, `${current} is a srcset candidate`).toBeGreaterThanOrEqual(0);
+      // Never below the optimal pick (soft fetch); at most one bucket step above
+      // it. Chromium, Firefox and WebKit all pick exactly optimal in testing.
+      expect(pickedIndex, `${current} vs optimal ${optimal.url} for ${need.toFixed(0)}px need`).toBeGreaterThanOrEqual(optimalIndex);
+      expect(pickedIndex, `${current} vs optimal ${optimal.url} for ${need.toFixed(0)}px need`).toBeLessThanOrEqual(Math.min(optimalIndex + 1, candidates.length - 1));
+    }
     expect(await page.locator('.case:first-child .shot-desk').getAttribute('fetchpriority')).toBe('high');
   });
 }
