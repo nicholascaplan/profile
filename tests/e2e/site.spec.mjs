@@ -779,7 +779,7 @@ test('showcase: on mobile widths the phone capture stands alone, large and reada
       assert.equal(g.outerBackground, 'rgba(0, 0, 0, 0)', 'solo phone has no outer panel background');
       assert.equal(g.cropFit, 'cover', 'phone crop never distorts the capture');
       assert.equal(g.cropPosition, '50% 0%', 'phone crop preserves the top of the page');
-      assert.ok(Math.abs(g.mob.height / g.mob.width - 1.4) < .02, 'phone is a shorter 5:7 crop');
+      assert.ok(Math.abs(g.mob.height / g.mob.width - 1.8) < .02, 'phone is a taller 5:9 crop');
       assert.ok(!g.hScroll, `no horizontal scroll at ${width}px`);
     }
   }
