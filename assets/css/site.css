@@ -331,7 +331,7 @@ body[data-style="atelier"] .wordmark span { font-weight: 700; }
 body[data-style="atelier"] .hero { padding-top: 44px; }
 body[data-style="atelier"] .hero h1 { font-family: var(--body); font-size: clamp(52px, 8vw, 104px); font-weight: 400; letter-spacing: -.085em; line-height: .91; }
 body[data-style="atelier"] .hero h1 em { font-weight: 600; }
-body[data-style="atelier"] .hero-intro { font-size: 19px; max-width: none; }
+body[data-style="atelier"] .hero-intro { font-size: 19px; max-width: 620px; }
 body[data-style="atelier"] .portrait { filter: sepia(.16) saturate(.7); }
 body[data-style="atelier"] .section-heading h2, body[data-style="atelier"] .footer h2, body[data-style="atelier"] .page-hero h1 { font-weight: 400; }
 body[data-style="atelier"] .role { gap: 70px; grid-template-columns: 160px 1fr; }
