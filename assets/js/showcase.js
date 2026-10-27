@@ -24,19 +24,19 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   "foa-home-mob-320w.webp": "10-foa-home-mob-320w.webp",
   "foa-home-mob-dark-160w.webp": "11-foa-home-mob-dark-160w.webp",
   "foa-home-mob-dark-320w.webp": "12-foa-home-mob-dark-320w.webp",
-  "sam-home-desk-400w.webp": "13-sam-home-desk-400w.webp",
-  "sam-home-desk-800w.webp": "14-sam-home-desk-800w.webp",
-  "sam-home-desk-dark-400w.webp": "15-sam-home-desk-dark-400w.webp",
-  "sam-home-desk-dark-800w.webp": "16-sam-home-desk-dark-800w.webp",
-  "sam-home-mob-160w.webp": "17-sam-home-mob-160w.webp",
-  "sam-home-mob-320w.webp": "18-sam-home-mob-320w.webp",
-  "sam-home-mob-dark-160w.webp": "19-sam-home-mob-dark-160w.webp",
-  "sam-home-mob-dark-320w.webp": "20-sam-home-mob-dark-320w.webp"
+  "sam-home-desk-400w.webp": "5-13-sam-home-desk-400w.webp",
+  "sam-home-desk-800w.webp": "6-14-sam-home-desk-800w.webp",
+  "sam-home-desk-dark-400w.webp": "7-15-sam-home-desk-dark-400w.webp",
+  "sam-home-desk-dark-800w.webp": "8-16-sam-home-desk-dark-800w.webp",
+  "sam-home-mob-160w.webp": "9-17-sam-home-mob-160w.webp",
+  "sam-home-mob-320w.webp": "10-18-sam-home-mob-320w.webp",
+  "sam-home-mob-dark-160w.webp": "11-19-sam-home-mob-dark-160w.webp",
+  "sam-home-mob-dark-320w.webp": "12-20-sam-home-mob-dark-320w.webp"
 };
   const sources = (src, kind) => {
     const widths = !src.includes('-home-') ? [] : kind === 'Desk' ? [400, 800] : [160, 320];
     const fullWidth = kind === 'Desk' ? 1280 : 600;
-    return [...widths.map((w) => `${src.slice(0, src.lastIndexOf('/') + 1)}${responsiveFiles[src.split('/').pop().replace('.webp', `-${w}w.webp`)]} ${w}w`), `${src} ${fullWidth}w`].join(', ');
+    return [...widths.map((w) => `${src.slice(0, src.lastIndexOf('/') + 1)}${responsiveFiles[src.split('/').pop().replace(/^\d+-/, '').replace('.webp', `-${w}w.webp`)]} ${w}w`), `${src} ${fullWidth}w`].join(', ');
   };
   // The desktop mobile preview renders the phone capture at the small-screen
   // solo size; its hint follows the toggle so the preview stays sharp.
