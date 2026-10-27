@@ -24,7 +24,7 @@ for (const page of pages) {
   const dir = dirname(join(root, page));
   const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
   const anchors = [...html.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
-  const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+  const images = [...html.replace(/<template\b[\s\S]*?<\/template>/g, '').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
 
   test(`${page}: document shell - doctype, language, title and viewport`, () => {
     assert.match(html, /^<!doctype html>/i);
@@ -146,7 +146,7 @@ for (const page of pages) {
 
 test('home page carries the showcase imagery', () => {
   const html = read('index.html');
-  const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+  const images = [...html.replace(/<template\b[\s\S]*?<\/template>/g, '').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
   assert.equal(images.filter((tag) => /class="shot-img shot-desk"/.test(tag)).length, 2, 'each project has a desktop overview');
   assert.equal(images.filter((tag) => /class="shot-img shot-mob"/.test(tag)).length, 2, 'each project has a phone capture');
   assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 6, 'three labelled page choices per project');
@@ -204,4 +204,19 @@ test('every public page uses the approved portfolio stream, never the FOA stream
 test('analytics registers its cross-tab withdrawal handler only once', () => {
   const script = read('assets/js/analytics.js');
   assert.equal((script.match(/window\.addEventListener\('storage'/g) || []).length, 1);
+});
+
+
+test('experience page: pre-NatWest roles foreground website delivery', () => {
+  const html = read('experience/index.html');
+  const roles = [...html.matchAll(/<article class="role">[\s\S]*?<\/article>/g)].map((m) => m[0]);
+  const byTitle = (name) => roles.find((r) => (r.match(/<h3 class="role-title">([^<]+)<\/h3>/) || [])[1]?.includes(name)) || '';
+  // Nick's direction (26 October 2026): the earlier roles lead with the
+  // website-building angle; the 100,000+ visitors and 2-to-23 states figures
+  // come from his original CV copy. The NatWest Boxed entry stays unchanged.
+  assert.match(byTitle('Oddschecker'), /website serving 100,000\+ monthly visitors/);
+  assert.match(byTitle('Oddschecker'), /Scaled the website from 2 to 23 US state jurisdictions/);
+  assert.match(byTitle('Moogsoft'), /web platform/);
+  assert.match(byTitle('Alfa'), /enterprise web platform/);
+  assert.match(byTitle('NatWest Boxed'), /Core banking platforms, customer onboarding and account services/);
 });
