@@ -42,10 +42,11 @@ for (const theme of ['dark', 'light']) {
         current: i.currentSrc, srcset: i.srcset, sizes: i.sizes,
         renderWidth: i.getBoundingClientRect().width,
       }));
+      if (renderWidth === 0) continue; // hidden at this width: only the matching device capture shows
       const sourceSize = resolveSizes(sizes, viewportWidth);
       // Hint fidelity: within [0.9x, 1.5x] of the rendered width. Under-declaring
       // risks soft captures; the upper bound covers the capped-width transition
-      // (max measured 1.375x at the 600px viewport where the 240px cap binds).
+      // (max measured 1.375x at the 600px viewport where the width cap binds).
       expect(sourceSize / renderWidth, `${sizes} vs ${renderWidth}px render`).toBeGreaterThanOrEqual(0.9);
       expect(sourceSize / renderWidth, `${sizes} vs ${renderWidth}px render`).toBeLessThanOrEqual(1.5);
       const candidates = srcset.split(',').map((s) => s.trim().split(/\s+/))
@@ -90,7 +91,31 @@ test('static no-JavaScript homepage retains all showcase images', async ({ brows
   const page = await context.newPage();
   await page.goto(baseURL);
   await expect(page.locator('.shot-img')).toHaveCount(4);
-  for (const image of await page.locator('.shot-img').all()) await expect(image).toBeVisible();
+  // Every capture stays in the DOM and loads; small screens hide the desktop
+  // capture by design (the phone capture stands alone there).
+  // One capture per viewport: exactly the capture matching the viewport's
+  // device class is visible; the other stays in the DOM, hidden by design.
+  const vw = page.viewportSize().width;
+  for (const image of await page.locator('.shot-img').all()) {
+    const kind = await image.evaluate((el) => (el.classList.contains('shot-desk') ? 'desk' : 'mob'));
+    const shouldShow = (kind === 'desk' && vw > 960) || (kind === 'mob' && vw <= 960);
+    if (shouldShow) await expect(image).toBeVisible();
+    else await expect(image).toBeHidden();
+  }
+  await context.close();
+});
+
+test('static no-JavaScript small screen shows the phone capture alone', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto(baseURL);
+  await expect(page.locator('.case:first-child .shot-img')).toHaveCount(2);
+  await expect(page.locator('.case:first-child .shot-desk')).toBeHidden();
+  await expect(page.locator('.case:first-child .shotbar')).toBeHidden();
+  const mob = page.locator('.case:first-child .shot-mob');
+  await expect(mob).toBeVisible();
+  const box = await mob.boundingBox();
+  expect(box.width).toBeGreaterThanOrEqual(220);
   await context.close();
 });
 
