@@ -2,6 +2,7 @@
 const form = document.querySelector('#contact-form');
 if (form && window.fetch && window.FormData && window.AbortController) {
   const fields = [...form.querySelectorAll('input, textarea')];
+  const fieldsContainer = form.querySelector('.contact-fields');
   const submit = form.querySelector('[type="submit"]');
   const status = document.querySelector('#contact-status');
   const reset = document.querySelector('#contact-another');
@@ -50,7 +51,9 @@ if (form && window.fetch && window.FormData && window.AbortController) {
     busy = true;
     submit.disabled = true;
     fields.forEach((field) => { field.readOnly = true; });
-    form.setAttribute('aria-busy', 'true');
+    // Keep the live region outside the busy subtree: assistive tech may defer
+    // announcements owned by an aria-busy element, so mark only the fields.
+    fieldsContainer.setAttribute('aria-busy', 'true');
     announce('Sending your message...', 'pending');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
@@ -89,7 +92,7 @@ if (form && window.fetch && window.FormData && window.AbortController) {
       busy = false;
       submit.disabled = false;
       fields.forEach((field) => { field.readOnly = false; });
-      form.removeAttribute('aria-busy');
+      fieldsContainer.removeAttribute('aria-busy');
     }
   });
   form.noValidate = true;
