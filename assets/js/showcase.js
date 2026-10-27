@@ -13,7 +13,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   if (!thumbs.length || !desk || !mob || !pillLabel) return;
   const sizes = {
     Desk: '(max-width: 600px) calc(100vw - 42px), (max-width: 960px) calc(100vw - 66px), 600px',
-    Mob: '(max-width: 405px) 85vw, (max-width: 960px) 300px, 150px',
+    Mob: '(max-width: 352px) 85vw, (max-width: 960px) 300px, 150px',
   };
   const responsiveFiles = {
   "foa-home-desk-400w.webp": "5-foa-home-desk-400w.webp",

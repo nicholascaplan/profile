@@ -259,3 +259,17 @@ test('an older decoded pair cannot overwrite a newer selection', async ({ page }
   await expect(page.locator('.case:first-child .pill-label')).toHaveText('Fundraising');
   await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Fundraising');
 });
+
+// Regression: a 1x phone should not fetch 600w for a capture capped at 300px.
+test('mobile 390 at 1x uses the sufficient 320w capture', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  await page.goto('/');
+  await page.waitForFunction(() => [...document.querySelectorAll('.shot-mob')].every(i => i.complete && i.naturalWidth > 0));
+  for (const image of await page.locator('.shot-mob').all()) {
+    const state = await image.evaluate(i => ({ src: i.currentSrc, width: i.getBoundingClientRect().width }));
+    expect(state.width).toBeLessThanOrEqual(300);
+    expect(state.src).toMatch(/-320w\.webp$/);
+  }
+  await context.close();
+});
