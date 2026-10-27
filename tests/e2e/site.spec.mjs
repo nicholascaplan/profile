@@ -702,7 +702,40 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
       assert.ok(g.mobHasBezel, `${caseSel} phone capture has a bezel ring at ${width}px`);
       assert.ok(g.mob.right <= g.card.right + 1 && g.desk.left >= g.card.left - 1, `${caseSel} both captures stay inside the card at ${width}px`);
       assert.equal(g.overlap, 0, `${caseSel} no overlap at ${width}px`);
+      const tags = await page.evaluate((cs) => {
+        const read = (sel) => {
+          const el = document.querySelector(`${cs} ${sel}`);
+          const r = el.getBoundingClientRect();
+          return { text: el.textContent, display: getComputedStyle(el).display, top: r.top, left: r.left, right: r.right };
+        };
+        const card = document.querySelector(`${cs} .shot`).getBoundingClientRect();
+        const desk = document.querySelector(`${cs} .shot-desk`).getBoundingClientRect();
+        const mob = document.querySelector(`${cs} .shot-mob`).getBoundingClientRect();
+        return { deskTag: read('.tag-desk'), mobTag: read('.tag-mob'), cardLeft: card.left, cardRight: card.right, deskBottom: desk.bottom, mobBottom: mob.bottom, mobLeft: mob.left };
+      }, caseSel);
+      assert.equal(tags.deskTag.text, 'Desktop');
+      assert.equal(tags.mobTag.text, 'Mobile');
+      assert.notEqual(tags.deskTag.display, 'none', `${caseSel} desktop caption shows at ${width}px`);
+      assert.notEqual(tags.mobTag.display, 'none', `${caseSel} mobile caption shows at ${width}px`);
+      assert.ok(tags.deskTag.top >= tags.deskBottom - 1, `${caseSel} desktop caption sits below its capture at ${width}px`);
+      assert.ok(tags.mobTag.top >= tags.mobBottom - 1, `${caseSel} mobile caption sits below its capture at ${width}px`);
+      assert.ok(tags.mobTag.left >= tags.mobLeft - 1, `${caseSel} mobile caption aligns with the phone column at ${width}px`);
+      assert.ok(tags.deskTag.left >= tags.cardLeft - 1 && tags.mobTag.right <= tags.cardRight + 1, `${caseSel} captions stay inside the card at ${width}px`);
     }
+  }
+  // Enlarged text (200%): captions must stay inside the card, not collide.
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto('/');
+  await settle(page);
+  await enlargeText(page);
+  for (const caseSel of ['.case:first-child', '.case:last-child']) {
+    const fit = await page.evaluate((cs) => {
+      const rect = (sel) => document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
+      const card = rect('.shot'), deskTag = rect('.tag-desk'), mobTag = rect('.tag-mob');
+      return { cardLeft: card.left, cardRight: card.right, dLeft: deskTag.left, dRight: deskTag.right, mLeft: mobTag.left, mRight: mobTag.right };
+    }, caseSel);
+    assert.ok(fit.dLeft >= fit.cardLeft - 1 && fit.mRight <= fit.cardRight + 1, `${caseSel} enlarged captions stay inside the card`);
+    assert.ok(fit.mLeft >= fit.dRight - 1, `${caseSel} enlarged captions do not collide`);
   }
   // Choosing a different page keeps the side-by-side composition on the new pair.
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -720,6 +753,8 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
     const g = await shotGeometry(page);
     assert.equal(g.mobPosition, 'absolute', `phone capture remains an overlay inset at ${width}px`);
     assert.ok(g.overlap > 0, `phone capture still overlays the desktop capture at ${width}px`);
+    const tagDisplay = await page.evaluate(() => getComputedStyle(document.querySelector('.case:first-child .tag-desk')).display);
+    assert.equal(tagDisplay, 'none', `captions stay hidden in the overlay layout at ${width}px`);
   }
 });
 
@@ -731,6 +766,8 @@ test('showcase: phone layout keeps the overlay inset', async ({ page }) => {
     const g = await shotGeometry(page);
     assert.equal(g.mobPosition, 'absolute', `phone capture remains an overlay inset at ${width}px`);
     assert.ok(g.overlap > 0, `phone capture still overlays the desktop capture at ${width}px`);
+    const tagDisplay = await page.evaluate(() => getComputedStyle(document.querySelector('.case:first-child .tag-desk')).display);
+    assert.equal(tagDisplay, 'none', `captions stay hidden in the overlay layout at ${width}px`);
   }
 });
 
