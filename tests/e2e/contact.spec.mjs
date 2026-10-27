@@ -134,6 +134,30 @@ for (const body of ['{}', '{"next":null}']) {
   });
 }
 
+test('pending announcement stays outside the busy subtree', async ({ page }) => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  await page.route(endpoint, async route => {
+    await gate;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '{"next":"/thanks"}' });
+  });
+  await complete(page);
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  const status = page.locator('#contact-status');
+  await expect(status).toHaveText('Sending your message...');
+  // Assistive tech may defer announcements owned by an aria-busy element, so
+  // the live region must sit outside the busy subtree while sending.
+  const during = await page.evaluate(() => ({
+    statusInBusy: Boolean(document.querySelector('#contact-status').closest('[aria-busy="true"]')),
+    fieldsBusy: document.querySelector('.contact-fields').getAttribute('aria-busy'),
+  }));
+  expect(during).toEqual({ statusInBusy: false, fieldsBusy: 'true' });
+  release();
+  await expect(status).toContainText('your message has been sent');
+  const after = await page.evaluate(() => document.querySelector('.contact-fields').getAttribute('aria-busy'));
+  expect(after).toBeNull();
+});
+
 test('status panel keeps a uniform border; outline follows input modality', async ({ page }) => {
   await page.route(endpoint, route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"next":"/thanks"}' }));
   const status = page.locator('#contact-status');
