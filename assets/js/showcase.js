@@ -224,6 +224,20 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   let current = 0;
   let wanted = 0;
   let swapSeq = 0;
+  const syncPresentedChoice = () => {
+    // Keep the decoded pair on failure. A hidden phone-only choice can
+    // share its desktop capture with a visible choice (Menu uses Homepage).
+    // Label that actual desktop image, then restore Menu on return to phone.
+    const matchingDesktop = thumbs.findIndex((thumb) => !thumb.hidden &&
+      new URL(variant(thumb, 'Desk'), document.baseURI).href === desk.src);
+    const visibleIndex = thumbs[current].hidden ? matchingDesktop : current;
+    if (visibleIndex < 0) return;
+    thumbs.forEach((thumb, j) => {
+      thumb.classList.toggle('sel', j === visibleIndex);
+      thumb.setAttribute('aria-pressed', String(j === visibleIndex));
+    });
+    pillLabel.textContent = thumbs[visibleIndex].dataset.label;
+  };
   function select(index) {
     wanted = (index + thumbs.length) % thumbs.length;
     if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) wanted = 0;
@@ -252,15 +266,12 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         // Keep the displayed pair as the theme-swap target after a failed
         // swap; an explicit thumbnail click still retries the failed tab.
         wanted = current;
+        syncPresentedChoice();
         caseEl.dispatchEvent(new Event('showcase:swap-failed'));
         return;
       }
       current = wanted;
-      thumbs.forEach((thumb, j) => {
-        thumb.classList.toggle('sel', j === current);
-        thumb.setAttribute('aria-pressed', String(j === current));
-      });
-      pillLabel.textContent = chosen.dataset.label;
+      syncPresentedChoice();
 
       apply(desk, srcD, 'Desk');
       desk.alt = chosen.dataset.altDesk;
@@ -287,6 +298,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     // Remember focus before hiding: browsers may move it to body immediately.
     const focused = thumbs.find((thumb) => thumb === document.activeElement);
     thumbs.forEach((thumb) => { if (thumb.dataset.mobileOnly) thumb.hidden = !phoneLayout(); });
+    syncPresentedChoice();
     if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) select(0);
     if (focused?.hidden) {
       const visibleChoice = thumbs[current].hidden ? thumbs[0] : thumbs[current];

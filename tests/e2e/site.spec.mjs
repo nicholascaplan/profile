@@ -1100,3 +1100,63 @@ test('showcase: hiding a focused unselected Menu preserves keyboard position', a
   await expect(menu).toBeHidden(); await expect(fundraising).toBeFocused();
   await expect(fundraising).toHaveAttribute('aria-pressed', 'true');
 });
+
+test('showcase: failed Menu desktop fallback keeps a visible selection and restores phone state', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  const homepage = first.getByRole('button', { name: 'Homepage', exact: true });
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  const pair = await shotPair(page);
+  // Reject decode even if an engine reuses the initially decoded image
+  // without another network request (notably Firefox's memory image cache).
+  await page.evaluate(() => {
+    const NativeImage = window.Image;
+    window.Image = class extends NativeImage {
+      decode() { return this.src.includes('fundraising') ? Promise.reject(new Error('test decode failure')) : super.decode(); }
+    };
+  });
+  await page.evaluate(() => { window.fallbackFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed', resolve, {once:true})); });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.fallbackFailed);
+  await expect(menu).toBeHidden();
+  await expect(homepage).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Homepage');
+  assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
+  assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Menu');
+});
+
+test('showcase: failed Menu preview-toggle fallback keeps a visible selection and restores phone state', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/'); await settle(page);
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await expect(page.locator('.case').first().getByRole('button', {name:'Menu',exact:true})).toBeVisible();
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  const homepage = first.getByRole('button', { name: 'Homepage', exact: true });
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  const pair = await shotPair(page);
+  // Reject decode even if an engine reuses the initially decoded image
+  // without another network request (notably Firefox's memory image cache).
+  await page.evaluate(() => {
+    const NativeImage = window.Image;
+    window.Image = class extends NativeImage {
+      decode() { return this.src.includes('fundraising') ? Promise.reject(new Error('test decode failure')) : super.decode(); }
+    };
+  });
+  await page.evaluate(() => { window.fallbackFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed', resolve, {once:true})); });
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await page.evaluate(() => window.fallbackFailed);
+  await expect(menu).toBeHidden();
+  await expect(homepage).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Homepage');
+  assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
+  assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Menu');
+});
