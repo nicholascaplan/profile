@@ -32,7 +32,7 @@ async function settleHeroLayout(page) {
     const stable = probe === window.__heroProbe;
     window.__heroProbe = probe;
     return stable;
-  }, null, { polling: 100, timeout: 10000 }).catch(() => {});
+  }, null, { polling: 100, timeout: 10000 });
 }
 
 // WCAG contrast ratio of the hero/muted body text against the page background.
