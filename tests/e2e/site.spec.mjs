@@ -2,7 +2,7 @@
 // Chromium, Firefox, WebKit and mobile Chrome.
 // Usage: npx playwright test   (npm run test:e2e)
 
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -752,7 +752,7 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
       const ratio = g.mob.height / unit;
       // Nick, 27 October 2026 (PR #24 comment 6447346709): the captures' heights
       // must not differ - the phone matches the framed browser window exactly.
-      assert.ok(Number.isFinite(ratio) && ratio >= 0.98 && ratio <= 1, `${caseSel} phone capture matches the framed browser window height at ${width}px (ratio ${ratio.toFixed(3)})`);
+      assert.ok(Number.isFinite(ratio) && Math.abs(g.mob.height - unit) <= 1, `${caseSel} phone capture matches the framed browser window height at ${width}px (ratio ${ratio.toFixed(3)})`);
       assert.ok(Math.abs(g.mob.top - g.bar.top) <= 1, `${caseSel} phone capture top aligns with the browser window top at ${width}px`);
       assert.ok(g.mobRadius >= 14, `${caseSel} phone capture has device corners at ${width}px`);
       assert.ok(g.mobHasBezel, `${caseSel} phone capture has a bezel ring at ${width}px`);
@@ -1068,4 +1068,29 @@ test('experience page: all four roles render', async ({ page }) => {
   for (const expected of ['NatWest Boxed', 'Oddschecker', 'Moogsoft', 'Alfa']) {
     assert.ok(roles.some((r) => r.includes(expected)), `role present: ${expected}`);
   }
+});
+
+
+// Wide Work canvas: larger examples, mirrored columns, unchanged phone mode.
+test('wide Work examples use a balanced sixty-forty composition', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop geometry');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const geometry = () => page.locator('.case').evaluateAll(cases => cases.map(c => ({
+    shot: c.querySelector('.case-shot').getBoundingClientRect().width,
+    copy: c.querySelector('.case-copy').getBoundingClientRect().width,
+    desk: c.querySelector('.shot-desk').getBoundingClientRect().width,
+  })));
+  const wide = await geometry();
+  for (const item of wide) {
+    expect(item.shot).toBeGreaterThan(750);
+    expect(item.desk).toBeGreaterThan(550);
+    expect(item.shot / item.copy).toBeCloseTo(1.5, 1);
+  }
+  expect(Math.abs(wide[0].shot - wide[1].shot)).toBeLessThan(1);
+  await page.setViewportSize({ width: 1920, height: 1000 });
+  for (const item of await geometry()) expect(item.shot).toBeLessThan(850);
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  for (const item of await geometry()) expect(Math.abs(item.shot - item.copy)).toBeLessThan(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
