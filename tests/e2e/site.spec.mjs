@@ -762,6 +762,9 @@ test('showcase: on mobile widths the phone capture stands alone, large and reada
                  barVisible: visible('.shotbar'), deskVisible: visible('.shot-desk'), mobVisible: visible('.shot-mob'),
                  mobPosition: mobStyle.position, mobDisplay: mobStyle.display, mobRadius: parseFloat(mobStyle.borderTopLeftRadius),
                  mobHasBezel: mobStyle.boxShadow.includes('inset'),
+                 cropFit: mobStyle.objectFit, cropPosition: mobStyle.objectPosition,
+                 outerBorder: getComputedStyle(document.querySelector(`${cs} .shot`)).borderTopWidth,
+                 outerBackground: getComputedStyle(document.querySelector(`${cs} .shot`)).backgroundColor,
                  hScroll: document.documentElement.scrollWidth > window.innerWidth + 1 };
       }, caseSel);
       assert.ok(!g.barVisible && !g.deskVisible, `${caseSel} desktop unit is not shown at ${width}px`);
@@ -772,6 +775,11 @@ test('showcase: on mobile widths the phone capture stands alone, large and reada
       const spare = g.card.width - g.mob.width;
       assert.ok(Math.abs(g.mob.left - g.card.left - spare / 2) <= 2, `${caseSel} phone capture is centered at ${width}px`);
       assert.ok(g.mobRadius >= 10 && g.mobHasBezel, `${caseSel} phone capture keeps its device frame at ${width}px`);
+      assert.equal(g.outerBorder, '0px', 'solo phone has no redundant outer border');
+      assert.equal(g.outerBackground, 'rgba(0, 0, 0, 0)', 'solo phone has no outer panel background');
+      assert.equal(g.cropFit, 'cover', 'phone crop never distorts the capture');
+      assert.equal(g.cropPosition, '50% 0%', 'phone crop preserves the top of the page');
+      assert.ok(Math.abs(g.mob.height / g.mob.width - 1.4) < .02, 'phone is a shorter 5:7 crop');
       assert.ok(!g.hScroll, `no horizontal scroll at ${width}px`);
     }
   }
