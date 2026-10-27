@@ -254,11 +254,28 @@ test('footer privacy stays bottom right with consistent small-print typography',
 });
 
 test('hero portrait grows on desktop without changing the tablet size', async ({ page }) => {
-  for (const [width, expected] of [[1440, 320], [1024, 256], [768, 190]]) {
+  for (const [width, expected] of [[1440, 400], [1024, 307.2], [768, 190]]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     const size = await page.locator('.hero-grid .portrait-wrap').evaluate((el) => el.getBoundingClientRect().width);
-    assert.equal(size, expected, `portrait width at ${width}px`);
+    assert.ok(Math.abs(size - expected) < 1, `portrait is about ${expected}px at ${width}px`);
+  }
+});
+
+test('hero portrait stays within reach of the heading on wide screens', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  for (const width of [1024, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const gap = await page.evaluate(() => {
+      const heading = document.querySelector('.hero h1');
+      const range = document.createRange();
+      range.selectNodeContents(heading);
+      const textEnd = Math.max(...[...range.getClientRects()].map((r) => r.right));
+      return document.querySelector('.hero-grid .portrait-wrap').getBoundingClientRect().left - textEnd;
+    });
+    assert.ok(gap >= 16, `portrait clears the heading text at ${width}px (gap ${Math.round(gap)}px)`);
+    assert.ok(gap < 280, `portrait stays within reach of the heading at ${width}px (gap ${Math.round(gap)}px)`);
   }
 });
 
