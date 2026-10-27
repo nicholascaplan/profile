@@ -1078,3 +1078,25 @@ test('showcase: Fundraising leads and Menu is a labelled phone-only last choice'
   await expect(first.locator('.thumb').first()).toHaveAttribute('aria-pressed', 'true');
   assert.equal(await first.locator('.thumb[aria-pressed="true"]').count(), 1);
 });
+
+
+test('showcase: hiding a focused unselected Menu preserves keyboard position', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  const fundraising = first.getByRole('button', { name: 'Fundraising', exact: true });
+  await menu.focus();
+  await expect(menu).toHaveAttribute('aria-pressed', 'false');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(menu).toBeHidden(); await expect(fundraising).toBeFocused();
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await menu.focus();
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await expect(menu).toBeHidden(); await expect(fundraising).toBeFocused();
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await expect(menu).toBeHidden(); await expect(fundraising).toBeFocused();
+  await expect(fundraising).toHaveAttribute('aria-pressed', 'true');
+});

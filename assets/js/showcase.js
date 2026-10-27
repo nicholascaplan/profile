@@ -117,11 +117,13 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   }).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
 
   const syncChoices = () => {
+    // Remember focus before hiding: browsers may move it to body immediately.
+    const focused = thumbs.find((thumb) => thumb === document.activeElement);
     thumbs.forEach((thumb) => { if (thumb.dataset.mobileOnly) thumb.hidden = !phoneLayout(); });
-    if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) {
-      const hadFocus = thumbs.includes(document.activeElement);
-      select(0);
-      if (hadFocus) thumbs[0].focus();
+    if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) select(0);
+    if (focused?.hidden) {
+      const visibleChoice = thumbs[current].hidden ? thumbs[0] : thumbs[current];
+      visibleChoice.focus();
     }
   };
   phoneQuery.addEventListener('change', syncChoices);
