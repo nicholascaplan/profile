@@ -703,6 +703,66 @@ test('showcase: composed overviews have a single readable set of controls at eve
   }
 });
 
+// Exploration (Nick, 27 October 2026, separate branch): on mobile widths the
+// phone capture gets lost as an overlay inset, so it stands below the desktop
+// capture as its own framed block with captions. Desktop keeps the overlay.
+test('showcase: on mobile the phone capture stands below the desktop capture as its own framed block', async ({ page }) => {
+  for (const width of [768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await settle(page);
+    for (const caseSel of ['.case:first-child', '.case:last-child']) {
+      const g = await page.evaluate((cs) => {
+        const rectOf = (sel) => {
+          const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        const tagOf = (sel) => {
+          const el = document.querySelector(`${cs} ${sel}`);
+          const r = el.getBoundingClientRect();
+          return { text: el.textContent, display: getComputedStyle(el).display, top: r.top, bottom: r.bottom };
+        };
+        const mobStyle = getComputedStyle(document.querySelector(`${cs} .shot-mob`));
+        return { card: rectOf('.shot'), desk: rectOf('.shot-desk'), mob: rectOf('.shot-mob'), bar: rectOf('.shotbar'),
+                 mobPosition: mobStyle.position, mobRadius: parseFloat(mobStyle.borderTopLeftRadius),
+                 mobHasBezel: mobStyle.boxShadow.includes('inset'), tagDesk: tagOf('.tag-desk'), tagMob: tagOf('.tag-mob'),
+                 hScroll: document.documentElement.scrollWidth > window.innerWidth + 1 };
+      }, caseSel);
+      assert.equal(g.mobPosition, 'static', `${caseSel} phone capture stands in the flow at ${width}px`);
+      assert.ok(Math.abs(g.desk.top - g.bar.bottom) <= 1, `${caseSel} address bar stays attached to the desktop capture at ${width}px`);
+      assert.ok(g.tagDesk.top >= g.desk.bottom - 1 && g.tagDesk.bottom <= g.mob.top + 1, `${caseSel} desktop caption sits between the captures at ${width}px`);
+      assert.ok(g.mob.top >= g.desk.bottom - 1, `${caseSel} phone capture sits below the desktop capture at ${width}px`);
+      assert.ok(g.mob.width >= 140, `${caseSel} phone capture is wide enough to read at ${width}px (${Math.round(g.mob.width)}px)`);
+      assert.ok(g.mob.right <= g.card.right + 1 && g.mob.left >= g.card.left - 1, `${caseSel} phone capture stays inside the card at ${width}px`);
+      assert.ok(g.mobRadius >= 10 && g.mobHasBezel, `${caseSel} phone capture keeps its device frame at ${width}px`);
+      assert.equal(g.tagDesk.display, 'block', `${caseSel} desktop caption visible at ${width}px`);
+      assert.equal(g.tagMob.display, 'block', `${caseSel} mobile caption visible at ${width}px`);
+      assert.ok(g.tagMob.top >= g.mob.bottom - 1, `${caseSel} mobile caption sits under the phone capture at ${width}px`);
+      assert.ok(!g.hScroll, `no horizontal scroll at ${width}px`);
+    }
+  }
+});
+
+test('showcase: mobile activation preserves the reserved stacked layout', async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await page.route('**/assets/js/showcase.js', async (route) => { await gate; await route.continue(); });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/', { waitUntil: 'commit' });
+  await page.waitForFunction(() => document.querySelectorAll('.case:first-child .shot-template').length === 2);
+  await page.waitForFunction(() => {
+    const t = [...document.querySelectorAll('.case:first-child .shot-template')];
+    return t[0].getBoundingClientRect().height > 100 && t[1].getBoundingClientRect().height > 200;
+  });
+  const box = () => page.locator('.case:first-child .shot').boundingBox();
+  const before = await box();
+  release();
+  await page.waitForFunction(() => document.querySelectorAll('.shot-img').length === 4);
+  const after = await box();
+  assert.ok(Math.abs(after.height - before.height) < 1, `stacked card height preserved on activation (before ${before.height}, after ${after.height})`);
+  assert.ok(Math.abs(after.y - before.y) < 1, 'stacked card position preserved on activation');
+});
+
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
 // of its label. Check every visible CTA with a symbol, narrow widths and enlarged text.
 // Regression coverage for the paired screenshot swap (the composed card shows
