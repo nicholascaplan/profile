@@ -169,6 +169,7 @@ button { color: inherit; font: inherit; }
 .shot-desk { aspect-ratio: 1280 / 713; }
 .shot-mob { aspect-ratio: 390 / 844; }
 .shot { position: relative; }
+.shot-phone { display: contents; }
 /* The composed shot is an overview, not a miniature interactive website.
    Keep a single, readable set of page selectors and let visitors explore live. */
 .shot-mob { position: absolute; right: 7%; bottom: 2%; display: block; height: 80%; width: auto; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
@@ -190,7 +191,13 @@ button { color: inherit; font: inherit; }
   body:not([data-mobile="true"]) .shotbar { grid-column: 1; border: 1px solid #454c54; border-bottom: 0; border-radius: 12px 12px 0 0; }
   body:not([data-mobile="true"]) .shot-desk { grid-column: 1; border: 1px solid #454c54; border-top: 0; border-radius: 0 0 12px 12px; box-shadow: 0 12px 24px rgba(0, 0, 0, .45); }
   body:not([data-mobile="true"]) .shot:not(:has(noscript .shot-img)) .shot-browser > .shot-template:first-of-type { grid-column: 1; }
-  body:not([data-mobile="true"]) .shot-mob { position: static; height: auto; width: 100%; border-color: #454c54; border-radius: 20px; box-shadow: inset 0 0 0 6px #17191c, 0 12px 24px rgba(0, 0, 0, .45); }
+  body:not([data-mobile="true"]) .shot-phone { display: block; grid-column: 2; align-self: stretch; position: relative; min-width: 0; }
+  /* The phone matches the framed browser window's full height: it fills its
+     stretched grid area absolutely, so only the browser unit drives the row
+     height (no cyclic sizing); aspect-ratio derives the width, so no crop.
+     Nick, 27 October 2026 (PR #24 comment 6447346709). */
+  body:not([data-mobile="true"]) .shot-phone .shot-mob, body:not([data-mobile="true"]) .shot-phone > noscript { position: absolute; inset: 0; height: 100%; width: auto; margin: 0 auto; border-color: #454c54; border-radius: 20px; box-shadow: inset 0 0 0 6px #17191c, 0 12px 24px rgba(0, 0, 0, .45); }
+  body:not([data-mobile="true"]) .shot-phone > noscript > .shot-mob { height: 100%; width: auto; }
   body:not([data-mobile="true"]) .shot-tag { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .16em; padding: 8px 2px 0; text-transform: uppercase; }
   /* Anchored to the right with an inset: enlarged text grows the word
      leftward into the column gap, never toward the card's clipped rounded
