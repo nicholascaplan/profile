@@ -581,6 +581,13 @@ test('desktop mobile preview: content fits the frame and matches a phone layout'
       const css = getComputedStyle(el);
       return { display: css.display, columns: css.gridTemplateColumns };
     });
+    // The showcase mirrors too: the phone capture stands alone in the preview,
+    // exactly as on a real phone.
+    structures.push(...['.case:first-child .shotbar', '.case:first-child .shot-desk', '.case:first-child .shot-mob'].map((sel) => {
+      const el = document.querySelector(sel);
+      const css = getComputedStyle(el);
+      return { display: css.display, columns: css.position };
+    }));
     const hero = document.querySelector('.hero');
     const walker = document.createTreeWalker(hero.querySelector('h1'), NodeFilter.SHOW_TEXT);
     const lines = [];
@@ -693,7 +700,9 @@ test('showcase: composed overviews have a single readable set of controls at eve
       sizes: [...document.querySelectorAll('.thumb')].map((el) => ({ height: el.getBoundingClientRect().height, font: parseFloat(getComputedStyle(el.querySelector('span')).fontSize) })),
       duplicateControls: document.querySelectorAll('.m-step, .zoom-cue, .thumb img').length,
     }));
-    assert.equal(state.shots, 4, `both device captures remain visible at ${width}px`);
+    // One capture per viewport (Nick, 27 October 2026): the capture matching
+    // the visitor's own device shows alone at every width.
+    assert.equal(state.shots, 2, `only the capture matching the visitor's device is visible at ${width}px`);
     assert.equal(state.duplicateControls, 0, 'no competing arrows, thumbnail images or enlargement affordance');
     assert.equal(state.sizes.length, 6);
     for (const size of state.sizes) {
@@ -703,10 +712,40 @@ test('showcase: composed overviews have a single readable set of controls at eve
   }
 });
 
-// Exploration (Nick, 27 October 2026, separate branch): on mobile widths the
-// phone capture gets lost as an overlay inset, so it stands below the desktop
-// capture as its own framed block with captions. Desktop keeps the overlay.
-test('showcase: on mobile the phone capture stands below the desktop capture as its own framed block', async ({ page }) => {
+// Exploration (Nick, 27 October 2026, separate branch): show the capture
+// matching the visitor's own device. On mobile widths the phone capture stands
+// alone, large and readable; desktop widths show the framed desktop capture
+// alone - no overlay, nothing stacked.
+test('showcase: on desktop widths the framed desktop capture stands alone', async ({ page, isMobile }) => {
+  desktopOnly(isMobile);
+  for (const width of [1440, 1280, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await settle(page);
+    for (const caseSel of ['.case:first-child', '.case:last-child']) {
+      const g = await page.evaluate((cs) => {
+        const rectOf = (sel) => {
+          const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, width: r.width };
+        };
+        const visible = (sel) => document.querySelector(`${cs} ${sel}`).offsetParent !== null;
+        const cardStyle = getComputedStyle(document.querySelector(`${cs} .shot`));
+        return { card: rectOf('.shot'), bar: rectOf('.shotbar'), desk: rectOf('.shot-desk'),
+                 borderTop: parseFloat(cardStyle.borderTopWidth), borderBottom: parseFloat(cardStyle.borderBottomWidth),
+                 barVisible: visible('.shotbar'), deskVisible: visible('.shot-desk'), mobVisible: visible('.shot-mob') };
+      }, caseSel);
+      assert.ok(g.barVisible && g.deskVisible, `${caseSel} framed desktop capture shows at ${width}px`);
+      assert.ok(!g.mobVisible, `${caseSel} phone capture does not overlay at ${width}px`);
+      // Compare against the card's content box: its border ring is not layout slack.
+      assert.ok(Math.abs(g.bar.top - (g.card.top + g.borderTop)) <= 1, `${caseSel} address bar caps the card at ${width}px`);
+      assert.ok(Math.abs(g.desk.top - g.bar.bottom) <= 1, `${caseSel} desktop capture sits directly under its bar at ${width}px`);
+      assert.ok(Math.abs(g.desk.bottom - (g.card.bottom - g.borderBottom)) <= 1, `${caseSel} desktop capture fills the card to its foot at ${width}px`);
+      assert.ok(g.desk.width >= 400, `${caseSel} desktop capture is large enough to read at ${width}px (${Math.round(g.desk.width)}px)`);
+    }
+  }
+});
+
+test('showcase: on mobile widths the phone capture stands alone, large and readable', async ({ page }) => {
   for (const width of [768, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
@@ -715,35 +754,48 @@ test('showcase: on mobile the phone capture stands below the desktop capture as 
       const g = await page.evaluate((cs) => {
         const rectOf = (sel) => {
           const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
-          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+          return { left: r.left, right: r.right, width: r.width, height: r.height };
         };
-        const tagOf = (sel) => {
-          const el = document.querySelector(`${cs} ${sel}`);
-          const r = el.getBoundingClientRect();
-          return { text: el.textContent, display: getComputedStyle(el).display, top: r.top, bottom: r.bottom };
-        };
+        const visible = (sel) => document.querySelector(`${cs} ${sel}`).offsetParent !== null;
         const mobStyle = getComputedStyle(document.querySelector(`${cs} .shot-mob`));
-        return { card: rectOf('.shot'), desk: rectOf('.shot-desk'), mob: rectOf('.shot-mob'), bar: rectOf('.shotbar'),
-                 mobPosition: mobStyle.position, mobRadius: parseFloat(mobStyle.borderTopLeftRadius),
-                 mobHasBezel: mobStyle.boxShadow.includes('inset'), tagDesk: tagOf('.tag-desk'), tagMob: tagOf('.tag-mob'),
+        return { card: rectOf('.shot'), mob: rectOf('.shot-mob'),
+                 barVisible: visible('.shotbar'), deskVisible: visible('.shot-desk'), mobVisible: visible('.shot-mob'),
+                 mobPosition: mobStyle.position, mobDisplay: mobStyle.display, mobRadius: parseFloat(mobStyle.borderTopLeftRadius),
+                 mobHasBezel: mobStyle.boxShadow.includes('inset'),
                  hScroll: document.documentElement.scrollWidth > window.innerWidth + 1 };
       }, caseSel);
+      assert.ok(!g.barVisible && !g.deskVisible, `${caseSel} desktop unit is not shown at ${width}px`);
+      assert.ok(g.mobVisible, `${caseSel} phone capture is shown at ${width}px`);
       assert.equal(g.mobPosition, 'static', `${caseSel} phone capture stands in the flow at ${width}px`);
-      assert.ok(Math.abs(g.desk.top - g.bar.bottom) <= 1, `${caseSel} address bar stays attached to the desktop capture at ${width}px`);
-      assert.ok(g.tagDesk.top >= g.desk.bottom - 1 && g.tagDesk.bottom <= g.mob.top + 1, `${caseSel} desktop caption sits between the captures at ${width}px`);
-      assert.ok(g.mob.top >= g.desk.bottom - 1, `${caseSel} phone capture sits below the desktop capture at ${width}px`);
-      assert.ok(g.mob.width >= 140, `${caseSel} phone capture is wide enough to read at ${width}px (${Math.round(g.mob.width)}px)`);
-      assert.ok(g.mob.right <= g.card.right + 1 && g.mob.left >= g.card.left - 1, `${caseSel} phone capture stays inside the card at ${width}px`);
+      assert.equal(g.mobDisplay, 'block', `${caseSel} phone capture is a centered block at ${width}px`);
+      assert.ok(g.mob.width >= 220, `${caseSel} phone capture is wide enough to read at ${width}px (${Math.round(g.mob.width)}px)`);
+      const spare = g.card.width - g.mob.width;
+      assert.ok(Math.abs(g.mob.left - g.card.left - spare / 2) <= 2, `${caseSel} phone capture is centered at ${width}px`);
       assert.ok(g.mobRadius >= 10 && g.mobHasBezel, `${caseSel} phone capture keeps its device frame at ${width}px`);
-      assert.equal(g.tagDesk.display, 'block', `${caseSel} desktop caption visible at ${width}px`);
-      assert.equal(g.tagMob.display, 'block', `${caseSel} mobile caption visible at ${width}px`);
-      assert.ok(g.tagMob.top >= g.mob.bottom - 1, `${caseSel} mobile caption sits under the phone capture at ${width}px`);
       assert.ok(!g.hScroll, `no horizontal scroll at ${width}px`);
     }
   }
 });
 
-test('showcase: mobile activation preserves the reserved stacked layout', async ({ page }) => {
+// Regression (27 October 2026, bff2b598): an author display rule on a noscript
+// element overrides the browser's scripting-enabled display:none, so the
+// fallback's raw markup leaked onto the page as text. With JavaScript enabled
+// the noscript fallbacks must never render, as boxes or as text.
+test('showcase: with JavaScript the noscript fallbacks never render as text', async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await settle(page);
+    const bad = await page.evaluate(() => ({
+      visibleBox: [...document.querySelectorAll('.shot noscript')].some((n) => n.getClientRects().length > 0),
+      rawText: document.body.innerText.includes('shot-img') || document.body.innerText.includes('<img'),
+    }));
+    assert.ok(!bad.visibleBox, `no noscript box renders at ${width}px`);
+    assert.ok(!bad.rawText, `no raw image markup shows as text at ${width}px`);
+  }
+});
+
+test('showcase: mobile activation preserves the reserved phone block', async ({ page }) => {
   let release;
   const gate = new Promise((resolve) => { release = resolve; });
   await page.route('**/assets/js/showcase.js', async (route) => { await gate; await route.continue(); });
@@ -752,15 +804,15 @@ test('showcase: mobile activation preserves the reserved stacked layout', async 
   await page.waitForFunction(() => document.querySelectorAll('.case:first-child .shot-template').length === 2);
   await page.waitForFunction(() => {
     const t = [...document.querySelectorAll('.case:first-child .shot-template')];
-    return t[0].getBoundingClientRect().height > 100 && t[1].getBoundingClientRect().height > 200;
+    return t[0].getBoundingClientRect().height === 0 && t[1].getBoundingClientRect().height > 200;
   });
   const box = () => page.locator('.case:first-child .shot').boundingBox();
   const before = await box();
   release();
   await page.waitForFunction(() => document.querySelectorAll('.shot-img').length === 4);
   const after = await box();
-  assert.ok(Math.abs(after.height - before.height) < 1, `stacked card height preserved on activation (before ${before.height}, after ${after.height})`);
-  assert.ok(Math.abs(after.y - before.y) < 1, 'stacked card position preserved on activation');
+  assert.ok(Math.abs(after.height - before.height) < 1, `showcase card height preserved on activation (before ${before.height}, after ${after.height})`);
+  assert.ok(Math.abs(after.y - before.y) < 1, 'showcase card position preserved on activation');
 });
 
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
