@@ -34,9 +34,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   "sam-home-mob-dark-320w.webp": "12-20-sam-home-mob-dark-320w.webp"
 };
   const sources = (src, kind) => {
-    const widths = !src.includes('-home-') ? [] : kind === 'Desk' ? [400, 800] : [160, 320];
+    const widths = !/-(home|fireworks|fundraising|menu)-/.test(src) ? [] : kind === 'Desk' ? [400, 800] : [160, 320];
     const fullWidth = kind === 'Desk' ? 1280 : 600;
-    return [...widths.map((w) => `${src.slice(0, src.lastIndexOf('/') + 1)}${responsiveFiles[src.split('/').pop().replace(/^\d+-/, '').replace('.webp', `-${w}w.webp`)]} ${w}w`), `${src} ${fullWidth}w`].join(', ');
+    return [...widths.map((w) => `${src.slice(0, src.lastIndexOf('/') + 1)}${(responsiveFiles[src.split('/').pop().replace(/^\d+-/, '').replace('.webp', `-${w}w.webp`)] || src.split('/').pop().replace('.webp', `-${w}w.webp`))} ${w}w`), `${src} ${fullWidth}w`].join(', ');
   };
   // The desktop mobile preview renders the phone capture at the small-screen
   // solo size; its hint follows the toggle so the preview stays sharp.
@@ -47,6 +47,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     img.src = src;
   };
   new MutationObserver(() => { mob.sizes = mobSizes(); }).observe(document.body, { attributes: true, attributeFilter: ['data-mobile'] });
+  const phoneQuery = matchMedia('(max-width: 960px)');
+  const phoneLayout = () => phoneQuery.matches || document.body.dataset.mobile === 'true';
   // Populate initial sources in one pass, already matching the saved theme.
   const initial = thumbs[0];
   if (caseEl === document.querySelector('.case')) desk.fetchPriority = 'high';
@@ -57,6 +59,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   let swapSeq = 0;
   function select(index) {
     wanted = (index + thumbs.length) % thumbs.length;
+    if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) wanted = 0;
     const chosen = thumbs[wanted];
     // Swap the two shots atomically: only once BOTH new images have loaded,
     // so the desktop and mobile screenshots never visibly change at
@@ -113,5 +116,16 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     }
   }).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
 
+  const syncChoices = () => {
+    thumbs.forEach((thumb) => { if (thumb.dataset.mobileOnly) thumb.hidden = !phoneLayout(); });
+    if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) {
+      const hadFocus = thumbs.includes(document.activeElement);
+      select(0);
+      if (hadFocus) thumbs[0].focus();
+    }
+  };
+  phoneQuery.addEventListener('change', syncChoices);
+  new MutationObserver(syncChoices).observe(document.body, { attributes: true, attributeFilter: ['data-mobile'] });
+  syncChoices();
   thumbs.forEach((thumb, j) => thumb.addEventListener('click', () => select(j)));
 });

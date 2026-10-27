@@ -364,7 +364,7 @@ body[data-style="atelier"][data-theme="dark"] .credstrip { background: #101711; 
      visitor's own device. On small screens the phone capture stands alone,
      large and readable, instead of crowding both captures together; desktop
      widths show only the framed desktop capture. */
-  /* No redundant panel around the solo phone. A 5:7 top crop keeps the
+  /* No redundant panel around the solo phone. A 5:9 top crop keeps the
      capture readable without making each project a screen and a half long. */
   .shot { background: transparent; border: 0; box-shadow: none; overflow: visible; }
   .shotbar, .shot-desk { display: none; }
@@ -545,3 +545,6 @@ body[data-theme] .privacy-details [data-cookie-preferences] { background: var(--
 
 /* Failed consent saves remain visible after the choice panel closes. */
 .cookie-save-warning { position: relative; margin: 0; padding: 12px 20px; background: var(--bg); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 14px; }
+
+/* Viewport-specific examples never enter the desktop keyboard order. */
+.thumb[hidden] { display: none !important; }

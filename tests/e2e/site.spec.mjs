@@ -2,7 +2,7 @@
 // Chromium, Firefox, WebKit and mobile Chrome.
 // Usage: npx playwright test   (npm run test:e2e)
 
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -651,15 +651,15 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
     src: document.querySelector('.case:first-child .shot-desk').src,
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
-  assert.match(before.src, /foa-home-desk-dark\.webp$/, 'homepage screenshot shown by default (page opens dark)');
-  assert.equal(before.pill, 'Homepage', 'pill labels the default shot');
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  assert.match(before.src, /foa-fundraising-desk-dark\.webp$/, 'Fundraising screenshot shown by default (page opens dark)');
+  assert.equal(before.pill, 'Fundraising', 'pill labels the default shot');
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   await page.waitForTimeout(200);
   const after = await page.evaluate(() => ({
     src: document.querySelector('.case:first-child .shot-desk').src,
     mobSrc: document.querySelector('.case:first-child .shot-mob').src,
     pill: document.querySelector('.case:first-child .pill').textContent,
-    pressed: document.querySelector('.case:first-child .thumb:nth-child(2)').getAttribute('aria-pressed'),
+    pressed: document.querySelector('.case:first-child .thumb[data-label="What’s On"]').getAttribute('aria-pressed'),
     otherPill: document.querySelector('.case:last-child .pill').textContent,
   }));
   assert.match(after.src, /foa-whatson-desk-dark\.webp$/, 'main screenshot swaps to the chosen page');
@@ -676,8 +676,8 @@ test('showcase: mobile page choices are readable, keyboard-accessible and indepe
   await settle(page);
   const first = '.case:first-child';
   const buttons = page.locator(`${first} .thumb`);
-  assert.equal(await buttons.count(), 3);
-  for (const [index, expected] of [[1, 'whatson'], [2, 'fundraising'], [0, 'home']]) {
+  assert.equal(await buttons.count(), 5);
+  for (const [index, expected] of [[3, 'whatson'], [1, 'fireworks'], [2, 'home'], [4, 'menu'], [0, 'fundraising']]) {
     await buttons.nth(index).focus();
     await page.keyboard.press(index === 2 ? 'Space' : 'Enter');
     await page.waitForFunction((name) => document.querySelector('.case:first-child .shot-mob').currentSrc.includes(`foa-${name}-mob`), expected);
@@ -685,7 +685,7 @@ test('showcase: mobile page choices are readable, keyboard-accessible and indepe
       pressed: [...document.querySelectorAll('.case:first-child .thumb')].map((b) => b.getAttribute('aria-pressed')),
       other: document.querySelector('.case:last-child .shot-mob').currentSrc,
     }));
-    assert.deepEqual(state.pressed, [0, 1, 2].map((j) => String(j === index)));
+    assert.deepEqual(state.pressed, [0, 1, 2, 3, 4].map((j) => String(j === index)));
     assert.match(state.other, /sam-home-mob-dark(?:-\d+w)?\.webp$/, 'choosing a page does not change the other project');
   }
   await shot(page, 'browser-showcase-mobile-choices', testInfo.project.name);
@@ -697,14 +697,14 @@ test('showcase: composed overviews have a single readable set of controls at eve
     await page.goto('/');
     const state = await page.evaluate(() => ({
       shots: [...document.querySelectorAll('.shot-img')].filter((el) => el.offsetParent !== null).length,
-      sizes: [...document.querySelectorAll('.thumb')].map((el) => ({ height: el.getBoundingClientRect().height, font: parseFloat(getComputedStyle(el.querySelector('span')).fontSize) })),
+      sizes: [...document.querySelectorAll('.thumb')].filter(el => !el.hidden).map((el) => ({ height: el.getBoundingClientRect().height, font: parseFloat(getComputedStyle(el.querySelector('span')).fontSize) })),
       duplicateControls: document.querySelectorAll('.m-step, .zoom-cue, .thumb img').length,
     }));
     // One capture per viewport (Nick, 27 October 2026): the capture matching
     // the visitor's own device shows alone at every width.
     assert.equal(state.shots, 2, `only the capture matching the visitor's device is visible at ${width}px`);
     assert.equal(state.duplicateControls, 0, 'no competing arrows, thumbnail images or enlargement affordance');
-    assert.equal(state.sizes.length, 6);
+    assert.equal(state.sizes.length, width <= 960 ? 8 : 7);
     for (const size of state.sizes) {
       assert.ok(size.height >= 44, `44px touch target at ${width}px`);
       assert.ok(size.font >= 12, `readable label at ${width}px`);
@@ -830,7 +830,7 @@ test('showcase: mobile activation preserves the reserved phone block', async ({ 
 // must change together, rapid choices must settle on the latest, and a failed
 // image must not block the pair. Artificial per-image latency forces the
 // windows open; assertions are on observable behaviour, not timing internals.
-const pageOf = (file) => (file.match(/foa-(home|whatson|fundraising)-/) || [])[1] || '';
+const pageOf = (file) => (file.match(/foa-(home|fireworks|whatson|fundraising)-/) || [])[1] || '';
 const shotPair = (page) => page.evaluate(() => ({
   desk: document.querySelector('.case:first-child .shot-desk').currentSrc.split('/').pop().replace(/^(?:\d+-)+/, '').replace(/-\d+w(?=\.webp$)/, ''),
   mob: document.querySelector('.case:first-child .shot-mob').currentSrc.split('/').pop().replace(/^(?:\d+-)+/, '').replace(/-\d+w(?=\.webp$)/, ''),
@@ -847,7 +847,7 @@ test('showcase: screenshot pair swaps atomically under uneven image latency', as
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
-  await page.click('.case:first-child .thumb:nth-child(2)');
+  await page.click('.case:first-child .thumb[data-label="What’s On"]');
   const mismatches = [];
   for (let i = 0; i < 12; i++) {
     const pair = await shotPair(page);
@@ -865,53 +865,53 @@ test('showcase: rapid thumbnail changes settle on the latest choice', async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
-  await page.click('.case:first-child .thumb:nth-child(2)');
+  await page.click('.case:first-child .thumb[data-label="What’s On"]');
   await page.waitForTimeout(120);
-  await page.click('.case:first-child .thumb:nth-child(3)');
+  await page.click('.case:first-child .thumb[data-label="Homepage"]');
   await page.waitForFunction(() => {
     const d = document.querySelector('.case:first-child .shot-desk');
     const m = document.querySelector('.case:first-child .shot-mob');
-    return d.currentSrc.includes('fundraising-desk') && m.currentSrc.includes('fundraising-mob');
+    return d.currentSrc.includes('home-desk') && m.currentSrc.includes('home-mob');
   }, { timeout: 8000 });
   const state = await page.evaluate(() => ({
     pill: document.querySelector('.case:first-child .pill').textContent,
     selected: document.querySelector('.case:first-child .thumb.sel').textContent.trim(),
   }));
-  assert.equal(state.pill, 'Fundraising', 'pill follows the latest choice');
-  assert.equal(state.selected, 'Fundraising', 'selected label follows the latest choice');
+  assert.equal(state.pill, 'Homepage', 'pill follows the latest choice');
+  assert.equal(state.selected, 'Homepage', 'selected label follows the latest choice');
 });
 
 test('showcase: a failed screenshot preserves the displayed pair and allows retry', async ({ page }) => {
   let fail = true;
-  await page.route('**/assets/images/work/foa-fundraising-desk-dark.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
+  await page.route('**/assets/images/work/*foa-home-desk-dark*.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
   const before = await shotPair(page);
-  const failedResponse = page.waitForResponse((response) => response.url().includes('fundraising-desk-dark.webp') && response.status() === 404);
+  const failedResponse = page.waitForResponse((response) => response.url().includes('home-desk-dark') && response.status() === 404);
   await page.evaluate(() => {
     window.failedShowcaseSwap = new Promise((resolve) => {
       document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true });
     });
   });
-  await page.click('.case:first-child .thumb:nth-child(3)');
+  await page.click('.case:first-child .thumb[data-label="Homepage"]');
   await failedResponse;
   await page.evaluate(() => window.failedShowcaseSwap);
   assert.deepEqual(await shotPair(page), before, 'a failed replacement cannot discard either working screenshot');
-  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
-  assert.equal(await page.locator('.case:first-child .thumb.sel').textContent(), 'Homepage');
+  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Fundraising');
+  assert.equal(await page.locator('.case:first-child .thumb.sel').textContent(), 'Fundraising');
   // After a failed swap the displayed pair stays the theme-swap target (the
   // brief: keep the working pair and its selected label): a theme change
   // re-themes the working pair rather than retrying the failed tab.
   await page.evaluate(() => { document.body.dataset.theme = 'light'; });
   await page.waitForFunction(() => {
     const src = document.querySelector('.case:first-child .shot-mob').currentSrc;
-    return src.includes('foa-home-mob') && !src.includes('-dark');
+    return src.includes('foa-fundraising-mob') && !src.includes('-dark');
   });
-  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
+  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Fundraising');
   fail = false;
-  await page.click('.case:first-child .thumb:nth-child(3)');
-  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fundraising-mob'));
+  await page.click('.case:first-child .thumb[data-label="Homepage"]');
+  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('home-mob'));
   const state = await page.evaluate(() => ({
     // src, not currentSrc: the swap commits both src attributes atomically, but
     // Firefox only updates currentSrc for a failed image after the 404 settles,
@@ -920,9 +920,9 @@ test('showcase: a failed screenshot preserves the displayed pair and allows retr
     deskAlt: document.querySelector('.case:first-child .shot-desk').alt,
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
-  assert.ok(state.deskSrc.includes('fundraising-desk'), 'retry commits the working replacement');
-  assert.match(state.deskAlt, /Fundraising/);
-  assert.equal(state.pill, 'Fundraising');
+  assert.ok(state.deskSrc.includes('home-desk'), 'retry commits the working replacement');
+  assert.match(state.deskAlt, /homepage/);
+  assert.equal(state.pill, 'Homepage');
 });
 
 test('showcase: screenshots follow the page light/dark theme', async ({ page }) => {
@@ -942,25 +942,25 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
   });
   const dark0 = await read();
   assert.equal(dark0.theme, 'dark', 'page opens dark by default');
-  assert.equal(dark0.foaDesk, 'foa-home-desk-dark.webp', 'FOA shows its dark capture in dark mode');
-  assert.equal(dark0.foaMob, 'foa-home-mob-dark.webp', 'mobile shot follows too');
-  assert.equal(dark0.foaSelected, 'Homepage', 'page choice is labelled');
+  assert.equal(dark0.foaDesk, 'foa-fundraising-desk-dark.webp', 'FOA shows its dark capture in dark mode');
+  assert.equal(dark0.foaMob, 'foa-fundraising-mob-dark.webp', 'mobile shot follows too');
+  assert.equal(dark0.foaSelected, 'Fundraising', 'page choice is labelled');
   assert.equal(dark0.samDesk, 'sam-home-desk-dark.webp', 'Sam shows its dark capture in dark mode too');
   await page.locator('button.theme-toggle').first().click();
   await page.waitForTimeout(300);
   const light = await read();
   assert.equal(light.theme, 'light');
-  assert.equal(light.foaDesk, 'foa-home-desk.webp', 'FOA swaps to its light capture in light mode');
-  assert.equal(light.foaMob, 'foa-home-mob.webp');
-  assert.equal(light.foaSelected, 'Homepage', 'theme changes preserve the selected page');
+  assert.equal(light.foaDesk, 'foa-fundraising-desk.webp', 'FOA swaps to its light capture in light mode');
+  assert.equal(light.foaMob, 'foa-fundraising-mob.webp');
+  assert.equal(light.foaSelected, 'Fundraising', 'theme changes preserve the selected page');
   assert.equal(light.samDesk, 'sam-home-desk.webp', 'Sam swaps to its light capture in light mode');
   await page.locator('button.theme-toggle').first().click();
   await page.waitForTimeout(300);
   const dark1 = await read();
-  assert.equal(dark1.foaDesk, 'foa-home-desk-dark.webp', 'toggling back restores the dark captures');
+  assert.equal(dark1.foaDesk, 'foa-fundraising-desk-dark.webp', 'toggling back restores the dark captures');
   assert.equal(dark1.samDesk, 'sam-home-desk-dark.webp', 'Sam dark captures return too');
 
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   const waitForSelectedPair = (suffix) => page.waitForFunction((ending) => {
     const first = document.querySelector('.case:first-child');
     return first.querySelector('.shot-desk').currentSrc.replace(/-\d+w(?=\.webp$)/, '').endsWith(`foa-whatson-desk${ending}.webp`)
@@ -1052,4 +1052,29 @@ test('experience page: all four roles render', async ({ page }) => {
   for (const expected of ['NatWest Boxed', 'Oddschecker', 'Moogsoft', 'Alfa']) {
     assert.ok(roles.some((r) => r.includes(expected)), `role present: ${expected}`);
   }
+});
+
+test('showcase: Fundraising leads and Menu is a labelled phone-only last choice', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'Homepage', 'What’s On', 'Menu']);
+  await expect(first.locator('.shot-mob')).toHaveAttribute('alt', /Fundraising/);
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  await menu.focus(); await page.keyboard.press('Enter');
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('alt', /open navigation menu/);
+  assert.ok((await first.locator('.shot-mob').getAttribute('src')).includes('foa-menu-mob'));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(menu).toBeHidden();
+  await expect(first.locator('.thumb').first()).toHaveAttribute('aria-pressed', 'true');
+  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'Homepage', 'What’s On']);
+  await expect(first.locator('.shot-desk')).toHaveAttribute('alt', /Fundraising/);
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await expect(menu).toBeVisible(); await menu.click();
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await expect(menu).toBeHidden();
+  await expect(first.locator('.thumb').first()).toHaveAttribute('aria-pressed', 'true');
+  assert.equal(await first.locator('.thumb[aria-pressed="true"]').count(), 1);
 });

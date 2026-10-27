@@ -129,13 +129,13 @@ test('paired screenshot changes wait for both decoded candidates', async ({ page
       return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
     };
   });
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   await page.waitForFunction(() => window.decodeReleases.length === 2);
-  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-home-desk');
-  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-home-mob');
+  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-fundraising-desk');
+  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-fundraising-mob');
   await page.evaluate(() => window.decodeReleases[0]());
-  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-home-desk');
-  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-home-mob');
+  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-fundraising-desk');
+  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-fundraising-mob');
   await page.evaluate(() => window.decodeReleases[1]());
   await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-whatson-desk/);
   await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-whatson-mob/);
@@ -152,14 +152,14 @@ test('theme change during a pending selection keeps the requested screenshots', 
       return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
     };
   });
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   await page.waitForFunction(() => window.decodeReleases.length === 2);
   // The theme flips while the requested pair is still decoding; the pending
   // choice must survive, reloading the same selection for the new theme.
   await page.evaluate(() => { document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'; });
   await page.waitForFunction(() => window.decodeReleases.length >= 6);
   await page.evaluate(() => window.decodeReleases.splice(0).forEach((release) => release()));
-  await expect(page.locator('.case:first-child .thumb:nth-child(2)')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.case:first-child .thumb[data-label="What’s On"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.case:first-child .pill-label')).toHaveText(/What.s On/);
   await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-whatson-desk(-dark)?\.webp$/);
   await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-whatson-mob(-dark)?\.webp$/);
@@ -222,11 +222,11 @@ test('a rejected decode retains both displayed images and selected label', async
     };
     window.failedDecodeSwap = new Promise((resolve) => document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true }));
   });
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   await page.evaluate(() => window.failedDecodeSwap);
   expect(await page.locator('.case:first-child .shot-img').evaluateAll((images) => images.map((i) => i.currentSrc))).toEqual(before);
-  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Homepage');
-  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Homepage');
+  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Fundraising');
+  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Fundraising');
 });
 
 test('an older decoded pair cannot overwrite a newer selection', async ({ page }) => {
@@ -242,11 +242,11 @@ test('an older decoded pair cannot overwrite a newer selection', async ({ page }
       });
     };
   });
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   await page.waitForFunction(() => window.olderDecodeReleases.length === 2);
-  await page.locator('.case:first-child .thumb:nth-child(3)').click();
-  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-fundraising-desk/);
-  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-fundraising-mob/);
+  await page.locator('.case:first-child .thumb[data-label="Homepage"]').click();
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-home-desk/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-home-mob/);
   await page.evaluate(async () => {
     window.olderDecodeReleases.forEach((release) => release());
     // A task boundary lets all promise continuations, including the pair's
@@ -254,10 +254,10 @@ test('an older decoded pair cannot overwrite a newer selection', async ({ page }
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
   expect(await page.evaluate(() => window.olderDecodesCompleted)).toBe(2);
-  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-fundraising-desk/);
-  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-fundraising-mob/);
-  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Fundraising');
-  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Fundraising');
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-home-desk/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-home-mob/);
+  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Homepage');
+  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Homepage');
 });
 
 // Regression: a 1x phone should not fetch 600w for a capture capped at 300px.
