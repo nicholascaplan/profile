@@ -720,13 +720,16 @@ const shotGeometry = (page, caseSel = '.case:first-child') => page.evaluate((cs)
   const desk = rectOf('.shot-desk');
   const mob = rectOf('.shot-mob');
   const card = rectOf('.shot');
+  const phoneEl = document.querySelector(`${cs} .shot-phone`);
+  const phone = phoneEl ? phoneEl.getBoundingClientRect() : null;
   const mobStyle = getComputedStyle(document.querySelector(`${cs} .shot-mob`));
   const mobPosition = mobStyle.position;
+  const phonePosition = phoneEl ? getComputedStyle(phoneEl).position : null;
   const mobRadius = parseFloat(mobStyle.borderTopLeftRadius);
   const mobHasBezel = mobStyle.boxShadow.includes('inset');
   const overlap = Math.max(0, Math.min(desk.right, mob.right) - Math.max(desk.left, mob.left))
     * Math.max(0, Math.min(desk.bottom, mob.bottom) - Math.max(desk.top, mob.top));
-  return { card, bar, desk, mob, mobPosition, mobRadius, mobHasBezel, overlap };
+  return { card, bar, desk, mob, phone, mobPosition, phonePosition, mobRadius, mobHasBezel, overlap };
 }, caseSel);
 
 test('showcase: desktop pairs the phone capture beside the desktop capture; smaller layouts keep the overlay', async ({ page, isMobile }) => {
@@ -737,13 +740,19 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
     await settle(page);
     for (const caseSel of ['.case:first-child', '.case:last-child']) {
       const g = await shotGeometry(page, caseSel);
-      assert.equal(g.mobPosition, 'static', `${caseSel} phone capture sits in the card row at ${width}px`);
+      // The phone fills a static grid-area wrapper absolutely, so the browser
+      // unit alone drives the row height and the pair's heights match exactly.
+      assert.ok(g.phonePosition === 'static' || g.phonePosition === 'relative', `${caseSel} phone column sits in the card row at ${width}px (position ${g.phonePosition})`);
+      assert.ok(g.phone && Math.abs(g.mob.top - g.phone.top) <= 1 && Math.abs(g.mob.bottom - g.phone.bottom) <= 1, `${caseSel} phone capture fills its column at ${width}px`);
       assert.ok(g.mob.left >= g.desk.right - 1, `${caseSel} phone capture starts where the desktop capture ends at ${width}px`);
       assert.ok(Math.abs(g.mob.bottom - g.desk.bottom) <= 1, `${caseSel} captures share a baseline at ${width}px`);
       assert.ok(Math.abs(g.desk.top - g.bar.bottom) <= 1, `${caseSel} address bar stays attached to the desktop capture at ${width}px`);
       const unit = g.bar.height + g.desk.height;
       const ratio = g.mob.height / unit;
-      assert.ok(Number.isFinite(ratio) && ratio >= 0.85 && ratio <= 1, `${caseSel} phone capture stands no taller than the framed browser window at ${width}px (ratio ${ratio.toFixed(3)})`);
+      // Nick, 27 October 2026 (PR #24 comment 6447346709): the captures' heights
+      // must not differ - the phone matches the framed browser window exactly.
+      assert.ok(Number.isFinite(ratio) && ratio >= 0.98 && ratio <= 1, `${caseSel} phone capture matches the framed browser window height at ${width}px (ratio ${ratio.toFixed(3)})`);
+      assert.ok(Math.abs(g.mob.top - g.bar.top) <= 1, `${caseSel} phone capture top aligns with the browser window top at ${width}px`);
       assert.ok(g.mobRadius >= 14, `${caseSel} phone capture has device corners at ${width}px`);
       assert.ok(g.mobHasBezel, `${caseSel} phone capture has a bezel ring at ${width}px`);
       assert.ok(g.mob.right <= g.card.right + 1 && g.desk.left >= g.card.left - 1, `${caseSel} both captures stay inside the card at ${width}px`);
@@ -802,7 +811,7 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
   await page.locator('.case:first-child .thumb:nth-child(2)').click();
   await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('foa-whatson-mob'));
   const switched = await shotGeometry(page);
-  assert.equal(switched.mobPosition, 'static', 'chosen pair stays beside the desktop capture');
+  assert.ok(switched.phonePosition === 'static' || switched.phonePosition === 'relative', 'chosen pair stays beside the desktop capture');
   assert.equal(switched.overlap, 0, 'chosen pair does not overlap');
   for (const width of [960, 768]) {
     await page.setViewportSize({ width, height: 900 });
