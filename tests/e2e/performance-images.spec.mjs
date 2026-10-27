@@ -288,6 +288,24 @@ test('every declared mobile capture candidate matches its decoded pixel dimensio
     const dimensions = await page.evaluate(async (src) => { const i = new Image(); i.src = src; await i.decode(); return [i.naturalWidth,i.naturalHeight]; }, src);
     expect(dimensions[0], src).toBe(1170); expect(dimensions[1], src).toBe(2106);
   }
+  // Verify the synchronous runtime map for every selectable capture and theme.
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate(value => { document.body.dataset.theme = value; }, theme);
+    for (const card of await page.locator('.case').all()) {
+      for (const thumb of await card.locator('.thumb').all()) {
+        const source = await thumb.getAttribute(theme === 'dark' ? 'data-src-mob-dark' : 'data-src-mob');
+        const capture = manifest[source.split('/').pop()];
+        expect(capture, source).toBeDefined();
+        await thumb.click();
+        const image = card.locator('.shot-mob');
+        await expect(image).toHaveAttribute('src', source);
+        const srcset = await image.getAttribute('srcset');
+        for (const [width, file] of Object.entries(capture.variants)) {
+          expect(srcset, source).toContain(`${file} ${width}w`);
+        }
+      }
+    }
+  }
   for (const image of await page.locator('.shot-mob').all()) {
     const result = await image.evaluate(async i => { const candidate = new Image(); candidate.src = i.currentSrc; await candidate.decode(); const descriptor = i.srcset.split(',').map(s=>s.trim().split(/\s+/)).find(([u])=>new URL(u,location.href).href===i.currentSrc);return {actual:candidate.naturalWidth,declared:Number(descriptor[1].replace('w','')),need:i.getBoundingClientRect().width*devicePixelRatio};});
     expect(result.actual).toBe(result.declared);expect(result.actual).toBeGreaterThanOrEqual(result.need);
