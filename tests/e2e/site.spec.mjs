@@ -13,6 +13,28 @@ async function shot(page, name, project) {
   await page.screenshot({ path: join(shotsDir, `${name}-${project}.png`) });
 }
 
+// Viewport resizes do not apply synchronously under mobile emulation: media
+// queries and grid tracks can still report the previous width's layout on the
+// first measurement. After a resize, wait until the hero geometry reads
+// identically twice in a row before asserting on it.
+async function settleHeroLayout(page) {
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.waitForFunction(() => {
+    const h1 = document.querySelector('.hero h1');
+    const grid = document.querySelector('.hero-grid');
+    if (!h1 || !grid) return true;
+    const probe = JSON.stringify([
+      h1.getBoundingClientRect().width,
+      getComputedStyle(h1).fontSize,
+      getComputedStyle(grid).gridTemplateColumns,
+    ]);
+    const stable = probe === window.__heroProbe;
+    window.__heroProbe = probe;
+    return stable;
+  }, null, { polling: 100, timeout: 10000 }).catch(() => {});
+}
+
 // WCAG contrast ratio of the hero/muted body text against the page background.
 function heroTextContrast() {
   const lum = (rgb) => {
@@ -267,6 +289,7 @@ test('hero portrait stays within reach of the heading on wide screens', async ({
   await page.evaluate(() => document.fonts.ready);
   for (const width of [1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    await settleHeroLayout(page);
     const gap = await page.evaluate(() => {
       const heading = document.querySelector('.hero h1');
       const range = document.createRange();
@@ -293,6 +316,7 @@ test('hero heading keeps earn and their on the same line', async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
   for (const width of [320, 390, 698, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    await settleHeroLayout(page);
     const words = await page.locator('.hero h1').evaluate((heading) => {
       const node = heading.firstChild;
       return ['earn', 'their'].map((word) => {
