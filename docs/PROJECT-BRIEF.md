@@ -1,71 +1,58 @@
-# Profile site project brief
+# Project brief
 
-## Current design (25 October 2026, responsive UX refinement)
+What this site is and what it must do. This document describes requirements. It changes only when the project's direction changes. Individual design and engineering decisions, and the reasons for them, are in [decisions.md](decisions.md). Working rules for contributors are in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-- Keep the forest-green/terracotta identity, both themes, dark first-visit default and side-by-side hero portrait. Scale the portrait and headline with the site container on phones, including desktop phone previews.
-- Public pages use the available width. Phone styling starts at 600px; project sections stack at 960px and below. A fixed 430px frame is exclusively an explicit local/Netlify development-preview choice, tracked separately as `data-preview`. With no manual override, every host follows viewport changes; production ignores stored development choices.
-- Projects read in DOM order as heading, composed screenshot, description/role and live-site CTA. Desktop keeps the alternating two-column composition. Project headings use h2 and label their articles.
-- Treat screenshots as visual teasers, not miniature interactive sites. Keep paired, theme-matching captures and atomic switching, replacing tiny image thumbnails and duplicate arrow/counter controls with one set of readable, keyboard-operable page buttons (44px minimum targets). The live site remains the route for exploring a project. No lightbox or zoom affordance.
-- Mobile project copy and contact inputs are at least 16px. The home intro offers an early enquiry link; the footer is the single closing contact section, replacing the duplicated bordered teaser.
-- Explain design/development roles without inventing project outcomes, target markets or delivery promises. Introduce the experience page in terms of client benefits, retaining the career detail. The contact message has a visible, programmatically associated prompt; no response-time promise is added without Nick confirming one. Native validation and the existing Formspree submission remain unchanged.
+## Purpose
 
-Earlier entries below are historical decisions and intermediate states; the current design above supersedes conflicting layout/gallery descriptions.
+Websites by Nick Caplan (websitesbynick.co.uk) shows Nick's website-building work and makes it easy for a small business or organisation to get in touch. Websites come first. His wider engineering experience is supporting evidence of credibility, not the main offer.
 
-Current status (24 October 2026): the portfolio-first redesign (option C7) is on the c7-redesign branch. The single page becomes three real URLs - home (websites lead), experience (the CV content) and contact (the form, reframed "Have a website in mind?") - with visible navigation on every screen size and no menu button. Showcase cards show one hero-sized screenshot per site, chosen by labelled thumbnails; on mobile, visible prev/next arrows and a counter step through the same set. Screenshots are static captures, optimised to WebP. Shared CSS and JavaScript move to `assets/css/site.css` and `assets/js/`; the theme and mobile preview behaviour are unchanged. The hero portrait's placement is awaiting Nick's choice between beside the Experience intro and beside the home hero text, and lands separately.
+## Audience
 
+Prospective clients who want a modern, responsive website designed, built and maintained for them. Most arrive on a phone, so the mobile experience matters as much as desktop.
 
-Current status (24 October 2026): the local-only preview change and all three defect fixes have merged. Deployed layouts now also follow breakpoint changes without reloading, while local preview choices remain fixed until toggled. The coverage branch has been rebased onto those changes, retaining its Playwright workflow; the three regression checks below now run as ordinary desired-state assertions, with no expected-failure markers. Earlier entries below record the decisions and intermediate states.
+## Pages
 
-Personal profile page for Nick Caplan, live at [websitesbynick.co.uk](https://websitesbynick.co.uk/). Deployed from `main` by GitHub Pages (`.github/workflows/pages.yml`).
+- **Home**: leads with the websites Nick has built. Each project shows what it is, Nick's role and a link to the live site.
+- **Experience**: Nick's background, written in terms of what it means for a client. Earlier roles are presented around the website building they involved. Use only facts Nick has approved and never invent projects, responsibilities or results.
+- **Contact**: a short enquiry form ("Have a website in mind?"), sent through Formspree.
+- **Privacy & cookies**: describes what the site actually does.
 
-## How the site is built
+Every page has the same navigation, visible at all screen sizes, and the same footer with a single closing contact call to action.
 
-- Single static `index.html`: inline CSS and vanilla JavaScript, no build step and no runtime dependencies.
-- Behaviour checks live in `tests/` and run with `node --test` - also dependency-free.
+## Content requirements
 
-## Decisions
+- Describe roles and work plainly. Do not invent project outcomes, target markets, results or delivery promises.
+- Do not promise a response time unless Nick confirms one.
+- Use British English.
+- Project examples use composed desktop and phone screenshots that follow the page theme. They are visual teasers; the live site is how a visitor explores a project.
+- Only the finished portrait belongs in the repository, not source photographs.
 
-- Light and dark themes; the choice persists in `localStorage` under `nick-theme`.
-- The mobile preview toggle in the nav is a development aid, not a visitor feature. It only appears when the site is served locally (`localhost`, `127.0.0.1`, `[::1]`, or a `file://` page). On the deployed site the control is removed and the layout simply follows the viewport width, including on narrow screens; a stored `nick-mobile` choice is only honoured on local hosts (24 October 2026).
-- Test coverage extends beyond the preview toggle: theme logic, page content and structure, and real browser behaviour in headless Chrome (still dependency-free). Coverage work lands on a separate branch and pull request so the preview fix stays focused (24 October 2026).
-- Known defects, recorded 24 October 2026: at 320px the hero headline text overflows into the portrait (the painted text, not the element box, crosses it); the light theme's muted body text measures about 3.9:1 contrast, below the 4.5:1 guideline. The checks assert the desired state and are reported as expected failures while each defect reproduces, separately from passing checks; they fail loudly if a defect stops reproducing so the record is updated. Neither defect is fixed yet - fixes need a product decision first.
+## Design requirements
 
-- Update (24 October 2026): browser checks standardise on Playwright (Desktop Chromium, Firefox, WebKit and mobile Chrome) on the coverage PR, matching the FOA and Sam repos. Dependency-free was an implementation choice of the first harness, not a repo policy; the `node --test` unit and content checks stay dependency-free. The workflow runs in the official Playwright container with the package version pinned and stays green cold (77s) and warm (under 90s).
-- Update (24 October 2026): both defects are fixed on the defect-fix PR. The hero portrait stacks under the headline at 480px and below (the overlap reproduced from 320px to 414px and cleared at 428px); the light-theme muted tokens move from 3.93:1 to 5.36:1. Verified with before/after captures and with both checks asserted in their desired state passing on all four browsers. When that PR merges, the coverage suite's two expected-failure records are removed on merge-up; until then their loud failure is intentional.
-- Update (24 October 2026): this PR and the coverage PR both add `.github/workflows/test.yml` with different content; whichever merges second reconciles that file.
-- Update (24 October 2026): a third known defect was found and fixed on the defect-fix PR: CTA symbols could wrap away from the end of their label - at 320px the "Explore my work" hero button let its arrow drop onto a line of its own, away from "work", under 200% enlarged text the "Get in touch" and "Send message" buttons let their mail icon separate from the final word, and the footer "View on GitHub" source link let its GitHub icon separate from "GitHub" in the same way. Nick's rule (24 October 2026): a CTA symbol, arrow or icon, never wraps away from the end of its label - the final word and its symbol form one no-wrap unit. The rule is stored in code (the final word and symbol sit in a no-wrap `cta-end` span, with a comment at the pattern; the footer source link uses the same structure) and recorded here. The coverage suite carries a third expected-failure record for it, checking narrow widths and enlarged text, which reproduces on all four browsers until the defect-fix PR merges; the earlier entries' count of expected-failure records rises from two to three, all to be removed on that PR's merge-up.
+- Forest green and terracotta identity, with light and dark themes. Dark is the default for new visitors, and a visitor's saved choice always wins. The page is correct on first paint, with no flash of the wrong theme.
+- Responsive at every width from 320px up, with phone styling on small screens and stacked project sections below desktop widths. The public site follows the viewport. A fixed phone frame exists only as a development aid on local and preview hosts.
+- Readable and usable: text contrast meets WCAG AA in both themes, body and form text is at least 16px on phones, and touch targets are at least 44px.
+- Everything works with enlarged text and at 320px with no clipping, overlap or sideways scrolling.
+- Interactive controls are keyboard operable with visible focus and correct accessible names.
+- A call-to-action's arrow or icon never wraps away from the end of its label.
 
-- Update (25 October 2026): theme initialisation moves before first paint. Each of the three pages carries one tiny inline bootstrap immediately after `<body>`, byte-identical across pages, which sets `data-theme` (and the local-only `data-mobile`) from a guarded `localStorage` read with a dark default, so the first paint is already correct and the light-to-dark flash on load is gone. Dark is now the default theme for new visitors; a saved light or dark choice still wins, `nick-theme` is only written when the visitor toggles, and storage failures are guarded. Nick approved a single exception to the no-inline-scripts rule for this shared startup code (25 October 2026): the exception is limited to that one bootstrap per page, and the content check now asserts exactly one inline script per page, identical on every page.
-- Update (25 October 2026): the footer "Let's Make It Happen." heading links to the contact action on every page - the Contact page's form via `#contact-form`, with focus moved to the form on arrival. Primary CTA label text is 15px across the site for consistency, with nav and footer chrome deliberately smaller. Intro copy now reads: "I design, build and maintain modern, responsive websites, tailored to each project. You can find examples of my work below."
+## Performance requirements
 
-- Update (25 October 2026): two load-speed changes, both approved by Nick. The four font families are self-hosted instead of loaded from Google Fonts: the same woff2 files Google served for latin text, declared in `assets/css/fonts.css` with `font-display: swap`, licence texts in `assets/fonts/OFL-*.txt` (all SIL OFL 1.1). The two font preconnects and the render-blocking Google stylesheet link are removed, so pages keep the same fonts with two fewer cross-origin connections and no third-party dependency. The hero portrait is resized from 984px to 600px wide (99KB to 51KB); it still renders at 300x300 and is unchanged on screen. Appearance verified pixel-identical against the previous state across all pages, both themes and both viewports, with the only differences inside the resampled portrait itself.
+- Pages load quickly on a throttled mobile connection. Fonts are self-hosted, images are optimised and sized for where they appear, and there is no render-blocking third-party code.
+- Optimisation must not visibly reduce image sharpness.
 
-- Update (25 October 2026): the Netlify site's main address (nickcaplan-profile.netlify.app) is switched from serving a second copy of `main` to redirecting every path to the same path on the GitHub Pages site, a change Nick approved. The redirect ships through a production-context-only build command in `netlify.toml`, which writes a `_redirects` rule into production deploys only; PR previews build without it and are unaffected. The rule uses 302 (temporary) rather than 301 so browsers don't cache the redirect permanently and the change stays easy to reverse. GitHub Pages remains the live host; Netlify remains for PR previews. Verified on this change's own deploy preview before merge: with the rule temporarily applied to the preview context, the root and sub-paths redirected correctly; with the final production-only version, the preview served the site normally.
+## Privacy and analytics
 
-- Update (26 October 2026): Nick selected the smiling, centred burgundy-shirt portrait after comparing shirt colours in both themes. Keep the circular CSS crop and existing portrait placement; the image is a photo edit based on his supplied references. Only the finished solo portrait belongs in the public repository, not the private source photographs. The export stays 600px square to limit page weight.
+- Google Analytics for this site is off until the visitor chooses Allow. Rejecting is remembered, Allow and Reject carry equal weight, and consent can be withdrawn from the privacy page at any time.
+- Analytics use this site's own measurement ID. They never run on local or preview hosts, and never collect form contents or personal information.
+- The privacy page describes real behaviour, including Formspree, and makes no invented retention promises.
 
-## Optional analytics (26 October 2026)
+## Technical constraints
 
-- Follow the FOA consent model, adapted to this static site: Google Analytics stays off until an explicit Allow choice; rejection is remembered. Both choices have equal weight. Privacy & cookies is reachable from every footer and offers consent withdrawal.
-- Use the portfolio GA4 web stream G-J3J3NS19ZS supplied by Nick for websitesbynick.co.uk, never FOA's measurement ID. The shared analytics script reads this site's ID from its script element. No valid ID means no Google traffic. Local and Netlify previews show the same controls but never load production analytics.
-- Consent is stored under websites-by-nick-cookie-preferences. Storage failures do not break the site or prevent an in-page choice. Withdrawal disables the tag, deletes this site's _ga cookies and reloads only after rejection is saved. If the write fails, keep the current page disabled without a reload; never send denied-consent pings. Already collected data is not deleted by withdrawal.
-- Advertising storage, user data and personalisation consent remain denied; Google signals and advertising personalisation are disabled. The initial page location omits query strings and fragments; the referrer is omitted. Do not add analytics of form contents or personal information. Disable enhanced-measurement form interactions in the web stream before release.
-- The bottom consent panel has a bounded, scrollable height. While visible, equivalent bottom space lets footer controls scroll clear. Recheck narrow screens and enlarged text when changing it.
-- The Privacy page describes actual website behaviour and existing Formspree use; it makes no invented retention promises.
+- Static site: plain HTML, shared CSS and vanilla JavaScript. No build step and no runtime dependencies unless Nick decides otherwise.
+- Hosted on GitHub Pages, deployed from `main`. Netlify is used only for pull request previews.
+- `main` is protected. Changes go through a pull request with passing checks (unit tests and browser tests on Chromium, Firefox, WebKit and mobile Chrome) and a verified preview.
 
-Cookie preferences uses explicit theme colours rather than native button defaults, with readable labels in light/dark and hover/focus states.
+## Out of scope
 
-Consent panel stays compact: short optional-analytics explanation, side-by-side equal-weight Allow/Reject controls with 44px touch targets. Mobile standard-text panel should use less than 25% of an 844px viewport; enlarged text remains scrollable without horizontal clipping.
-Desktop consent uses a 420px bottom-right card with a 24px edge gap, not a full-width bar. Mobile retains the compact full-width bottom panel. Choices remain equal weight.
-
-- Update (26 October 2026): failed withdrawal saves remove any stale Allow where possible and record rejection independently in a first-party essential fallback cookie and session storage. BroadcastChannel propagates withdrawal even when no localStorage event fires. Rejection markers take precedence on startup and are cleared only by a fresh explicit Allow. A failed-save status explains the limit when all browser storage/messaging is blocked. Preserve in-page re-opt-in by re-enabling the existing tag without duplicate loading/configuration.
-
-- Update (26 October 2026, approved option B): screenshot page choices use quiet text labels on one thin baseline with a terracotta underline for the selected view, rather than enclosing boxes. Preserve the existing screenshot switching, aria-pressed state, keyboard focus ring and at least44px hit targets. Keep page navigation chips and live-site CTAs unchanged: they have a different place in the action hierarchy.
-
-## Image delivery (26 October 2026)
-
-Preserve the approved composition and sharp screenshot text. Initial screenshots are created from inert templates after the saved theme is known, so a light-theme visit never downloads the dark set first. Noscript keeps complete static dark captures. Responsive homepage screenshot and portrait candidates let the browser choose detail for its viewport and pixel density; original full-size captures remain the upper-resolution fallback and non-home tab captures. A small explicit source manifest maps those candidates to their stable asset filenames. Load/decode both selected screenshot candidates before committing a tab or theme swap, preserving the atomic pair and latest-selection behaviour. Keep the first Friends of Ashley desktop capture eager and high priority because it can be the mobile largest-contentful-paint element. Do not trade retina sharpness, no-JS content, theme first paint or consent for a performance score.
-
-If a replacement screenshot cannot load or decode, keep the existing working pair and its selected label. A later choice or retry must still work; never replace a working pair with a broken image.
-
-- Update (26 October 2026): at Nick's direction the Experience page's pre-NatWest roles foreground website delivery. Oddschecker is presented as the high-traffic website it was - the 100,000+ monthly visitors and 2-to-23 US state figures are restored from his original CV copy - and the Moogsoft and Alfa entries describe their web platforms explicitly. The NatWest Boxed entry is unchanged. No new projects, responsibilities or results were introduced; existing approved facts were reworded only.
+Lightbox or zoom controls on screenshots, and visitor-facing preview toggles.
