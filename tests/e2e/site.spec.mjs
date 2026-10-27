@@ -13,6 +13,28 @@ async function shot(page, name, project) {
   await page.screenshot({ path: join(shotsDir, `${name}-${project}.png`) });
 }
 
+// Viewport resizes do not apply synchronously under mobile emulation: media
+// queries and grid tracks can still report the previous width's layout on the
+// first measurement. After a resize, wait until the hero geometry reads
+// identically twice in a row before asserting on it.
+async function settleHeroLayout(page) {
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.waitForFunction(() => {
+    const h1 = document.querySelector('.hero h1');
+    const grid = document.querySelector('.hero-grid');
+    if (!h1 || !grid) return true;
+    const probe = JSON.stringify([
+      h1.getBoundingClientRect().width,
+      getComputedStyle(h1).fontSize,
+      getComputedStyle(grid).gridTemplateColumns,
+    ]);
+    const stable = probe === window.__heroProbe;
+    window.__heroProbe = probe;
+    return stable;
+  }, null, { polling: 100, timeout: 10000 });
+}
+
 // WCAG contrast ratio of the hero/muted body text against the page background.
 function heroTextContrast() {
   const lum = (rgb) => {
@@ -254,11 +276,29 @@ test('footer privacy stays bottom right with consistent small-print typography',
 });
 
 test('hero portrait grows on desktop without changing the tablet size', async ({ page }) => {
-  for (const [width, expected] of [[1440, 320], [1024, 256], [768, 190]]) {
+  for (const [width, expected] of [[1440, 400], [1024, 307.2], [768, 190]]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     const size = await page.locator('.hero-grid .portrait-wrap').evaluate((el) => el.getBoundingClientRect().width);
-    assert.equal(size, expected, `portrait width at ${width}px`);
+    assert.ok(Math.abs(size - expected) < 1, `portrait is about ${expected}px at ${width}px`);
+  }
+});
+
+test('hero portrait stays within reach of the heading on wide screens', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  for (const width of [1024, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await settleHeroLayout(page);
+    const gap = await page.evaluate(() => {
+      const heading = document.querySelector('.hero h1');
+      const range = document.createRange();
+      range.selectNodeContents(heading);
+      const textEnd = Math.max(...[...range.getClientRects()].map((r) => r.right));
+      return document.querySelector('.hero-grid .portrait-wrap').getBoundingClientRect().left - textEnd;
+    });
+    assert.ok(gap >= 16, `portrait clears the heading text at ${width}px (gap ${Math.round(gap)}px)`);
+    assert.ok(gap < 280, `portrait stays within reach of the heading at ${width}px (gap ${Math.round(gap)}px)`);
   }
 });
 
@@ -276,6 +316,7 @@ test('hero heading keeps earn and their on the same line', async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
   for (const width of [320, 390, 698, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    await settleHeroLayout(page);
     const words = await page.locator('.hero h1').evaluate((heading) => {
       const node = heading.firstChild;
       return ['earn', 'their'].map((word) => {
