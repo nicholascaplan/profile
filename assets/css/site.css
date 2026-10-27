@@ -172,6 +172,7 @@ button { color: inherit; font: inherit; }
 /* The composed shot is an overview, not a miniature interactive website.
    Keep a single, readable set of page selectors and let visitors explore live. */
 .shot-mob { position: absolute; right: 7%; bottom: 2%; display: block; height: 80%; width: auto; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
+.shot-tag { display: none; }
 .thumbs { display: flex; flex-wrap: wrap; gap: 0; margin-top: 12px; }
 /* Screenshot choices are quieter than page navigation and live-site actions. */
 .thumb { position: relative; background: transparent; border: 0; border-radius: 0; box-shadow: inset 0 -1px var(--line); cursor: pointer; flex: 1 1 auto; min-height: 44px; margin: 0; padding: 10px 8px; text-align: center; }
@@ -352,6 +353,17 @@ body[data-style="atelier"][data-theme="dark"][data-mobile="true"] .nav-chips a[a
 body[data-style="atelier"][data-theme="dark"] .credstrip { background: #101711; }
 
 @media (max-width: 960px) {
+  /* Exploration (Nick, 27 October 2026): on mobile the phone capture gets lost
+     as an overlay inset, so it stands below the desktop capture as its own
+     framed block with device captions. Desktop widths keep the overlay. */
+  .shot { display: flex; flex-direction: column; }
+  .shot-tag { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .16em; padding: 10px 4px 0; text-transform: uppercase; }
+  .tag-desk { order: 3; }
+  .shot-mob { order: 4; position: static; height: auto; width: min(62%, 240px); margin: 12px auto 2px; border-radius: 16px; box-shadow: inset 0 0 0 4px #17191c, 0 8px 20px rgba(0, 0, 0, .38); }
+  .tag-mob { order: 5; text-align: center; }
+  /* Reserve the stacked phone block before its template is activated, so
+     activation does not shift the thumbnails and copy below. */
+  .shot:not(:has(noscript .shot-img)) .shot-template:last-of-type { display: block; order: 4; aspect-ratio: 390 / 844; width: min(62%, 240px); margin: 12px auto 2px; }
   .site-nav { padding: 22px 20px; }
   .hero-grid { gap: 28px; }
   .hero-grid .portrait-wrap { width: 190px; }
@@ -416,6 +428,7 @@ body[data-mobile="true"] .shotbar { padding: 8px 10px; }
 body[data-mobile="true"] .shotbar .t { font-size: 9.5px; max-width: 170px; }
 body[data-mobile="true"] .shotbar .pill { font-size: 8.5px; letter-spacing: .1em; padding: 2px 7px; }
 body[data-mobile="true"] .shot-mob { border-radius: 8px; }
+  body[data-mobile="true"] .shot-mob { border-radius: 16px; } /* Stacked presentation: full device corner (overrides the overlay inset tuning above). */
 body[data-mobile="true"] .thumb { padding: 10px 8px; }
 body[data-mobile="true"] .case-heading h2 { font-size: 26px; margin: 8px 0 0; }
 body[data-mobile="true"] .case-copy p { font-size: 16px; line-height: 1.55; margin-top: 0; }
