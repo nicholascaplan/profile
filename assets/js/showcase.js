@@ -13,7 +13,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   if (!thumbs.length || !desk || !mob || !pillLabel) return;
   const sizes = {
     Desk: '(max-width: 600px) calc(100vw - 42px), (max-width: 960px) calc(100vw - 66px), 600px',
-    Mob: '(max-width: 600px) 55vw, (max-width: 960px) 240px, 150px',
+    Mob: '(max-width: 405px) 85vw, (max-width: 960px) 300px, 150px',
   };
   const responsiveFiles = {
   "foa-home-desk-400w.webp": "5-foa-home-desk-400w.webp",
@@ -38,11 +38,15 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const fullWidth = kind === 'Desk' ? 1280 : 600;
     return [...widths.map((w) => `${src.slice(0, src.lastIndexOf('/') + 1)}${responsiveFiles[src.split('/').pop().replace('.webp', `-${w}w.webp`)]} ${w}w`), `${src} ${fullWidth}w`].join(', ');
   };
+  // The desktop mobile preview renders the phone capture at the small-screen
+  // solo size; its hint follows the toggle so the preview stays sharp.
+  const mobSizes = () => (document.body.dataset.mobile === 'true' ? '300px' : sizes.Mob);
   const apply = (img, src, kind) => {
-    img.sizes = sizes[kind];
+    img.sizes = kind === 'Mob' ? mobSizes() : sizes[kind];
     img.srcset = sources(src, kind);
     img.src = src;
   };
+  new MutationObserver(() => { mob.sizes = mobSizes(); }).observe(document.body, { attributes: true, attributeFilter: ['data-mobile'] });
   // Populate initial sources in one pass, already matching the saved theme.
   const initial = thumbs[0];
   if (caseEl === document.querySelector('.case')) desk.fetchPriority = 'high';
