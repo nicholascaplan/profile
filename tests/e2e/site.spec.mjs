@@ -705,7 +705,11 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
       const tags = await page.evaluate((cs) => {
         const read = (sel) => {
           const el = document.querySelector(`${cs} ${sel}`);
-          const r = el.getBoundingClientRect();
+          // Range, not element box: the caption element fills its grid column,
+          // so only the text range shows where the actual glyphs end.
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const r = range.getBoundingClientRect();
           return { text: el.textContent, display: getComputedStyle(el).display, top: r.top, left: r.left, right: r.right };
         };
         const card = document.querySelector(`${cs} .shot`).getBoundingClientRect();
@@ -721,6 +725,8 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
       assert.ok(tags.mobTag.top >= tags.mobBottom - 1, `${caseSel} mobile caption sits below its capture at ${width}px`);
       assert.ok(tags.mobTag.left >= tags.mobLeft - 1, `${caseSel} mobile caption aligns with the phone column at ${width}px`);
       assert.ok(tags.deskTag.left >= tags.cardLeft - 1 && tags.mobTag.right <= tags.cardRight + 1, `${caseSel} captions stay inside the card at ${width}px`);
+      // The card clips at its rounded corners, so text must clear the edge.
+      assert.ok(tags.cardRight - tags.mobTag.right >= 8, `${caseSel} mobile caption keeps breathing room from the card edge at ${width}px`);
     }
   }
   // Enlarged text (200%): captions must stay inside the card, not collide.
@@ -731,10 +737,16 @@ test('showcase: desktop pairs the phone capture beside the desktop capture; smal
   for (const caseSel of ['.case:first-child', '.case:last-child']) {
     const fit = await page.evaluate((cs) => {
       const rect = (sel) => document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
-      const card = rect('.shot'), deskTag = rect('.tag-desk'), mobTag = rect('.tag-mob');
+      const textRect = (sel) => {
+        const range = document.createRange();
+        range.selectNodeContents(document.querySelector(`${cs} ${sel}`));
+        return range.getBoundingClientRect();
+      };
+      const card = rect('.shot'), deskTag = textRect('.tag-desk'), mobTag = textRect('.tag-mob');
       return { cardLeft: card.left, cardRight: card.right, dLeft: deskTag.left, dRight: deskTag.right, mLeft: mobTag.left, mRight: mobTag.right };
     }, caseSel);
     assert.ok(fit.dLeft >= fit.cardLeft - 1 && fit.mRight <= fit.cardRight + 1, `${caseSel} enlarged captions stay inside the card`);
+    assert.ok(fit.cardRight - fit.mRight >= 8, `${caseSel} enlarged mobile caption keeps breathing room from the card edge`);
     assert.ok(fit.mLeft >= fit.dRight - 1, `${caseSel} enlarged captions do not collide`);
   }
   // Choosing a different page keeps the side-by-side composition on the new pair.
