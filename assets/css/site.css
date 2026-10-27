@@ -164,7 +164,7 @@ button { color: inherit; font: inherit; }
 .shotbar .t { color: #edf1ed; font-family: var(--body); font-size: 12px; letter-spacing: .06em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shotbar .pill { background: #3d4a41; border-radius: 99px; color: #d8e0d8; flex: none; font-family: var(--body); font-size: 10.5px; letter-spacing: .12em; margin-left: auto; padding: 3px 9px; }
 /* Reserve screenshot space before its theme-aware template is activated. */
-.shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: block; aspect-ratio: 1280 / 713; width: 100%; }
+.shot:not(:has(noscript .shot-img)) .shot-browser > .shot-template:first-of-type { display: block; aspect-ratio: 1280 / 713; width: 100%; }
 .shot-img { display: block; object-fit: cover; width: 100%; }
 .shot-desk { aspect-ratio: 1280 / 713; }
 .shot-mob { aspect-ratio: 390 / 844; }
@@ -173,18 +173,23 @@ button { color: inherit; font: inherit; }
    Keep a single, readable set of page selectors and let visitors explore live. */
 .shot-mob { position: absolute; right: 7%; bottom: 2%; display: block; height: 80%; width: auto; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
 /* Desktop composition: the phone capture sits beside the desktop capture
-   rather than overlaying it, bottom-aligned at roughly 84% of the desktop
-   capture's height with a dark bezel ring, so it reads as a phone next to a
-   monitor. Stacked and phone layouts keep the overlay inset unchanged. */
+   rather than overlaying it, bottom-aligned at roughly the full height of
+   the framed browser window with a dark bezel ring, so it reads as a phone
+   next to a monitor. Stacked and phone layouts keep the overlay inset
+   unchanged. */
 @media (min-width: 961px) {
   /* Each capture gets its own device boundary on a padded canvas: the desktop
      capture and the address bar form one framed browser window, and the phone
      stands separately with its own bezel. Without this the dark captures bleed
      into the dark card and the pair reads as one shape. */
-  body:not([data-mobile="true"]) .shot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.216fr); column-gap: 14px; align-items: end; padding: 14px; }
+  body:not([data-mobile="true"]) .shot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.3fr); column-gap: 14px; align-items: end; padding: 14px; }
+  /* The address bar and desktop capture form one browser unit: wrapped so the
+     unit bottom-aligns against the phone without the bar detaching from its
+     capture when the phone stands taller than the desktop screenshot. */
+  body:not([data-mobile="true"]) .shot-browser { grid-column: 1; align-self: end; min-width: 0; }
   body:not([data-mobile="true"]) .shotbar { grid-column: 1; border: 1px solid #454c54; border-bottom: 0; border-radius: 12px 12px 0 0; }
   body:not([data-mobile="true"]) .shot-desk { grid-column: 1; border: 1px solid #454c54; border-top: 0; border-radius: 0 0 12px 12px; box-shadow: 0 12px 24px rgba(0, 0, 0, .45); }
-  body:not([data-mobile="true"]) .shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { grid-column: 1; }
+  body:not([data-mobile="true"]) .shot:not(:has(noscript .shot-img)) .shot-browser > .shot-template:first-of-type { grid-column: 1; }
   body:not([data-mobile="true"]) .shot-mob { position: static; height: auto; width: 100%; border-color: #454c54; border-radius: 20px; box-shadow: inset 0 0 0 6px #17191c, 0 12px 24px rgba(0, 0, 0, .45); }
   body:not([data-mobile="true"]) .shot-tag { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .16em; padding: 8px 2px 0; text-transform: uppercase; }
   /* Anchored to the right with an inset: enlarged text grows the word
