@@ -133,3 +133,33 @@ for (const body of ['{}', '{"next":null}']) {
     await expect(page.locator('[type="submit"]')).toBeHidden();
   });
 }
+
+test('status panel keeps a uniform border; outline follows input modality', async ({ page }) => {
+  await page.route(endpoint, route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"next":"/thanks"}' }));
+  const status = page.locator('#contact-status');
+  // Pointer submit: the programmatic focus moves to the status panel but must
+  // not paint a decorative outline; the panel border stays a uniform 1px.
+  await complete(page);
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  await expect(status).toContainText('your message has been sent');
+  await expect(status).toBeFocused();
+  const pointerStyle = await status.evaluate(el => {
+    const cs = getComputedStyle(el);
+    return { left: cs.borderLeftWidth, top: cs.borderTopWidth, outline: cs.outlineStyle };
+  });
+  expect(pointerStyle).toEqual({ left: '1px', top: '1px', outline: 'none' });
+  // Keyboard submit: the outline stays, so keyboard users see where focus went.
+  await page.getByRole('button', { name: 'Send another message' }).click();
+  await page.getByLabel('Name', { exact: true }).fill('Test visitor');
+  await page.getByLabel('Email', { exact: true }).fill('visitor@example.com');
+  await page.getByLabel('Message', { exact: true }).fill('Second enquiry, intercepted in this test.');
+  await page.getByRole('button', { name: 'Send message', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(status).toContainText('your message has been sent');
+  await expect(status).toBeFocused();
+  const keyStyle = await status.evaluate(el => {
+    const cs = getComputedStyle(el);
+    return { left: cs.borderLeftWidth, outline: cs.outlineStyle, outlineWidth: cs.outlineWidth };
+  });
+  expect(keyStyle).toEqual({ left: '1px', outline: 'solid', outlineWidth: '2px' });
+});
