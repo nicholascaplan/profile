@@ -202,8 +202,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     if (kind === 'Mob' && capture) {
       return [...Object.entries(capture.variants).map(([width, file]) => `${directory}${file} ${width}w`), `${src} ${capture.width}w`].join(', ');
     }
-    const widths = !/-(home|fireworks|fundraising)-/.test(src) ? [] : [400, 800];
-    return [...widths.map((w) => `${directory}${responsiveFiles[filename.replace(/^\d+-/, '').replace('.webp', `-${w}w.webp`)] || filename.replace('.webp', `-${w}w.webp`)} ${w}w`), `${src} 1280w`].join(', ');
+    const widths = [400, 800, 1280, 1920];
+    const files = widths.map((w) => `${directory}${responsiveFiles[filename.replace(/^\d+-/, '').replace('.webp', `-${w}w.webp`)] || filename.replace('.webp', `-${w}w.webp`)} ${w}w`);
+    return [...files, `${src} 2560w`].join(', ');
   };
   // The desktop mobile preview renders the phone capture at the small-screen
   // solo size; its hint follows the toggle so the preview stays sharp.

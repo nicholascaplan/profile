@@ -75,12 +75,12 @@ test('responsive captures retain enough detail at phone, tablet and desktop widt
     await page.goto('/');
     await page.waitForFunction(() => [...document.querySelectorAll('.shot-img, .portrait')].every((i) => i.complete && i.naturalWidth > 0));
     const images = await page.locator('.shot-img, .portrait').evaluateAll((images) => images.map((img) => {
-      const candidate = Number(img.currentSrc.match(/-(\d+)w\.webp$/)?.[1] || (img.classList.contains('shot-desk') ? 1280 : 1170));
+      const candidate = Number(img.currentSrc.match(/-(\d+)w\.webp$/)?.[1] || (img.classList.contains('shot-desk') ? 2560 : 1170));
       return { candidate, required: img.getBoundingClientRect().width * devicePixelRatio, src: img.currentSrc };
     }));
     for (const image of images) {
       // Original capture resolution is the upper bound, never upscale or invent detail.
-      const maximum = image.src.includes('-desk') ? 1280 : image.src.includes('/work/') ? 1170 : 600;
+      const maximum = image.src.includes('-desk') ? 2560 : image.src.includes('/work/') ? 1170 : 600;
       expect(image.candidate, `${image.src} at ${width}px`).toBeGreaterThanOrEqual(Math.min(maximum, image.required) * 0.9);
     }
   }
@@ -311,4 +311,43 @@ test('every declared mobile capture candidate matches its decoded pixel dimensio
     expect(result.actual).toBe(result.declared);expect(result.actual).toBeGreaterThanOrEqual(result.need);
   }
   await context.close();
+});
+
+// Decode the actual selected file, not its srcset descriptor or a capped need.
+test('wide desktop and phone captures cover real high-density display pixels', async ({browser,baseURL}) => {
+  for(const [width,dpr] of [[390,3],[1280,2],[1440,2],[1920,3]]) {
+    const context=await browser.newContext({viewport:{width,height:1000},deviceScaleFactor:dpr});
+    const page=await context.newPage();await page.goto(baseURL);
+    for(const preview of [false,true]) {
+      await page.evaluate(v=>document.body.dataset.mobile=String(v),preview);
+      for(const c of await page.locator('.case').all()) for(const button of await c.locator('.thumb:visible').all()) {
+        await button.click();await expect(button).toHaveAttribute('aria-pressed','true');
+        const image=c.locator(width<=960||preview?'.shot-mob':'.shot-desk');
+        const actual=await image.evaluate(async i=>{const n=new Image();n.src=i.currentSrc;await n.decode();return{pixels:n.naturalWidth,need:i.getBoundingClientRect().width*devicePixelRatio,source:i.currentSrc}});
+        expect(actual.pixels,`${actual.source} ${width}px @${dpr}x preview=${preview}`).toBeGreaterThanOrEqual(Math.ceil(actual.need)-1);
+      }
+    }
+    await context.close();
+  }
+});
+
+test('each desktop capture candidate keeps its master pixels and theme', async ({page}) => {
+  await page.goto('/');
+  const families=await page.locator('.case .thumb').evaluateAll(bs=>[...new Set(bs.flatMap(b=>[b.dataset.srcDesk,b.dataset.srcDeskDark]))]);
+  for(const src of families){
+    const result=await page.evaluate(async src=>{
+      const image=async url=>{const i=new Image();i.src=url;await i.decode();return i};
+      const master=await image(src);const canvas=document.createElement('canvas');canvas.width=16;canvas.height=9;const ctx=canvas.getContext('2d');ctx.drawImage(master,0,0,16,9);const ref=ctx.getImageData(0,0,16,9).data;
+      const base=src.split('/').pop();let errors=[];
+      for(const w of[400,800,1280,1920]){
+        let file=base.replace('.webp',`-${w}w.webp`);
+        if(base.startsWith('3-sam-home')&&w<1000)file=(w===400?'5-13-':'6-14-')+file.slice(2);
+        if(base.startsWith('4-sam-home')&&w<1000)file=(w===400?'7-15-':'8-16-')+file.slice(2);
+        const i=await image(src.slice(0,src.lastIndexOf('/')+1)+file);ctx.clearRect(0,0,16,9);ctx.drawImage(i,0,0,16,9);const data=ctx.getImageData(0,0,16,9).data;let diff=0;for(let k=0;k<data.length;k++)diff+=Math.abs(data[k]-ref[k]);errors.push({w,pixels:i.naturalWidth,diff:diff/data.length});
+      }
+      return{master:master.naturalWidth,errors};
+    },src);
+    expect(result.master).toBe(2560);
+    for(const e of result.errors){expect(e.pixels).toBe(e.w);expect(e.diff,`${src} ${e.w}w agrees with actual master pixels`).toBeLessThan(12)}
+  }
 });
