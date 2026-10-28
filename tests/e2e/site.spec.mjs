@@ -761,7 +761,7 @@ test('showcase: on mobile widths the phone capture stands alone, large and reada
         return { card: rectOf('.shot'), mob: rectOf('.shot-mob'),
                  barVisible: visible('.shotbar'), deskVisible: visible('.shot-desk'), mobVisible: visible('.shot-mob'),
                  mobPosition: mobStyle.position, mobDisplay: mobStyle.display, mobRadius: parseFloat(mobStyle.borderTopLeftRadius),
-                 mobHasBezel: mobStyle.boxShadow.includes('inset'),
+                 mobHasBezel: mobStyle.outlineStyle === 'solid' && mobStyle.outlineWidth === '4px',
                  cropFit: mobStyle.objectFit, cropPosition: mobStyle.objectPosition,
                  outerBorder: getComputedStyle(document.querySelector(`${cs} .shot`)).borderTopWidth,
                  outerBackground: getComputedStyle(document.querySelector(`${cs} .shot`)).backgroundColor,
@@ -1199,5 +1199,31 @@ test('wide Work canvas preserves dedicated device previews', async ({page,isMobi
     for(const c of cases){expect(c.shot/c.copy).toBeCloseTo(1.5,1);expect(c.visible).toEqual(['shot-img shot-desk']);expect(c.shot).toBeGreaterThan(650);expect(c.shot).toBeLessThan(850)}
     expect(Math.abs(cases[0].shot-cases[1].shot)).toBeLessThan(1);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+});
+
+test('phone frame paints all four edges without changing capture geometry', async ({browser,baseURL}) => {
+  for(const [width,preview] of [[390,false],[1440,true]]) {
+    const context=await browser.newContext({viewport:{width,height:1000},deviceScaleFactor:1});
+    const page=await context.newPage();
+    await page.addInitScript(()=>localStorage.setItem('websites-by-nick-cookie-preferences','essential'));
+    await page.goto(baseURL);
+    if(preview)await page.evaluate(()=>document.body.dataset.mobile='true');
+    for(const image of await page.locator('.shot-mob').all()) {
+      await image.evaluate(i=>i.decode());
+      await image.scrollIntoViewIfNeeded();
+      const geometry=()=>image.evaluate(i=>{const r=i.getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height}});
+      const before=await geometry();
+      const screenshot=await image.screenshot({animations:'disabled'});
+      const edges=await page.evaluate(async data=>{
+        const i=new Image();i.src='data:image/png;base64,'+data;await i.decode();
+        const c=document.createElement('canvas');c.width=i.width;c.height=i.height;const x=c.getContext('2d');x.drawImage(i,0,0);
+        return [[1,i.height/2],[i.width-2,i.height/2],[i.width/2,1],[i.width/2,i.height-2]].map(([a,b])=>Array.from(x.getImageData(Math.floor(a),Math.floor(b),1,1).data));
+      },screenshot.toString('base64'));
+      for(const edge of edges)assert.deepEqual(edge,[23,25,28,255],`actual painted frame ${width}px preview=${preview}`);
+      await image.evaluate(i=>i.style.outline='none');
+      assert.deepEqual(await geometry(),before,'frame must not change capture geometry');
+    }
+    await context.close();
   }
 });
