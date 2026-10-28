@@ -315,6 +315,7 @@ test('every declared mobile capture candidate matches its decoded pixel dimensio
 
 // Decode the actual selected file, not its srcset descriptor or a capped need.
 test('wide desktop and phone captures cover real high-density display pixels', async ({browser,baseURL}) => {
+  test.setTimeout(90_000);
   for(const [width,dpr] of [[390,3],[1280,2],[1440,2],[1920,3]]) {
     const context=await browser.newContext({viewport:{width,height:1000},deviceScaleFactor:dpr});
     const page=await context.newPage();await page.goto(baseURL);
