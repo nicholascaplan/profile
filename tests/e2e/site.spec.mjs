@@ -1203,7 +1203,7 @@ test('wide Work canvas preserves dedicated device previews', async ({page,isMobi
 });
 
 test('phone frame paints all four edges without changing capture geometry', async ({browser,baseURL}) => {
-  for(const [width,preview] of [[390,false],[1440,true]]) {
+  for(const [width,preview] of [[390,false],[768,false],[1440,true]]) {
     const context=await browser.newContext({viewport:{width,height:1000},deviceScaleFactor:1});
     const page=await context.newPage();
     await page.addInitScript(()=>localStorage.setItem('websites-by-nick-cookie-preferences','essential'));
