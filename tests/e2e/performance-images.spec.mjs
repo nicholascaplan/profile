@@ -244,9 +244,9 @@ test('an older decoded pair cannot overwrite a newer selection', async ({ page }
   });
   await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   await page.waitForFunction(() => window.olderDecodeReleases.length === 2);
-  await page.locator('.case:first-child .thumb[data-label="Homepage"]').click();
-  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-home-desk/);
-  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-home-mob/);
+  await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-fireworks-desk/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-fireworks-mob/);
   await page.evaluate(async () => {
     window.olderDecodeReleases.forEach((release) => release());
     // A task boundary lets all promise continuations, including the pair's
@@ -254,10 +254,10 @@ test('an older decoded pair cannot overwrite a newer selection', async ({ page }
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
   expect(await page.evaluate(() => window.olderDecodesCompleted)).toBe(2);
-  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-home-desk/);
-  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-home-mob/);
-  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Homepage');
-  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Homepage');
+  await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-fireworks-desk/);
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-fireworks-mob/);
+  await expect(page.locator('.case:first-child .pill-label')).toHaveText('Fireworks');
+  await expect(page.locator('.case:first-child .thumb.sel')).toHaveText('Fireworks');
 });
 
 // Regression: a 1x phone should not fetch 600w for a capture capped at 300px.
