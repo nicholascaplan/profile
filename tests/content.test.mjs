@@ -148,8 +148,8 @@ test('home page carries the showcase imagery', () => {
   const html = read('index.html');
   const images = [...html.replace(/<template\b[\s\S]*?<\/template>/g, '').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
   assert.equal(images.filter((tag) => /class="shot-img shot-desk"/.test(tag)).length, 2, 'each project has a desktop overview');
-  assert.equal(images.filter((tag) => /class="shot-img shot-mob"/.test(tag)).length, 2, 'each project has a phone capture');
-  assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 6, 'three labelled page choices per project');
+  assert.equal(images.filter((tag) => /class="shot-img shot-mob"/.test(tag)).length, 2, 'each project has a phone inset');
+  assert.equal([...html.matchAll(/class="thumb(?: sel)?"/g)].length, 7, 'four FOA choices and three Sam choices');
   assert.doesNotMatch(html, /class="(?:m-step|teaser)"|Tap to enlarge|thumb-desk|thumb-mob/, 'no duplicate gallery controls or closing contact panel');
   assert.match(html, /class="intro-contact" href="contact\/"/, 'an early enquiry link is present');
   assert.doesNotMatch(html, /class="case-role"|My role:/, 'projects omit the redundant role copy');

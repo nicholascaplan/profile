@@ -581,6 +581,13 @@ test('desktop mobile preview: content fits the frame and matches a phone layout'
       const css = getComputedStyle(el);
       return { display: css.display, columns: css.gridTemplateColumns };
     });
+    // The showcase mirrors too: the phone capture stands alone in the preview,
+    // exactly as on a real phone.
+    structures.push(...['.case:first-child .shotbar', '.case:first-child .shot-desk', '.case:first-child .shot-mob'].map((sel) => {
+      const el = document.querySelector(sel);
+      const css = getComputedStyle(el);
+      return { display: css.display, columns: css.position };
+    }));
     const hero = document.querySelector('.hero');
     const walker = document.createTreeWalker(hero.querySelector('h1'), NodeFilter.SHOW_TEXT);
     const lines = [];
@@ -644,15 +651,15 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
     src: document.querySelector('.case:first-child .shot-desk').src,
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
-  assert.match(before.src, /foa-home-desk-dark\.webp$/, 'homepage screenshot shown by default (page opens dark)');
-  assert.equal(before.pill, 'Homepage', 'pill labels the default shot');
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  assert.match(before.src, /foa-fundraising-desk-dark\.webp$/, 'Fundraising screenshot shown by default (page opens dark)');
+  assert.equal(before.pill, 'Fundraising', 'pill labels the default shot');
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   await page.waitForTimeout(200);
   const after = await page.evaluate(() => ({
     src: document.querySelector('.case:first-child .shot-desk').src,
     mobSrc: document.querySelector('.case:first-child .shot-mob').src,
     pill: document.querySelector('.case:first-child .pill').textContent,
-    pressed: document.querySelector('.case:first-child .thumb:nth-child(2)').getAttribute('aria-pressed'),
+    pressed: document.querySelector('.case:first-child .thumb[data-label="What’s On"]').getAttribute('aria-pressed'),
     otherPill: document.querySelector('.case:last-child .pill').textContent,
   }));
   assert.match(after.src, /foa-whatson-desk-dark\.webp$/, 'main screenshot swaps to the chosen page');
@@ -669,8 +676,8 @@ test('showcase: mobile page choices are readable, keyboard-accessible and indepe
   await settle(page);
   const first = '.case:first-child';
   const buttons = page.locator(`${first} .thumb`);
-  assert.equal(await buttons.count(), 3);
-  for (const [index, expected] of [[1, 'whatson'], [2, 'fundraising'], [0, 'home']]) {
+  assert.equal(await buttons.count(), 4);
+  for (const [index, expected] of [[2, 'whatson'], [1, 'fireworks'], [3, 'menu'], [0, 'fundraising']]) {
     await buttons.nth(index).focus();
     await page.keyboard.press(index === 2 ? 'Space' : 'Enter');
     await page.waitForFunction((name) => document.querySelector('.case:first-child .shot-mob').currentSrc.includes(`foa-${name}-mob`), expected);
@@ -678,7 +685,7 @@ test('showcase: mobile page choices are readable, keyboard-accessible and indepe
       pressed: [...document.querySelectorAll('.case:first-child .thumb')].map((b) => b.getAttribute('aria-pressed')),
       other: document.querySelector('.case:last-child .shot-mob').currentSrc,
     }));
-    assert.deepEqual(state.pressed, [0, 1, 2].map((j) => String(j === index)));
+    assert.deepEqual(state.pressed, [0, 1, 2, 3].map((j) => String(j === index)));
     assert.match(state.other, /sam-home-mob-dark(?:-\d+w)?\.webp$/, 'choosing a page does not change the other project');
   }
   await shot(page, 'browser-showcase-mobile-choices', testInfo.project.name);
@@ -690,12 +697,14 @@ test('showcase: composed overviews have a single readable set of controls at eve
     await page.goto('/');
     const state = await page.evaluate(() => ({
       shots: [...document.querySelectorAll('.shot-img')].filter((el) => el.offsetParent !== null).length,
-      sizes: [...document.querySelectorAll('.thumb')].map((el) => ({ height: el.getBoundingClientRect().height, font: parseFloat(getComputedStyle(el.querySelector('span')).fontSize) })),
+      sizes: [...document.querySelectorAll('.thumb')].filter(el => !el.hidden).map((el) => ({ height: el.getBoundingClientRect().height, font: parseFloat(getComputedStyle(el.querySelector('span')).fontSize) })),
       duplicateControls: document.querySelectorAll('.m-step, .zoom-cue, .thumb img').length,
     }));
-    assert.equal(state.shots, 4, `both device captures remain visible at ${width}px`);
+    // One capture per viewport (Nick, 27 October 2026): the capture matching
+    // the visitor's own device shows alone at every width.
+    assert.equal(state.shots, 2, `only the capture matching the visitor's device is visible at ${width}px`);
     assert.equal(state.duplicateControls, 0, 'no competing arrows, thumbnail images or enlargement affordance');
-    assert.equal(state.sizes.length, 6);
+    assert.equal(state.sizes.length, width <= 960 ? 7 : 6);
     for (const size of state.sizes) {
       assert.ok(size.height >= 44, `44px touch target at ${width}px`);
       assert.ok(size.font >= 12, `readable label at ${width}px`);
@@ -703,140 +712,115 @@ test('showcase: composed overviews have a single readable set of controls at eve
   }
 });
 
-// Desktop composition (Nick, 26 October 2026): on desktop widths the phone
-// capture sits beside the desktop capture instead of overlaying it; stacked
-// and phone layouts keep the overlay inset. Nick, 27 October 2026: the pair
-// must not read as the same screen - the phone capture is bottom-aligned and
-// carries a visible device frame (rounded corners, rim and bezel ring) so it
-// reads as a phone. Nick, 27 October 2026 (PR #24 review): the phone capture
-// stands larger - up to the full height of the framed browser window (address
-// bar + desktop capture), never taller.
-const shotGeometry = (page, caseSel = '.case:first-child') => page.evaluate((cs) => {
-  const rectOf = (sel) => {
-    const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
-    return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, height: r.height };
-  };
-  const bar = rectOf('.shotbar');
-  const desk = rectOf('.shot-desk');
-  const mob = rectOf('.shot-mob');
-  const card = rectOf('.shot');
-  const phoneEl = document.querySelector(`${cs} .shot-phone`);
-  const phone = phoneEl ? phoneEl.getBoundingClientRect() : null;
-  const mobStyle = getComputedStyle(document.querySelector(`${cs} .shot-mob`));
-  const mobPosition = mobStyle.position;
-  const phonePosition = phoneEl ? getComputedStyle(phoneEl).position : null;
-  const mobRadius = parseFloat(mobStyle.borderTopLeftRadius);
-  const bezel = getComputedStyle(phoneEl, '::after');
-  const mobHasBezel = bezel.content === '""' && bezel.position === 'absolute' && bezel.borderTopWidth === '6px' && bezel.borderTopColor === 'rgb(23, 25, 28)' && bezel.zIndex === '1' && bezel.pointerEvents === 'none';
-  const overlap = Math.max(0, Math.min(desk.right, mob.right) - Math.max(desk.left, mob.left))
-    * Math.max(0, Math.min(desk.bottom, mob.bottom) - Math.max(desk.top, mob.top));
-  return { card, bar, desk, mob, phone, mobPosition, phonePosition, mobRadius, mobHasBezel, overlap };
-}, caseSel);
-
-test('showcase: desktop pairs the phone capture beside the desktop capture; smaller layouts keep the overlay', async ({ page, isMobile }) => {
+// Exploration (Nick, 27 October 2026, separate branch): show the capture
+// matching the visitor's own device. On mobile widths the phone capture stands
+// alone, large and readable; desktop widths show the framed desktop capture
+// alone - no overlay, nothing stacked.
+test('showcase: on desktop widths the framed desktop capture stands alone', async ({ page, isMobile }) => {
   desktopOnly(isMobile);
   for (const width of [1440, 1280, 1024]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await settle(page);
     for (const caseSel of ['.case:first-child', '.case:last-child']) {
-      const g = await shotGeometry(page, caseSel);
-      // The phone fills a static grid-area wrapper absolutely, so the browser
-      // unit alone drives the row height and the pair's heights match exactly.
-      assert.ok(g.phonePosition === 'static' || g.phonePosition === 'relative', `${caseSel} phone column sits in the card row at ${width}px (position ${g.phonePosition})`);
-      assert.ok(g.phone && Math.abs(g.mob.top - g.phone.top) <= 1 && Math.abs(g.mob.bottom - g.phone.bottom) <= 1, `${caseSel} phone capture fills its column at ${width}px`);
-      assert.ok(g.mob.left >= g.desk.right - 1, `${caseSel} phone capture starts where the desktop capture ends at ${width}px`);
-      assert.ok(Math.abs(g.mob.bottom - g.desk.bottom) <= 1, `${caseSel} captures share a baseline at ${width}px`);
-      assert.ok(Math.abs(g.desk.top - g.bar.bottom) <= 1, `${caseSel} address bar stays attached to the desktop capture at ${width}px`);
-      const unit = g.bar.height + g.desk.height;
-      const ratio = g.mob.height / unit;
-      // Nick, 27 October 2026 (PR #24 comment 6447346709): the captures' heights
-      // must not differ - the phone matches the framed browser window exactly.
-      assert.ok(Number.isFinite(ratio) && Math.abs(g.mob.height - unit) <= 1, `${caseSel} phone capture matches the framed browser window height at ${width}px (ratio ${ratio.toFixed(3)})`);
-      assert.ok(Math.abs(g.mob.top - g.bar.top) <= 1, `${caseSel} phone capture top aligns with the browser window top at ${width}px`);
-      assert.ok(g.mobRadius >= 14, `${caseSel} phone capture has device corners at ${width}px`);
-      assert.ok(g.mobHasBezel, `${caseSel} phone capture has a bezel ring at ${width}px`);
-      assert.ok(g.mob.right <= g.card.right + 1 && g.desk.left >= g.card.left - 1, `${caseSel} both captures stay inside the card at ${width}px`);
-      assert.equal(g.overlap, 0, `${caseSel} no overlap at ${width}px`);
-      const tags = await page.evaluate((cs) => {
-        const read = (sel) => {
-          const el = document.querySelector(`${cs} ${sel}`);
-          // Range, not element box: the caption element fills its grid column,
-          // so only the text range shows where the actual glyphs end.
-          const range = document.createRange();
-          range.selectNodeContents(el);
-          const r = range.getBoundingClientRect();
-          return { text: el.textContent, display: getComputedStyle(el).display, top: r.top, left: r.left, right: r.right };
+      const g = await page.evaluate((cs) => {
+        const rectOf = (sel) => {
+          const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, width: r.width };
         };
-        const card = document.querySelector(`${cs} .shot`).getBoundingClientRect();
-        const desk = document.querySelector(`${cs} .shot-desk`).getBoundingClientRect();
-        const mob = document.querySelector(`${cs} .shot-mob`).getBoundingClientRect();
-        return { deskTag: read('.tag-desk'), mobTag: read('.tag-mob'), cardLeft: card.left, cardRight: card.right, deskBottom: desk.bottom, mobBottom: mob.bottom, mobLeft: mob.left };
+        const visible = (sel) => document.querySelector(`${cs} ${sel}`).offsetParent !== null;
+        const cardStyle = getComputedStyle(document.querySelector(`${cs} .shot`));
+        return { card: rectOf('.shot'), bar: rectOf('.shotbar'), desk: rectOf('.shot-desk'),
+                 borderTop: parseFloat(cardStyle.borderTopWidth), borderBottom: parseFloat(cardStyle.borderBottomWidth),
+                 barVisible: visible('.shotbar'), deskVisible: visible('.shot-desk'), mobVisible: visible('.shot-mob') };
       }, caseSel);
-      assert.equal(tags.deskTag.text, 'Desktop');
-      assert.equal(tags.mobTag.text, 'Mobile');
-      assert.notEqual(tags.deskTag.display, 'none', `${caseSel} desktop caption shows at ${width}px`);
-      assert.notEqual(tags.mobTag.display, 'none', `${caseSel} mobile caption shows at ${width}px`);
-      assert.ok(tags.deskTag.top >= tags.deskBottom - 1, `${caseSel} desktop caption sits below its capture at ${width}px`);
-      assert.ok(tags.mobTag.top >= tags.mobBottom - 1, `${caseSel} mobile caption sits below its capture at ${width}px`);
-      assert.ok(tags.mobTag.left >= tags.mobLeft - 1, `${caseSel} mobile caption aligns with the phone column at ${width}px`);
-      assert.ok(tags.deskTag.left >= tags.cardLeft - 1 && tags.mobTag.right <= tags.cardRight + 1, `${caseSel} captions stay inside the card at ${width}px`);
-      // The card clips at its rounded corners, so text must clear the edge.
-      assert.ok(tags.cardRight - tags.mobTag.right >= 8, `${caseSel} mobile caption keeps breathing room from the card edge at ${width}px`);
+      assert.ok(g.barVisible && g.deskVisible, `${caseSel} framed desktop capture shows at ${width}px`);
+      assert.ok(!g.mobVisible, `${caseSel} phone capture does not overlay at ${width}px`);
+      // Compare against the card's content box: its border ring is not layout slack.
+      assert.ok(Math.abs(g.bar.top - (g.card.top + g.borderTop)) <= 1, `${caseSel} address bar caps the card at ${width}px`);
+      assert.ok(Math.abs(g.desk.top - g.bar.bottom) <= 1, `${caseSel} desktop capture sits directly under its bar at ${width}px`);
+      assert.ok(Math.abs(g.desk.bottom - (g.card.bottom - g.borderBottom)) <= 1, `${caseSel} desktop capture fills the card to its foot at ${width}px`);
+      assert.ok(g.desk.width >= 400, `${caseSel} desktop capture is large enough to read at ${width}px (${Math.round(g.desk.width)}px)`);
     }
-  }
-  // Enlarged text (200%): captions must stay inside the card, not collide.
-  await page.setViewportSize({ width: 1024, height: 900 });
-  await page.goto('/');
-  await settle(page);
-  await enlargeText(page);
-  for (const caseSel of ['.case:first-child', '.case:last-child']) {
-    const fit = await page.evaluate((cs) => {
-      const rect = (sel) => document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
-      const textRect = (sel) => {
-        const range = document.createRange();
-        range.selectNodeContents(document.querySelector(`${cs} ${sel}`));
-        return range.getBoundingClientRect();
-      };
-      const card = rect('.shot'), deskTag = textRect('.tag-desk'), mobTag = textRect('.tag-mob');
-      return { cardLeft: card.left, cardRight: card.right, dLeft: deskTag.left, dRight: deskTag.right, mLeft: mobTag.left, mRight: mobTag.right };
-    }, caseSel);
-    assert.ok(fit.dLeft >= fit.cardLeft - 1 && fit.mRight <= fit.cardRight + 1, `${caseSel} enlarged captions stay inside the card`);
-    assert.ok(fit.cardRight - fit.mRight >= 8, `${caseSel} enlarged mobile caption keeps breathing room from the card edge`);
-    assert.ok(fit.mLeft >= fit.dRight - 1, `${caseSel} enlarged captions do not collide`);
-  }
-  // Choosing a different page keeps the side-by-side composition on the new pair.
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  await settle(page);
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
-  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('foa-whatson-mob'));
-  const switched = await shotGeometry(page);
-  assert.ok(switched.phonePosition === 'static' || switched.phonePosition === 'relative', 'chosen pair stays beside the desktop capture');
-  assert.equal(switched.overlap, 0, 'chosen pair does not overlap');
-  for (const width of [960, 768]) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto('/');
-    await settle(page);
-    const g = await shotGeometry(page);
-    assert.equal(g.mobPosition, 'absolute', `phone capture remains an overlay inset at ${width}px`);
-    assert.ok(g.overlap > 0, `phone capture still overlays the desktop capture at ${width}px`);
-    const tagDisplay = await page.evaluate(() => getComputedStyle(document.querySelector('.case:first-child .tag-desk')).display);
-    assert.equal(tagDisplay, 'none', `captions stay hidden in the overlay layout at ${width}px`);
   }
 });
 
-test('showcase: phone layout keeps the overlay inset', async ({ page }) => {
-  for (const width of [390, 320]) {
-    await page.setViewportSize({ width, height: 844 });
+test('showcase: on mobile widths the phone capture stands alone, large and readable', async ({ page }) => {
+  for (const width of [768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await settle(page);
-    const g = await shotGeometry(page);
-    assert.equal(g.mobPosition, 'absolute', `phone capture remains an overlay inset at ${width}px`);
-    assert.ok(g.overlap > 0, `phone capture still overlays the desktop capture at ${width}px`);
-    const tagDisplay = await page.evaluate(() => getComputedStyle(document.querySelector('.case:first-child .tag-desk')).display);
-    assert.equal(tagDisplay, 'none', `captions stay hidden in the overlay layout at ${width}px`);
+    for (const caseSel of ['.case:first-child', '.case:last-child']) {
+      const g = await page.evaluate((cs) => {
+        const rectOf = (sel) => {
+          const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
+          return { left: r.left, right: r.right, width: r.width, height: r.height };
+        };
+        const visible = (sel) => document.querySelector(`${cs} ${sel}`).offsetParent !== null;
+        const mobStyle = getComputedStyle(document.querySelector(`${cs} .shot-mob`));
+        return { card: rectOf('.shot'), mob: rectOf('.shot-mob'),
+                 barVisible: visible('.shotbar'), deskVisible: visible('.shot-desk'), mobVisible: visible('.shot-mob'),
+                 mobPosition: mobStyle.position, mobDisplay: mobStyle.display, mobRadius: parseFloat(mobStyle.borderTopLeftRadius),
+                 mobHasBezel: mobStyle.outlineStyle === 'solid' && mobStyle.outlineWidth === '4px',
+                 cropFit: mobStyle.objectFit, cropPosition: mobStyle.objectPosition,
+                 outerBorder: getComputedStyle(document.querySelector(`${cs} .shot`)).borderTopWidth,
+                 outerBackground: getComputedStyle(document.querySelector(`${cs} .shot`)).backgroundColor,
+                 hScroll: document.documentElement.scrollWidth > window.innerWidth + 1 };
+      }, caseSel);
+      assert.ok(!g.barVisible && !g.deskVisible, `${caseSel} desktop unit is not shown at ${width}px`);
+      assert.ok(g.mobVisible, `${caseSel} phone capture is shown at ${width}px`);
+      assert.equal(g.mobPosition, 'static', `${caseSel} phone capture stands in the flow at ${width}px`);
+      assert.equal(g.mobDisplay, 'block', `${caseSel} phone capture is a centered block at ${width}px`);
+      assert.ok(g.mob.width >= 220, `${caseSel} phone capture is wide enough to read at ${width}px (${Math.round(g.mob.width)}px)`);
+      const spare = g.card.width - g.mob.width;
+      assert.ok(Math.abs(g.mob.left - g.card.left - spare / 2) <= 2, `${caseSel} phone capture is centered at ${width}px`);
+      assert.ok(g.mobRadius >= 10 && g.mobHasBezel, `${caseSel} phone capture keeps its device frame at ${width}px`);
+      assert.equal(g.outerBorder, '0px', 'solo phone has no redundant outer border');
+      assert.equal(g.outerBackground, 'rgba(0, 0, 0, 0)', 'solo phone has no outer panel background');
+      assert.equal(g.cropFit, 'cover', 'phone crop never distorts the capture');
+      assert.equal(g.cropPosition, '50% 0%', 'phone crop preserves the top of the page');
+      assert.ok(Math.abs(g.mob.height / g.mob.width - 1.8) < .02, 'phone is a taller 5:9 crop');
+      assert.ok(!g.hScroll, `no horizontal scroll at ${width}px`);
+    }
   }
+});
+
+// Regression (27 October 2026, bff2b598): an author display rule on a noscript
+// element overrides the browser's scripting-enabled display:none, so the
+// fallback's raw markup leaked onto the page as text. With JavaScript enabled
+// the noscript fallbacks must never render, as boxes or as text.
+test('showcase: with JavaScript the noscript fallbacks never render as text', async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await settle(page);
+    const bad = await page.evaluate(() => ({
+      visibleBox: [...document.querySelectorAll('.shot noscript')].some((n) => n.getClientRects().length > 0),
+      rawText: document.body.innerText.includes('shot-img') || document.body.innerText.includes('<img'),
+    }));
+    assert.ok(!bad.visibleBox, `no noscript box renders at ${width}px`);
+    assert.ok(!bad.rawText, `no raw image markup shows as text at ${width}px`);
+  }
+});
+
+test('showcase: mobile activation preserves the reserved phone block', async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await page.route('**/assets/js/showcase.js', async (route) => { await gate; await route.continue(); });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/', { waitUntil: 'commit' });
+  await page.waitForFunction(() => document.querySelectorAll('.case:first-child .shot-template').length === 2);
+  await page.waitForFunction(() => {
+    const t = [...document.querySelectorAll('.case:first-child .shot-template')];
+    return t[0].getBoundingClientRect().height === 0 && t[1].getBoundingClientRect().height > 200;
+  });
+  const box = () => page.locator('.case:first-child .shot').boundingBox();
+  const before = await box();
+  release();
+  await page.waitForFunction(() => document.querySelectorAll('.shot-img').length === 4);
+  const after = await box();
+  assert.ok(Math.abs(after.height - before.height) < 1, `showcase card height preserved on activation (before ${before.height}, after ${after.height})`);
+  assert.ok(Math.abs(after.y - before.y) < 1, 'showcase card position preserved on activation');
 });
 
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
@@ -846,10 +830,10 @@ test('showcase: phone layout keeps the overlay inset', async ({ page }) => {
 // must change together, rapid choices must settle on the latest, and a failed
 // image must not block the pair. Artificial per-image latency forces the
 // windows open; assertions are on observable behaviour, not timing internals.
-const pageOf = (file) => (file.match(/foa-(home|whatson|fundraising)-/) || [])[1] || '';
+const pageOf = (file) => (file.match(/foa-(home|fireworks|whatson|fundraising)-/) || [])[1] || '';
 const shotPair = (page) => page.evaluate(() => ({
-  desk: document.querySelector('.case:first-child .shot-desk').currentSrc.split('/').pop().replace(/^\d+-/, '').replace(/-\d+w(?=\.webp$)/, ''),
-  mob: document.querySelector('.case:first-child .shot-mob').currentSrc.split('/').pop().replace(/^\d+-/, '').replace(/-\d+w(?=\.webp$)/, ''),
+  desk: document.querySelector('.case:first-child .shot-desk').currentSrc.split('/').pop().replace(/^(?:\d+-)+/, '').replace(/-\d+w(?=\.webp$)/, ''),
+  mob: document.querySelector('.case:first-child .shot-mob').currentSrc.split('/').pop().replace(/^(?:\d+-)+/, '').replace(/-\d+w(?=\.webp$)/, ''),
 }));
 const initialPairLoaded = () => {
   const d = document.querySelector('.case:first-child .shot-desk');
@@ -863,7 +847,7 @@ test('showcase: screenshot pair swaps atomically under uneven image latency', as
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
-  await page.click('.case:first-child .thumb:nth-child(2)');
+  await page.click('.case:first-child .thumb[data-label="What’s On"]');
   const mismatches = [];
   for (let i = 0; i < 12; i++) {
     const pair = await shotPair(page);
@@ -881,53 +865,53 @@ test('showcase: rapid thumbnail changes settle on the latest choice', async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
-  await page.click('.case:first-child .thumb:nth-child(2)');
+  await page.click('.case:first-child .thumb[data-label="What’s On"]');
   await page.waitForTimeout(120);
-  await page.click('.case:first-child .thumb:nth-child(3)');
+  await page.click('.case:first-child .thumb[data-label="Fireworks"]');
   await page.waitForFunction(() => {
     const d = document.querySelector('.case:first-child .shot-desk');
     const m = document.querySelector('.case:first-child .shot-mob');
-    return d.currentSrc.includes('fundraising-desk') && m.currentSrc.includes('fundraising-mob');
+    return d.currentSrc.includes('fireworks-desk') && m.currentSrc.includes('fireworks-mob');
   }, { timeout: 8000 });
   const state = await page.evaluate(() => ({
     pill: document.querySelector('.case:first-child .pill').textContent,
     selected: document.querySelector('.case:first-child .thumb.sel').textContent.trim(),
   }));
-  assert.equal(state.pill, 'Fundraising', 'pill follows the latest choice');
-  assert.equal(state.selected, 'Fundraising', 'selected label follows the latest choice');
+  assert.equal(state.pill, 'Fireworks', 'pill follows the latest choice');
+  assert.equal(state.selected, 'Fireworks', 'selected label follows the latest choice');
 });
 
 test('showcase: a failed screenshot preserves the displayed pair and allows retry', async ({ page }) => {
   let fail = true;
-  await page.route('**/assets/images/work/foa-fundraising-desk-dark.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
+  await page.route('**/assets/images/work/*foa-fireworks-desk-dark*.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
   const before = await shotPair(page);
-  const failedResponse = page.waitForResponse((response) => response.url().includes('fundraising-desk-dark.webp') && response.status() === 404);
+  const failedResponse = page.waitForResponse((response) => response.url().includes('fireworks-desk-dark') && response.status() === 404);
   await page.evaluate(() => {
     window.failedShowcaseSwap = new Promise((resolve) => {
       document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true });
     });
   });
-  await page.click('.case:first-child .thumb:nth-child(3)');
+  await page.click('.case:first-child .thumb[data-label="Fireworks"]');
   await failedResponse;
   await page.evaluate(() => window.failedShowcaseSwap);
   assert.deepEqual(await shotPair(page), before, 'a failed replacement cannot discard either working screenshot');
-  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
-  assert.equal(await page.locator('.case:first-child .thumb.sel').textContent(), 'Homepage');
+  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Fundraising');
+  assert.equal(await page.locator('.case:first-child .thumb.sel').textContent(), 'Fundraising');
   // After a failed swap the displayed pair stays the theme-swap target (the
   // brief: keep the working pair and its selected label): a theme change
   // re-themes the working pair rather than retrying the failed tab.
   await page.evaluate(() => { document.body.dataset.theme = 'light'; });
   await page.waitForFunction(() => {
     const src = document.querySelector('.case:first-child .shot-mob').currentSrc;
-    return src.includes('foa-home-mob') && !src.includes('-dark');
+    return src.includes('foa-fundraising-mob') && !src.includes('-dark');
   });
-  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Homepage');
+  assert.equal(await page.locator('.case:first-child .pill-label').textContent(), 'Fundraising');
   fail = false;
-  await page.click('.case:first-child .thumb:nth-child(3)');
-  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fundraising-mob'));
+  await page.click('.case:first-child .thumb[data-label="Fireworks"]');
+  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('fireworks-mob'));
   const state = await page.evaluate(() => ({
     // src, not currentSrc: the swap commits both src attributes atomically, but
     // Firefox only updates currentSrc for a failed image after the 404 settles,
@@ -936,9 +920,9 @@ test('showcase: a failed screenshot preserves the displayed pair and allows retr
     deskAlt: document.querySelector('.case:first-child .shot-desk').alt,
     pill: document.querySelector('.case:first-child .pill').textContent,
   }));
-  assert.ok(state.deskSrc.includes('fundraising-desk'), 'retry commits the working replacement');
-  assert.match(state.deskAlt, /Fundraising/);
-  assert.equal(state.pill, 'Fundraising');
+  assert.ok(state.deskSrc.includes('fireworks-desk'), 'retry commits the working replacement');
+  assert.match(state.deskAlt, /Fireworks/);
+  assert.equal(state.pill, 'Fireworks');
 });
 
 test('showcase: screenshots follow the page light/dark theme', async ({ page }) => {
@@ -950,33 +934,33 @@ test('showcase: screenshots follow the page light/dark theme', async ({ page }) 
     const last = document.querySelector('.case:last-child');
     return {
       theme: document.body.dataset.theme,
-      foaDesk: first.querySelector('.shot-desk').currentSrc.split('/').pop().replace(/^\d+-/, '').replace(/-\d+w(?=\.webp$)/, ''),
-      foaMob: first.querySelector('.shot-mob').currentSrc.split('/').pop().replace(/^\d+-/, '').replace(/-\d+w(?=\.webp$)/, ''),
+      foaDesk: first.querySelector('.shot-desk').currentSrc.split('/').pop().replace(/^(?:\d+-)+/, '').replace(/-\d+w(?=\.webp$)/, ''),
+      foaMob: first.querySelector('.shot-mob').currentSrc.split('/').pop().replace(/^(?:\d+-)+/, '').replace(/-\d+w(?=\.webp$)/, ''),
       foaSelected: first.querySelector('.thumb.sel').textContent.trim(),
-      samDesk: last.querySelector('.shot-desk').currentSrc.split('/').pop().replace(/^\d+-/, '').replace(/-\d+w(?=\.webp$)/, ''),
+      samDesk: last.querySelector('.shot-desk').currentSrc.split('/').pop().replace(/^(?:\d+-)+/, '').replace(/-\d+w(?=\.webp$)/, ''),
     };
   });
   const dark0 = await read();
   assert.equal(dark0.theme, 'dark', 'page opens dark by default');
-  assert.equal(dark0.foaDesk, 'foa-home-desk-dark.webp', 'FOA shows its dark capture in dark mode');
-  assert.equal(dark0.foaMob, 'foa-home-mob-dark.webp', 'mobile shot follows too');
-  assert.equal(dark0.foaSelected, 'Homepage', 'page choice is labelled');
+  assert.equal(dark0.foaDesk, 'foa-fundraising-desk-dark.webp', 'FOA shows its dark capture in dark mode');
+  assert.equal(dark0.foaMob, 'foa-fundraising-mob-dark.webp', 'mobile shot follows too');
+  assert.equal(dark0.foaSelected, 'Fundraising', 'page choice is labelled');
   assert.equal(dark0.samDesk, 'sam-home-desk-dark.webp', 'Sam shows its dark capture in dark mode too');
   await page.locator('button.theme-toggle').first().click();
   await page.waitForTimeout(300);
   const light = await read();
   assert.equal(light.theme, 'light');
-  assert.equal(light.foaDesk, 'foa-home-desk.webp', 'FOA swaps to its light capture in light mode');
-  assert.equal(light.foaMob, 'foa-home-mob.webp');
-  assert.equal(light.foaSelected, 'Homepage', 'theme changes preserve the selected page');
+  assert.equal(light.foaDesk, 'foa-fundraising-desk.webp', 'FOA swaps to its light capture in light mode');
+  assert.equal(light.foaMob, 'foa-fundraising-mob.webp');
+  assert.equal(light.foaSelected, 'Fundraising', 'theme changes preserve the selected page');
   assert.equal(light.samDesk, 'sam-home-desk.webp', 'Sam swaps to its light capture in light mode');
   await page.locator('button.theme-toggle').first().click();
   await page.waitForTimeout(300);
   const dark1 = await read();
-  assert.equal(dark1.foaDesk, 'foa-home-desk-dark.webp', 'toggling back restores the dark captures');
+  assert.equal(dark1.foaDesk, 'foa-fundraising-desk-dark.webp', 'toggling back restores the dark captures');
   assert.equal(dark1.samDesk, 'sam-home-desk-dark.webp', 'Sam dark captures return too');
 
-  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
   const waitForSelectedPair = (suffix) => page.waitForFunction((ending) => {
     const first = document.querySelector('.case:first-child');
     return first.querySelector('.shot-desk').currentSrc.replace(/-\d+w(?=\.webp$)/, '').endsWith(`foa-whatson-desk${ending}.webp`)
@@ -1070,27 +1054,176 @@ test('experience page: all four roles render', async ({ page }) => {
   }
 });
 
-
-// Wide Work canvas: larger examples, mirrored columns, unchanged phone mode.
-test('wide Work examples use a balanced sixty-forty composition', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'desktop geometry');
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/');
-  const geometry = () => page.locator('.case').evaluateAll(cases => cases.map(c => ({
-    shot: c.querySelector('.case-shot').getBoundingClientRect().width,
-    copy: c.querySelector('.case-copy').getBoundingClientRect().width,
-    desk: c.querySelector('.shot-desk').getBoundingClientRect().width,
-  })));
-  const wide = await geometry();
-  for (const item of wide) {
-    expect(item.shot).toBeGreaterThan(750);
-    expect(item.desk).toBeGreaterThan(550);
-    expect(item.shot / item.copy).toBeCloseTo(1.5, 1);
-  }
-  expect(Math.abs(wide[0].shot - wide[1].shot)).toBeLessThan(1);
-  await page.setViewportSize({ width: 1920, height: 1000 });
-  for (const item of await geometry()) expect(item.shot).toBeLessThan(850);
+test('showcase: Fundraising leads and Menu is a labelled phone-only last choice', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'What’s On', 'Menu']);
+  await expect(first.locator('.shot-mob')).toHaveAttribute('alt', /Fundraising/);
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  await menu.focus(); await page.keyboard.press('Enter');
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('alt', /open navigation menu/);
+  assert.ok((await first.locator('.shot-mob').getAttribute('src')).includes('foa-menu-mob'));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(menu).toBeHidden();
+  await expect(first.locator('.thumb').first()).toHaveAttribute('aria-pressed', 'true');
+  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'What’s On']);
+  await expect(first.locator('.shot-desk')).toHaveAttribute('alt', /Fundraising/);
   await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
-  for (const item of await geometry()) expect(Math.abs(item.shot - item.copy)).toBeLessThan(1);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await expect(menu).toBeVisible(); await menu.click();
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await expect(menu).toBeHidden();
+  await expect(first.locator('.thumb').first()).toHaveAttribute('aria-pressed', 'true');
+  assert.equal(await first.locator('.thumb[aria-pressed="true"]').count(), 1);
+});
+
+
+test('showcase: hiding a focused unselected Menu preserves keyboard position', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  const fundraising = first.getByRole('button', { name: 'Fundraising', exact: true });
+  await menu.focus();
+  await expect(menu).toHaveAttribute('aria-pressed', 'false');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(menu).toBeHidden(); await expect(fundraising).toBeFocused();
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await menu.focus();
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await expect(menu).toBeHidden(); await expect(fundraising).toBeFocused();
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await expect(menu).toBeHidden(); await expect(fundraising).toBeFocused();
+  await expect(fundraising).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('showcase: failed Menu desktop fallback keeps a visible selection and restores phone state', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  const homepage = first.getByRole('button', { name: 'Fundraising', exact: true });
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  const pair = await shotPair(page);
+  // Reject decode even if an engine reuses the initially decoded image
+  // without another network request (notably Firefox's memory image cache).
+  await page.evaluate(() => {
+    const NativeImage = window.Image;
+    window.Image = class extends NativeImage {
+      decode() { return this.src.includes('fundraising') ? Promise.reject(new Error('test decode failure')) : super.decode(); }
+    };
+  });
+  await page.evaluate(() => { window.fallbackFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed', resolve, {once:true})); });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => window.fallbackFailed);
+  await expect(menu).toBeHidden();
+  await expect(homepage).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Fundraising');
+  assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
+  assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Menu');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('src', /foa-menu-mob/);
+});
+
+test('showcase: failed Menu preview-toggle fallback keeps a visible selection and restores phone state', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/'); await settle(page);
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await expect(page.locator('.case').first().getByRole('button', {name:'Menu',exact:true})).toBeVisible();
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button', { name: 'Menu', exact: true });
+  const homepage = first.getByRole('button', { name: 'Fundraising', exact: true });
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  const pair = await shotPair(page);
+  // Reject decode even if an engine reuses the initially decoded image
+  // without another network request (notably Firefox's memory image cache).
+  await page.evaluate(() => {
+    const NativeImage = window.Image;
+    window.Image = class extends NativeImage {
+      decode() { return this.src.includes('fundraising') ? Promise.reject(new Error('test decode failure')) : super.decode(); }
+    };
+  });
+  await page.evaluate(() => { window.fallbackFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed', resolve, {once:true})); });
+  await page.evaluate(() => { document.body.dataset.mobile = 'false'; });
+  await page.evaluate(() => window.fallbackFailed);
+  await expect(menu).toBeHidden();
+  await expect(homepage).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Fundraising');
+  assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
+  assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  await expect(menu).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.locator('.pill-label')).toHaveText('Menu');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('src', /foa-menu-mob/);
+});
+
+test('showcase: retained Menu desktop capture stays selected after theme and fallback failures', async ({ page }) => {
+  await page.setViewportSize({width:390,height:900});
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button',{name:'Menu',exact:true});
+  const home = first.getByRole('button',{name:'Fundraising',exact:true});
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed','true');
+  const retained = await shotPair(page);
+  await page.evaluate(() => {
+    const NativeImage = Image;
+    window.Image = class extends NativeImage { decode() { return Promise.reject(new Error('test all replacements fail')); } };
+    window.themeFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed',resolve,{once:true}));
+    document.body.dataset.theme = 'light';
+  });
+  await page.evaluate(() => window.themeFailed);
+  await page.evaluate(() => { window.fallbackFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed',resolve,{once:true})); });
+  await page.setViewportSize({width:1440,height:900});
+  await page.evaluate(() => window.fallbackFailed);
+  await expect(menu).toBeHidden(); await expect(home).toHaveAttribute('aria-pressed','true');
+  await expect(first.locator('.pill-label')).toHaveText('Fundraising');
+  expect(await shotPair(page)).toEqual(retained);
+  expect(await first.locator('.shot-desk').getAttribute('src')).toBe(await home.getAttribute('data-src-desk-dark'));
+  await page.setViewportSize({width:390,height:900});
+  await expect(menu).toHaveAttribute('aria-pressed','true');
+  await expect(first.locator('.pill-label')).toHaveText('Menu');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('src', /foa-menu-mob/);
+});
+
+test('wide Work canvas preserves dedicated device previews', async ({page,isMobile}) => {
+  test.skip(isMobile,'desktop canvas');
+  for(const width of [1280,1440,1920]) {
+    await page.setViewportSize({width,height:1000}); await page.goto('/'); await settle(page);
+    const cases=await page.locator('.case').evaluateAll(cs=>cs.map(c=>({shot:c.querySelector('.case-shot').getBoundingClientRect().width,copy:c.querySelector('.case-copy').getBoundingClientRect().width,visible:[...c.querySelectorAll('.shot-img')].filter(e=>e.offsetParent!==null).map(e=>e.className)})));
+    for(const c of cases){expect(c.shot/c.copy).toBeCloseTo(1.5,1);expect(c.visible).toEqual(['shot-img shot-desk']);expect(c.shot).toBeGreaterThan(650);expect(c.shot).toBeLessThan(850)}
+    expect(Math.abs(cases[0].shot-cases[1].shot)).toBeLessThan(1);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+});
+
+test('phone frame paints all four edges without changing capture geometry', async ({browser,baseURL}) => {
+  for(const [width,preview] of [[390,false],[768,false],[1440,true]]) {
+    const context=await browser.newContext({viewport:{width,height:1000},deviceScaleFactor:1});
+    const page=await context.newPage();
+    await page.addInitScript(()=>localStorage.setItem('websites-by-nick-cookie-preferences','essential'));
+    await page.goto(baseURL);
+    if(preview)await page.evaluate(()=>document.body.dataset.mobile='true');
+    for(const image of await page.locator('.shot-mob').all()) {
+      await image.evaluate(i=>i.decode());
+      await image.scrollIntoViewIfNeeded();
+      const geometry=()=>image.evaluate(i=>{const r=i.getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height}});
+      const before=await geometry();
+      const screenshot=await image.screenshot({animations:'disabled'});
+      const edges=await page.evaluate(async data=>{
+        const i=new Image();i.src='data:image/png;base64,'+data;await i.decode();
+        const c=document.createElement('canvas');c.width=i.width;c.height=i.height;const x=c.getContext('2d');x.drawImage(i,0,0);
+        return [[1,i.height/2],[i.width-2,i.height/2],[i.width/2,1],[i.width/2,i.height-2]].map(([a,b])=>Array.from(x.getImageData(Math.floor(a),Math.floor(b),1,1).data));
+      },screenshot.toString('base64'));
+      for(const edge of edges)assert.deepEqual(edge,[23,25,28,255],`actual painted frame ${width}px preview=${preview}`);
+      await image.evaluate(i=>i.style.outline='none');
+      assert.deepEqual(await geometry(),before,'frame must not change capture geometry');
+    }
+    await context.close();
+  }
 });
