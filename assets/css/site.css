@@ -159,6 +159,13 @@ button { color: inherit; font: inherit; }
 .case-copy { grid-column: 2; align-self: start; }
 .case-flip .case-shot { grid-column: 2; }
 .case-flip .case-heading, .case-flip .case-copy { grid-column: 1; }
+/* Wider Work canvas only; preserve the dedicated device preview. */
+@media (min-width: 1280px) {
+  body:not([data-mobile="true"]) .showcase { max-width: 1480px; padding-left: 48px; padding-right: 48px; }
+  body:not([data-mobile="true"]) .case { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  body:not([data-mobile="true"]) .case-flip { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+}
+
 .shot { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
 .shotbar { align-items: center; background: #10131a; display: flex; gap: 8px; padding: 10px 14px; }
 .shotbar .t { color: #edf1ed; font-family: var(--body); font-size: 12px; letter-spacing: .06em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
