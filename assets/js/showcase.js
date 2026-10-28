@@ -229,7 +229,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     // share its desktop capture with a visible choice (Menu uses Homepage).
     // Label that actual desktop image, then restore Menu on return to phone.
     const matchingDesktop = thumbs.findIndex((thumb) => !thumb.hidden &&
-      new URL(variant(thumb, 'Desk'), document.baseURI).href === desk.src);
+      [thumb.dataset.srcDesk, thumb.dataset.srcDeskDark].filter(Boolean).some((src) =>
+        new URL(src, document.baseURI).href === desk.src));
     const visibleIndex = thumbs[current].hidden ? matchingDesktop : current;
     if (visibleIndex < 0) return;
     thumbs.forEach((thumb, j) => {

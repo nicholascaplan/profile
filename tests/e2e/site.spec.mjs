@@ -1160,3 +1160,30 @@ test('showcase: failed Menu preview-toggle fallback keeps a visible selection an
   await expect(menu).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');
 });
+
+test('showcase: retained Menu desktop capture stays selected after theme and fallback failures', async ({ page }) => {
+  await page.setViewportSize({width:390,height:900});
+  await page.goto('/'); await settle(page);
+  const first = page.locator('.case').first();
+  const menu = first.getByRole('button',{name:'Menu',exact:true});
+  const home = first.getByRole('button',{name:'Homepage',exact:true});
+  await menu.click(); await expect(menu).toHaveAttribute('aria-pressed','true');
+  const retained = await shotPair(page);
+  await page.evaluate(() => {
+    const NativeImage = Image;
+    window.Image = class extends NativeImage { decode() { return Promise.reject(new Error('test all replacements fail')); } };
+    window.themeFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed',resolve,{once:true}));
+    document.body.dataset.theme = 'light';
+  });
+  await page.evaluate(() => window.themeFailed);
+  await page.evaluate(() => { window.fallbackFailed = new Promise(resolve => document.querySelector('.case').addEventListener('showcase:swap-failed',resolve,{once:true})); });
+  await page.setViewportSize({width:1440,height:900});
+  await page.evaluate(() => window.fallbackFailed);
+  await expect(menu).toBeHidden(); await expect(home).toHaveAttribute('aria-pressed','true');
+  await expect(first.locator('.pill-label')).toHaveText('Homepage');
+  expect(await shotPair(page)).toEqual(retained);
+  expect(await first.locator('.shot-desk').getAttribute('src')).toBe(await home.getAttribute('data-src-desk-dark'));
+  await page.setViewportSize({width:390,height:900});
+  await expect(menu).toHaveAttribute('aria-pressed','true');
+  await expect(first.locator('.pill-label')).toHaveText('Menu');
+});
