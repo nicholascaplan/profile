@@ -1190,3 +1190,14 @@ test('showcase: retained Menu desktop capture stays selected after theme and fal
   await expect(first.locator('.pill-label')).toHaveText('Menu');
   await expect(first.locator('.shot-mob')).toHaveAttribute('src', /foa-menu-mob/);
 });
+
+test('wide Work canvas preserves dedicated device previews', async ({page,isMobile}) => {
+  test.skip(isMobile,'desktop canvas');
+  for(const width of [1280,1440,1920]) {
+    await page.setViewportSize({width,height:1000}); await page.goto('/'); await settle(page);
+    const cases=await page.locator('.case').evaluateAll(cs=>cs.map(c=>({shot:c.querySelector('.case-shot').getBoundingClientRect().width,copy:c.querySelector('.case-copy').getBoundingClientRect().width,visible:[...c.querySelectorAll('.shot-img')].filter(e=>e.offsetParent!==null).map(e=>e.className)})));
+    for(const c of cases){expect(c.shot/c.copy).toBeCloseTo(1.5,1);expect(c.visible).toEqual(['shot-img shot-desk']);expect(c.shot).toBeGreaterThan(650);expect(c.shot).toBeLessThan(850)}
+    expect(Math.abs(cases[0].shot-cases[1].shot)).toBeLessThan(1);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+});
