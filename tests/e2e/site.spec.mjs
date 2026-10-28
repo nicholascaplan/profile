@@ -1128,6 +1128,7 @@ test('showcase: failed Menu desktop fallback keeps a visible selection and resto
   await page.setViewportSize({ width: 390, height: 900 });
   await expect(menu).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('src', /foa-menu-mob/);
 });
 
 test('showcase: failed Menu preview-toggle fallback keeps a visible selection and restores phone state', async ({ page }) => {
@@ -1159,6 +1160,7 @@ test('showcase: failed Menu preview-toggle fallback keeps a visible selection an
   await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
   await expect(menu).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('src', /foa-menu-mob/);
 });
 
 test('showcase: retained Menu desktop capture stays selected after theme and fallback failures', async ({ page }) => {
@@ -1186,4 +1188,5 @@ test('showcase: retained Menu desktop capture stays selected after theme and fal
   await page.setViewportSize({width:390,height:900});
   await expect(menu).toHaveAttribute('aria-pressed','true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');
+  await expect(first.locator('.shot-mob')).toHaveAttribute('src', /foa-menu-mob/);
 });
