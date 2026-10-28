@@ -226,7 +226,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   let swapSeq = 0;
   const syncPresentedChoice = () => {
     // Keep the decoded pair on failure. A hidden phone-only choice can
-    // share its desktop capture with a visible choice (Menu uses Homepage).
+    // share its desktop capture with a visible choice (Menu uses Fundraising).
     // Label that actual desktop image, then restore Menu on return to phone.
     const matchingDesktop = thumbs.findIndex((thumb) => !thumb.hidden &&
       [thumb.dataset.srcDesk, thumb.dataset.srcDeskDark].filter(Boolean).some((src) =>

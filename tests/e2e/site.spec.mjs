@@ -1058,7 +1058,7 @@ test('showcase: Fundraising leads and Menu is a labelled phone-only last choice'
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/'); await settle(page);
   const first = page.locator('.case').first();
-  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'Homepage', 'What’s On', 'Menu']);
+  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'What’s On', 'Menu']);
   await expect(first.locator('.shot-mob')).toHaveAttribute('alt', /Fundraising/);
   const menu = first.getByRole('button', { name: 'Menu', exact: true });
   await menu.focus(); await page.keyboard.press('Enter');
@@ -1068,7 +1068,7 @@ test('showcase: Fundraising leads and Menu is a labelled phone-only last choice'
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(menu).toBeHidden();
   await expect(first.locator('.thumb').first()).toHaveAttribute('aria-pressed', 'true');
-  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'Homepage', 'What’s On']);
+  assert.deepEqual(await first.locator('.thumb:visible').allTextContents(), ['Fundraising', 'Fireworks', 'What’s On']);
   await expect(first.locator('.shot-desk')).toHaveAttribute('alt', /Fundraising/);
   await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
   await expect(menu).toBeVisible(); await menu.click();
@@ -1106,7 +1106,7 @@ test('showcase: failed Menu desktop fallback keeps a visible selection and resto
   await page.goto('/'); await settle(page);
   const first = page.locator('.case').first();
   const menu = first.getByRole('button', { name: 'Menu', exact: true });
-  const homepage = first.getByRole('button', { name: 'Homepage', exact: true });
+  const homepage = first.getByRole('button', { name: 'Fundraising', exact: true });
   await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
   const pair = await shotPair(page);
   // Reject decode even if an engine reuses the initially decoded image
@@ -1122,7 +1122,7 @@ test('showcase: failed Menu desktop fallback keeps a visible selection and resto
   await page.evaluate(() => window.fallbackFailed);
   await expect(menu).toBeHidden();
   await expect(homepage).toHaveAttribute('aria-pressed', 'true');
-  await expect(first.locator('.pill-label')).toHaveText('Homepage');
+  await expect(first.locator('.pill-label')).toHaveText('Fundraising');
   assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
   assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
   await page.setViewportSize({ width: 390, height: 900 });
@@ -1137,7 +1137,7 @@ test('showcase: failed Menu preview-toggle fallback keeps a visible selection an
   await expect(page.locator('.case').first().getByRole('button', {name:'Menu',exact:true})).toBeVisible();
   const first = page.locator('.case').first();
   const menu = first.getByRole('button', { name: 'Menu', exact: true });
-  const homepage = first.getByRole('button', { name: 'Homepage', exact: true });
+  const homepage = first.getByRole('button', { name: 'Fundraising', exact: true });
   await menu.click(); await expect(menu).toHaveAttribute('aria-pressed', 'true');
   const pair = await shotPair(page);
   // Reject decode even if an engine reuses the initially decoded image
@@ -1153,7 +1153,7 @@ test('showcase: failed Menu preview-toggle fallback keeps a visible selection an
   await page.evaluate(() => window.fallbackFailed);
   await expect(menu).toBeHidden();
   await expect(homepage).toHaveAttribute('aria-pressed', 'true');
-  await expect(first.locator('.pill-label')).toHaveText('Homepage');
+  await expect(first.locator('.pill-label')).toHaveText('Fundraising');
   assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
   assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
   await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
@@ -1166,7 +1166,7 @@ test('showcase: retained Menu desktop capture stays selected after theme and fal
   await page.goto('/'); await settle(page);
   const first = page.locator('.case').first();
   const menu = first.getByRole('button',{name:'Menu',exact:true});
-  const home = first.getByRole('button',{name:'Homepage',exact:true});
+  const home = first.getByRole('button',{name:'Fundraising',exact:true});
   await menu.click(); await expect(menu).toHaveAttribute('aria-pressed','true');
   const retained = await shotPair(page);
   await page.evaluate(() => {
@@ -1180,7 +1180,7 @@ test('showcase: retained Menu desktop capture stays selected after theme and fal
   await page.setViewportSize({width:1440,height:900});
   await page.evaluate(() => window.fallbackFailed);
   await expect(menu).toBeHidden(); await expect(home).toHaveAttribute('aria-pressed','true');
-  await expect(first.locator('.pill-label')).toHaveText('Homepage');
+  await expect(first.locator('.pill-label')).toHaveText('Fundraising');
   expect(await shotPair(page)).toEqual(retained);
   expect(await first.locator('.shot-desk').getAttribute('src')).toBe(await home.getAttribute('data-src-desk-dark'));
   await page.setViewportSize({width:390,height:900});
