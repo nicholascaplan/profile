@@ -2,7 +2,7 @@
 // Chromium, Firefox, WebKit and mobile Chrome.
 // Usage: npx playwright test   (npm run test:e2e)
 
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -703,6 +703,142 @@ test('showcase: composed overviews have a single readable set of controls at eve
   }
 });
 
+// Desktop composition (Nick, 26 October 2026): on desktop widths the phone
+// capture sits beside the desktop capture instead of overlaying it; stacked
+// and phone layouts keep the overlay inset. Nick, 27 October 2026: the pair
+// must not read as the same screen - the phone capture is bottom-aligned and
+// carries a visible device frame (rounded corners, rim and bezel ring) so it
+// reads as a phone. Nick, 27 October 2026 (PR #24 review): the phone capture
+// stands larger - up to the full height of the framed browser window (address
+// bar + desktop capture), never taller.
+const shotGeometry = (page, caseSel = '.case:first-child') => page.evaluate((cs) => {
+  const rectOf = (sel) => {
+    const r = document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
+    return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, height: r.height };
+  };
+  const bar = rectOf('.shotbar');
+  const desk = rectOf('.shot-desk');
+  const mob = rectOf('.shot-mob');
+  const card = rectOf('.shot');
+  const phoneEl = document.querySelector(`${cs} .shot-phone`);
+  const phone = phoneEl ? phoneEl.getBoundingClientRect() : null;
+  const mobStyle = getComputedStyle(document.querySelector(`${cs} .shot-mob`));
+  const mobPosition = mobStyle.position;
+  const phonePosition = phoneEl ? getComputedStyle(phoneEl).position : null;
+  const mobRadius = parseFloat(mobStyle.borderTopLeftRadius);
+  const bezel = getComputedStyle(phoneEl, '::after');
+  const mobHasBezel = bezel.content === '""' && bezel.position === 'absolute' && bezel.borderTopWidth === '6px' && bezel.borderTopColor === 'rgb(23, 25, 28)' && bezel.zIndex === '1' && bezel.pointerEvents === 'none';
+  const overlap = Math.max(0, Math.min(desk.right, mob.right) - Math.max(desk.left, mob.left))
+    * Math.max(0, Math.min(desk.bottom, mob.bottom) - Math.max(desk.top, mob.top));
+  return { card, bar, desk, mob, phone, mobPosition, phonePosition, mobRadius, mobHasBezel, overlap };
+}, caseSel);
+
+test('showcase: desktop pairs the phone capture beside the desktop capture; smaller layouts keep the overlay', async ({ page, isMobile }) => {
+  desktopOnly(isMobile);
+  for (const width of [1440, 1280, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await settle(page);
+    for (const caseSel of ['.case:first-child', '.case:last-child']) {
+      const g = await shotGeometry(page, caseSel);
+      // The phone fills a static grid-area wrapper absolutely, so the browser
+      // unit alone drives the row height and the pair's heights match exactly.
+      assert.ok(g.phonePosition === 'static' || g.phonePosition === 'relative', `${caseSel} phone column sits in the card row at ${width}px (position ${g.phonePosition})`);
+      assert.ok(g.phone && Math.abs(g.mob.top - g.phone.top) <= 1 && Math.abs(g.mob.bottom - g.phone.bottom) <= 1, `${caseSel} phone capture fills its column at ${width}px`);
+      assert.ok(g.mob.left >= g.desk.right - 1, `${caseSel} phone capture starts where the desktop capture ends at ${width}px`);
+      assert.ok(Math.abs(g.mob.bottom - g.desk.bottom) <= 1, `${caseSel} captures share a baseline at ${width}px`);
+      assert.ok(Math.abs(g.desk.top - g.bar.bottom) <= 1, `${caseSel} address bar stays attached to the desktop capture at ${width}px`);
+      const unit = g.bar.height + g.desk.height;
+      const ratio = g.mob.height / unit;
+      // Nick, 27 October 2026 (PR #24 comment 6447346709): the captures' heights
+      // must not differ - the phone matches the framed browser window exactly.
+      assert.ok(Number.isFinite(ratio) && Math.abs(g.mob.height - unit) <= 1, `${caseSel} phone capture matches the framed browser window height at ${width}px (ratio ${ratio.toFixed(3)})`);
+      assert.ok(Math.abs(g.mob.top - g.bar.top) <= 1, `${caseSel} phone capture top aligns with the browser window top at ${width}px`);
+      assert.ok(g.mobRadius >= 14, `${caseSel} phone capture has device corners at ${width}px`);
+      assert.ok(g.mobHasBezel, `${caseSel} phone capture has a bezel ring at ${width}px`);
+      assert.ok(g.mob.right <= g.card.right + 1 && g.desk.left >= g.card.left - 1, `${caseSel} both captures stay inside the card at ${width}px`);
+      assert.equal(g.overlap, 0, `${caseSel} no overlap at ${width}px`);
+      const tags = await page.evaluate((cs) => {
+        const read = (sel) => {
+          const el = document.querySelector(`${cs} ${sel}`);
+          // Range, not element box: the caption element fills its grid column,
+          // so only the text range shows where the actual glyphs end.
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const r = range.getBoundingClientRect();
+          return { text: el.textContent, display: getComputedStyle(el).display, top: r.top, left: r.left, right: r.right };
+        };
+        const card = document.querySelector(`${cs} .shot`).getBoundingClientRect();
+        const desk = document.querySelector(`${cs} .shot-desk`).getBoundingClientRect();
+        const mob = document.querySelector(`${cs} .shot-mob`).getBoundingClientRect();
+        return { deskTag: read('.tag-desk'), mobTag: read('.tag-mob'), cardLeft: card.left, cardRight: card.right, deskBottom: desk.bottom, mobBottom: mob.bottom, mobLeft: mob.left };
+      }, caseSel);
+      assert.equal(tags.deskTag.text, 'Desktop');
+      assert.equal(tags.mobTag.text, 'Mobile');
+      assert.notEqual(tags.deskTag.display, 'none', `${caseSel} desktop caption shows at ${width}px`);
+      assert.notEqual(tags.mobTag.display, 'none', `${caseSel} mobile caption shows at ${width}px`);
+      assert.ok(tags.deskTag.top >= tags.deskBottom - 1, `${caseSel} desktop caption sits below its capture at ${width}px`);
+      assert.ok(tags.mobTag.top >= tags.mobBottom - 1, `${caseSel} mobile caption sits below its capture at ${width}px`);
+      assert.ok(tags.mobTag.left >= tags.mobLeft - 1, `${caseSel} mobile caption aligns with the phone column at ${width}px`);
+      assert.ok(tags.deskTag.left >= tags.cardLeft - 1 && tags.mobTag.right <= tags.cardRight + 1, `${caseSel} captions stay inside the card at ${width}px`);
+      // The card clips at its rounded corners, so text must clear the edge.
+      assert.ok(tags.cardRight - tags.mobTag.right >= 8, `${caseSel} mobile caption keeps breathing room from the card edge at ${width}px`);
+    }
+  }
+  // Enlarged text (200%): captions must stay inside the card, not collide.
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto('/');
+  await settle(page);
+  await enlargeText(page);
+  for (const caseSel of ['.case:first-child', '.case:last-child']) {
+    const fit = await page.evaluate((cs) => {
+      const rect = (sel) => document.querySelector(`${cs} ${sel}`).getBoundingClientRect();
+      const textRect = (sel) => {
+        const range = document.createRange();
+        range.selectNodeContents(document.querySelector(`${cs} ${sel}`));
+        return range.getBoundingClientRect();
+      };
+      const card = rect('.shot'), deskTag = textRect('.tag-desk'), mobTag = textRect('.tag-mob');
+      return { cardLeft: card.left, cardRight: card.right, dLeft: deskTag.left, dRight: deskTag.right, mLeft: mobTag.left, mRight: mobTag.right };
+    }, caseSel);
+    assert.ok(fit.dLeft >= fit.cardLeft - 1 && fit.mRight <= fit.cardRight + 1, `${caseSel} enlarged captions stay inside the card`);
+    assert.ok(fit.cardRight - fit.mRight >= 8, `${caseSel} enlarged mobile caption keeps breathing room from the card edge`);
+    assert.ok(fit.mLeft >= fit.dRight - 1, `${caseSel} enlarged captions do not collide`);
+  }
+  // Choosing a different page keeps the side-by-side composition on the new pair.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await settle(page);
+  await page.locator('.case:first-child .thumb:nth-child(2)').click();
+  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-mob').currentSrc.includes('foa-whatson-mob'));
+  const switched = await shotGeometry(page);
+  assert.ok(switched.phonePosition === 'static' || switched.phonePosition === 'relative', 'chosen pair stays beside the desktop capture');
+  assert.equal(switched.overlap, 0, 'chosen pair does not overlap');
+  for (const width of [960, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await settle(page);
+    const g = await shotGeometry(page);
+    assert.equal(g.mobPosition, 'absolute', `phone capture remains an overlay inset at ${width}px`);
+    assert.ok(g.overlap > 0, `phone capture still overlays the desktop capture at ${width}px`);
+    const tagDisplay = await page.evaluate(() => getComputedStyle(document.querySelector('.case:first-child .tag-desk')).display);
+    assert.equal(tagDisplay, 'none', `captions stay hidden in the overlay layout at ${width}px`);
+  }
+});
+
+test('showcase: phone layout keeps the overlay inset', async ({ page }) => {
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    await settle(page);
+    const g = await shotGeometry(page);
+    assert.equal(g.mobPosition, 'absolute', `phone capture remains an overlay inset at ${width}px`);
+    assert.ok(g.overlap > 0, `phone capture still overlays the desktop capture at ${width}px`);
+    const tagDisplay = await page.evaluate(() => getComputedStyle(document.querySelector('.case:first-child .tag-desk')).display);
+    assert.equal(tagDisplay, 'none', `captions stay hidden in the overlay layout at ${width}px`);
+  }
+});
+
 // Nick's rule (24 October 2026): a CTA symbol must never wrap away from the end
 // of its label. Check every visible CTA with a symbol, narrow widths and enlarged text.
 // Regression coverage for the paired screenshot swap (the composed card shows
@@ -932,4 +1068,29 @@ test('experience page: all four roles render', async ({ page }) => {
   for (const expected of ['NatWest Boxed', 'Oddschecker', 'Moogsoft', 'Alfa']) {
     assert.ok(roles.some((r) => r.includes(expected)), `role present: ${expected}`);
   }
+});
+
+
+// Wide Work canvas: larger examples, mirrored columns, unchanged phone mode.
+test('wide Work examples use a balanced sixty-forty composition', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop geometry');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const geometry = () => page.locator('.case').evaluateAll(cases => cases.map(c => ({
+    shot: c.querySelector('.case-shot').getBoundingClientRect().width,
+    copy: c.querySelector('.case-copy').getBoundingClientRect().width,
+    desk: c.querySelector('.shot-desk').getBoundingClientRect().width,
+  })));
+  const wide = await geometry();
+  for (const item of wide) {
+    expect(item.shot).toBeGreaterThan(750);
+    expect(item.desk).toBeGreaterThan(550);
+    expect(item.shot / item.copy).toBeCloseTo(1.5, 1);
+  }
+  expect(Math.abs(wide[0].shot - wide[1].shot)).toBeLessThan(1);
+  await page.setViewportSize({ width: 1920, height: 1000 });
+  for (const item of await geometry()) expect(item.shot).toBeLessThan(850);
+  await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
+  for (const item of await geometry()) expect(Math.abs(item.shot - item.copy)).toBeLessThan(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });

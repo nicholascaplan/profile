@@ -159,19 +159,63 @@ button { color: inherit; font: inherit; }
 .case-copy { grid-column: 2; align-self: start; }
 .case-flip .case-shot { grid-column: 2; }
 .case-flip .case-heading, .case-flip .case-copy { grid-column: 1; }
+/* Give the work examples more space on wide screens without changing the
+   shared page shell or the established tablet/phone composition. */
+@media (min-width: 1280px) {
+  body:not([data-mobile="true"]) .showcase { max-width: 1480px; padding-left: 48px; padding-right: 48px; }
+  body:not([data-mobile="true"]) .case { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  body:not([data-mobile="true"]) .case-flip { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+}
+
 .shot { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
 .shotbar { align-items: center; background: #10131a; display: flex; gap: 8px; padding: 10px 14px; }
 .shotbar .t { color: #edf1ed; font-family: var(--body); font-size: 12px; letter-spacing: .06em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shotbar .pill { background: #3d4a41; border-radius: 99px; color: #d8e0d8; flex: none; font-family: var(--body); font-size: 10.5px; letter-spacing: .12em; margin-left: auto; padding: 3px 9px; }
 /* Reserve screenshot space before its theme-aware template is activated. */
-.shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: block; aspect-ratio: 1280 / 713; width: 100%; }
+.shot:not(:has(noscript .shot-img)) .shot-browser > .shot-template:first-of-type { display: block; aspect-ratio: 1280 / 713; width: 100%; }
 .shot-img { display: block; object-fit: cover; width: 100%; }
 .shot-desk { aspect-ratio: 1280 / 713; }
 .shot-mob { aspect-ratio: 390 / 844; }
 .shot { position: relative; }
+.shot-phone { display: contents; }
 /* The composed shot is an overview, not a miniature interactive website.
    Keep a single, readable set of page selectors and let visitors explore live. */
 .shot-mob { position: absolute; right: 7%; bottom: 2%; display: block; height: 80%; width: auto; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
+/* Desktop composition: the phone capture sits beside the desktop capture
+   rather than overlaying it, bottom-aligned at roughly the full height of
+   the framed browser window with a dark bezel ring, so it reads as a phone
+   next to a monitor. Stacked and phone layouts keep the overlay inset
+   unchanged. */
+@media (min-width: 961px) {
+  /* Each capture gets its own device boundary on a padded canvas: the desktop
+     capture and the address bar form one framed browser window, and the phone
+     stands separately with its own bezel. Without this the dark captures bleed
+     into the dark card and the pair reads as one shape. */
+  body:not([data-mobile="true"]) .shot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.3fr); column-gap: 14px; align-items: end; padding: 14px; }
+  /* The address bar and desktop capture form one browser unit: wrapped so the
+     unit bottom-aligns against the phone without the bar detaching from its
+     capture when the phone stands taller than the desktop screenshot. */
+  body:not([data-mobile="true"]) .shot-browser { grid-column: 1; align-self: end; min-width: 0; }
+  body:not([data-mobile="true"]) .shotbar { grid-column: 1; border: 1px solid #454c54; border-bottom: 0; border-radius: 12px 12px 0 0; }
+  body:not([data-mobile="true"]) .shot-desk { grid-column: 1; border: 1px solid #454c54; border-top: 0; border-radius: 0 0 12px 12px; box-shadow: 0 12px 24px rgba(0, 0, 0, .45); }
+  body:not([data-mobile="true"]) .shot:not(:has(noscript .shot-img)) .shot-browser > .shot-template:first-of-type { grid-column: 1; }
+  body:not([data-mobile="true"]) .shot-phone { display: block; grid-column: 2; align-self: stretch; position: relative; min-width: 0; }
+  /* The phone matches the framed browser window's full height: it fills its
+     stretched grid area absolutely, so only the browser unit drives the row
+     height (no cyclic sizing); aspect-ratio derives the width, so no crop.
+     Nick, 27 October 2026 (PR #24 comment 6447346709). */
+  body:not([data-mobile="true"]) .shot-phone .shot-mob, body:not([data-mobile="true"]) .shot-phone > noscript { position: absolute; inset: 0; height: 100%; width: auto; margin: 0 auto; border-color: #454c54; border-radius: 20px; box-shadow: inset 0 0 0 6px #17191c, 0 12px 24px rgba(0, 0, 0, .45); }
+  body:not([data-mobile="true"]) .shot-phone > noscript > .shot-mob { height: 100%; width: auto; }
+  /* Paint the bezel above the opaque capture without changing its geometry. */
+  body:not([data-mobile="true"]) .shot-phone::after { content: ""; position: absolute; inset: 0; height: 100%; width: auto; aspect-ratio: 390 / 844; margin: 0 auto; border: 6px solid #17191c; border-radius: 20px; box-sizing: border-box; pointer-events: none; z-index: 1; }
+  body:not([data-mobile="true"]) .shot-tag { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .16em; padding: 8px 2px 0; text-transform: uppercase; }
+  /* Anchored to the right with an inset: enlarged text grows the word
+     leftward into the column gap, never toward the card's clipped rounded
+     corner. Flex-end because overflowing inline text always spills to the
+     inline-end regardless of text-align. */
+  body:not([data-mobile="true"]) .tag-mob { display: flex; justify-content: flex-end; min-width: 0; }
+}
+.shot-tag { display: none; }
 .thumbs { display: flex; flex-wrap: wrap; gap: 0; margin-top: 12px; }
 /* Screenshot choices are quieter than page navigation and live-site actions. */
 .thumb { position: relative; background: transparent; border: 0; border-radius: 0; box-shadow: inset 0 -1px var(--line); cursor: pointer; flex: 1 1 auto; min-height: 44px; margin: 0; padding: 10px 8px; text-align: center; }

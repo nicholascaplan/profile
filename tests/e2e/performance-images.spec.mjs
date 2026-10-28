@@ -96,7 +96,7 @@ test('screenshot activation preserves the reserved layout before scripts run', a
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/', { waitUntil: 'commit' });
   await expect(page.locator('.case:first-child .shot-template')).toHaveCount(2);
-  await page.waitForFunction(() => document.querySelector('.case .shot-template').getBoundingClientRect().height > 300);
+  await page.waitForFunction(() => document.querySelector('.case .shot-template').getBoundingClientRect().height > 200);
   const box = () => page.locator('.case:first-child .shot').boundingBox();
   const before = await box();
   expect(before.height).toBeGreaterThan(300);
