@@ -162,6 +162,18 @@ test('a horizontal drag brings the incoming capture in from the edge', async ({p
   expect(state.shotTransform).toBe('translateX(-95px)');
   expect(state.layerTransform).toBe(`translateX(${state.stageWidth - 95}px)`);
   expect(state.src).toContain('fireworks');
+  const tandem = await caseEl.evaluate(el => {
+    const indicator = el.querySelector('.thumb-ind');
+    const buttons = el.querySelectorAll('.thumb');
+    const from = buttons[0].offsetLeft + 12;
+    const to = buttons[1].offsetLeft + 12;
+    return {fraction: (parseFloat(indicator.style.left) - from) / (to - from),
+      clip: getComputedStyle(el.querySelector('.shot-stage')).clipPath};
+  });
+  expect(tandem.fraction).toBeCloseTo(95 / state.stageWidth, 4);
+  // Phone outline/glow extend beyond its border box. The moving stage must
+  // clip sideways only, keeping vertical paint space without shifting layout.
+  expect(tandem.clip).toBe('inset(-48px 0px)');
   // Dragging back under the commit threshold and releasing settles the pair back.
   await fire('touchmove', 270);
   await fire('touchend', 270);
@@ -301,4 +313,47 @@ test('horizontal wheel scroll steps one screenshot per gesture', async ({page}) 
   await page.waitForTimeout(250);
   await wheel('.case .shot', -4, 0, 1);
   await expect.poll(() => pressedLabel(page, 0)).toBe('Fireworks');
+});
+
+test('underline and capture release share one animation clock', async ({page}) => {
+  await page.setViewportSize({width: 390, height: 844});
+  await page.goto('/');
+  await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+  await page.waitForFunction(() => document.querySelector('.case .thumb-ind').getAnimations().length > 0);
+  const clocks = await page.evaluate(() => {
+    const shot = document.querySelector('.case .shot').getAnimations()[0];
+    const indicator = document.querySelector('.case .thumb-ind').getAnimations()[0];
+    return {shotStart: shot.startTime, indicatorStart: indicator.startTime,
+      shotDuration: shot.effect.getTiming().duration, indicatorDuration: indicator.effect.getTiming().duration,
+      shotEasing: shot.effect.getTiming().easing, indicatorEasing: indicator.effect.getTiming().easing};
+  });
+  expect(clocks.shotStart).toBe(clocks.indicatorStart);
+  expect(clocks.shotDuration).toBe(clocks.indicatorDuration);
+  expect(clocks.shotEasing).toBe(clocks.indicatorEasing);
+});
+
+test('a short drag cancels a pending selection without a late slide or skipped choice', async ({page}) => {
+  await page.setViewportSize({width:390, height:844});
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.evaluate(() => {
+    window.delayedDecodes = [];
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      return decode.call(this).then(() => new Promise(resolve => window.delayedDecodes.push(resolve)));
+    };
+  });
+  await page.locator('.case:first-child .thumb[data-label="Menu"]').click();
+  await page.waitForFunction(() => window.delayedDecodes.length >= 2);
+  await swipe(page, '.case .shot', {x:280,y:500}, {x:250,y:503}, 3);
+  await expect(page.locator('.case:first-child .shot-layer')).toHaveCount(0);
+  await page.evaluate(() => window.delayedDecodes.splice(0).forEach(resolve => resolve()));
+  await page.waitForTimeout(300);
+  expect(errors).toEqual([]);
+  expect(await pressedLabel(page,0)).toBe('Fundraising');
+  await swipe(page, '.case .shot', {x:300,y:500}, {x:90,y:503}, 3);
+  await page.waitForFunction(() => window.delayedDecodes.length >= 2);
+  await page.evaluate(() => window.delayedDecodes.splice(0).forEach(resolve => resolve()));
+  await expect.poll(() => pressedLabel(page,0)).toBe('Fireworks');
 });

@@ -255,6 +255,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const motionOk = () => !matchMedia('(prefers-reduced-motion: reduce)').matches && typeof shotEl.animate === 'function';
   const stageWidth = () => stage.clientWidth || 1;
   let trackAnims = [];
+  let settleSeq = 0;
   let layer = null;
   let layerSign = 0;
   let layerChoice = -1;
@@ -263,9 +264,12 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const setTrack = (offset) => {
     dragOffset = offset;
     shotEl.style.transform = offset ? `translateX(${offset}px)` : '';
-    if (layer) layer.style.transform = `translateX(${layerSign * stageWidth() + offset}px)`;
+    if (layer) {
+      layer.style.transform = `translateX(${layerSign * stageWidth() + offset}px)`;
+      followIndicator(offset);
+    }
   };
-  const cancelTrack = () => { trackAnims.forEach((animation) => animation.cancel()); trackAnims = []; };
+  const cancelTrack = () => { settleSeq++; trackAnims.forEach((animation) => animation.cancel()); trackAnims = []; };
   const removeLayer = () => { if (layer) layer.remove(); layer = null; layerReady = null; layerChoice = -1; };
   const restoreShot = () => {
     cancelTrack();
@@ -273,6 +277,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     dragOffset = 0;
     shotEl.style.transform = '';
     stage.classList.remove('sliding');
+    moveIndicator();
   };
   // The on-screen position while an animation holds it (a grab mid-slide
   // continues from exactly where the captures are).
@@ -341,8 +346,12 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         { transform: `translateX(${layerSign * width}px)` },
       ], { duration: 200, easing: 'ease-out' }));
     }
+    anims.push(animateIndicator(current));
     trackAnims = anims;
-    Promise.all(anims.map((animation) => animation.finished)).then(() => restoreShot(), () => restoreShot());
+    const settling = ++settleSeq;
+    Promise.all(anims.map((animation) => animation.finished)).then(() => {
+      if (settling === settleSeq) restoreShot();
+    }, () => {});
   };
   // Preload the neighbouring captures (current theme and form factor only)
   // so the first swipe can slide immediately. Bounded to two captures and
@@ -410,7 +419,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         { transform: `translateX(${direction * width + startOffset}px)` },
         { transform: 'translateX(0px)' },
       ], { duration: 200, easing: 'ease-out', fill: 'forwards' });
-      trackAnims = [animOut, animIn];
+      trackAnims = [animOut, animIn, animateIndicator(wanted)];
       Promise.all(trackAnims.map((animation) => animation.finished)).then(() => {
         if (mySeq !== swapSeq) return;
         current = wanted;
@@ -527,12 +536,30 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   indicator.setAttribute('aria-hidden', 'true');
   thumbsEl.classList.add('thumbs-anim');
   thumbsEl.appendChild(indicator);
+  const indicatorBox = (index) => {
+    const button = thumbs[index];
+    return {left: button.offsetLeft + 12, top: button.offsetTop + button.offsetHeight - 2,
+      width: Math.max(0, button.offsetWidth - 24)};
+  };
+  const paintIndicator = (box) => {
+    for (const key of ['left', 'top', 'width']) indicator.style[key] = `${box[key]}px`;
+  };
   const moveIndicator = () => {
-    const selected = thumbsEl.querySelector('.thumb.sel');
-    if (!selected) return;
-    indicator.style.left = `${selected.offsetLeft + 12}px`;
-    indicator.style.top = `${selected.offsetTop + selected.offsetHeight - 2}px`;
-    indicator.style.width = `${Math.max(0, selected.offsetWidth - 24)}px`;
+    if (!layer && !trackAnims.length) paintIndicator(indicatorBox(current));
+  };
+  const followIndicator = (offset) => {
+    if (!layer) return;
+    const fraction = Math.min(1, Math.max(0, -layerSign * offset / stageWidth()));
+    const from = indicatorBox(current);
+    const to = indicatorBox(layerChoice);
+    paintIndicator(Object.fromEntries(['left', 'top', 'width'].map(key =>
+      [key, from[key] + (to[key] - from[key]) * fraction])));
+  };
+  const animateIndicator = (index) => {
+    const style = getComputedStyle(indicator);
+    const from = {left: style.left, top: style.top, width: style.width};
+    const to = Object.fromEntries(Object.entries(indicatorBox(index)).map(([key, value]) => [key, `${value}px`]));
+    return indicator.animate([from, to], {duration: 200, easing: 'ease-out', fill: 'forwards'});
   };
   new MutationObserver(moveIndicator).observe(thumbsEl, { attributes: true, subtree: true, attributeFilter: ['class', 'hidden'] });
   window.addEventListener('resize', moveIndicator);
@@ -560,10 +587,16 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const gestureAreas = [shotEl, thumbsEl].filter(Boolean);
   let drag = null;
   const clearDrag = () => { drag = null; };
+  const invalidateSlide = () => { swapSeq++; wanted = current; };
   // The drag target: continuing the direction of an incoming layer the
   // gesture itself brought on stage keeps that capture; once it is the
   // committed choice (or the direction flips), page the neighbour instead.
   const dragTarget = (direction) => {
+    if (drag) {
+      const visible = visibleIndexes();
+      const position = Math.max(0, visible.indexOf(drag.origin));
+      return visible[(position + direction + visible.length) % visible.length];
+    }
     if (layer && direction === layerSign && layerChoice !== wanted) return layerChoice;
     const visible = visibleIndexes();
     const position = Math.max(0, visible.indexOf(wanted));
@@ -576,15 +609,20 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       // A second finger cancels the drag: settle the pair back first so it
       // does not stay shifted with no handler left to restore it.
       if (event.touches.length !== 1) {
-        if (drag) settleBack(dragOffset);
+        if (drag) { invalidateSlide(); settleBack(dragOffset); }
         clearDrag();
         return;
       }
       // Grabbing mid-slide takes over from the on-screen position, so the
       // captures never jump when a new touch lands.
       const held = motionOk() ? visualOffset() : 0;
-      if (held) cancelTrack();
-      drag = { x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null };
+      if (held) {
+        const style = getComputedStyle(indicator);
+        const box = {left: parseFloat(style.left), top: parseFloat(style.top), width: parseFloat(style.width)};
+        cancelTrack();
+        paintIndicator(box);
+      }
+      drag = { x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: wanted, resume: wanted };
       if (held) setTrack(held);
       else dragOffset = 0;
     }, { passive: true });
@@ -596,7 +634,10 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       const dx = event.touches[0].clientX - drag.x;
       const dy = event.touches[0].clientY - drag.y;
       if (!drag.lock) {
-        if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) drag.lock = 'h';
+        if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          drag.lock = 'h';
+          invalidateSlide();
+        }
         else if (Math.abs(dy) > 8) drag.lock = 'v';
       }
       if (drag.lock !== 'h') return;
@@ -613,26 +654,28 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       if (!drag) return;
       const dx = event.changedTouches[0].clientX - drag.x;
       const dy = event.changedTouches[0].clientY - drag.y;
-      const { lock, base } = drag;
+      const { lock, base, resume } = drag;
+      const target = dragTarget(dx < 0 ? 1 : -1);
       clearDrag();
       expireSuppress();
       // Only a clearly horizontal swipe switches; vertical swipes scroll the
       // page exactly as before.
       const horizontal = Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5;
-      if (lock === 'h' && !horizontal) { settleBack(dragOffset); return; }
+      if (lock === 'h' && !horizontal) { invalidateSlide(); settleBack(dragOffset); return; }
       if (horizontal) {
         const direction = dx < 0 ? 1 : -1;
         // The slide continues from where the finger left the track: a locked
         // drag leaves it at base + dx, an untouched grab still holds base.
-        select(dragTarget(direction), direction, lock === 'h' ? base + dx : base);
+        select(target, direction, lock === 'h' ? base + dx : base);
         return;
       }
       // A tap that grabbed a mid-slide track (no drag) resumes the
       // interrupted slide rather than leaving the pair frozen.
-      if (base) select(wanted, base < 0 ? 1 : -1, base);
+      if (base) select(resume, base < 0 ? 1 : -1, base);
     }, { passive: true });
     area.addEventListener('touchcancel', () => {
       if (!drag) return;
+      invalidateSlide();
       clearDrag();
       expireSuppress();
       settleBack(dragOffset);
