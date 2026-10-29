@@ -210,7 +210,8 @@ button { color: inherit; font: inherit; }
 /* The selected choice's underline is a single indicator that slides between
    buttons; with JS off the per-button ::after underline remains. */
 .thumbs { position: relative; }
-.thumb-ind { background: var(--accent); height: 2px; pointer-events: none; position: absolute; }
+.thumb-ind-clip { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.thumb-ind, .thumb-ind-wrap { background: var(--accent); height: 2px; pointer-events: none; position: absolute; }
 .thumbs-anim .thumb.sel::after { content: none; }
 .case-copy .kicker, .kicker { color: var(--accent-ink); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .case-heading h2 { font-family: var(--display); font-size: 32px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: 10px 0 0; }

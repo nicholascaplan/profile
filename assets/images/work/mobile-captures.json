@@ -158,5 +158,25 @@
       "600": "sam-watch-mob-dark-600w.webp",
       "960": "sam-watch-mob-dark-960w.webp"
     }
+  },
+  "sam-bio-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-160w.webp",
+      "320": "sam-bio-mob-320w.webp",
+      "600": "sam-bio-mob-600w.webp",
+      "960": "sam-bio-mob-960w.webp"
+    }
+  },
+  "sam-bio-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-dark-160w.webp",
+      "320": "sam-bio-mob-dark-320w.webp",
+      "600": "sam-bio-mob-dark-600w.webp",
+      "960": "sam-bio-mob-dark-960w.webp"
+    }
   }
 }

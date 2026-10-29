@@ -461,3 +461,28 @@ test('a queued flick finishes the visible pair before waiting for the next decod
   await page.evaluate(()=>window.nextDecodeReleases.splice(0).forEach(r=>r()));
   await expect.poll(()=>pressedLabel(page,0)).toBe('What’s On');
 });
+
+for (const direction of [-1,1]) test(`underline wraps through opposite edges without traversing names ${direction}`,async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.goto('/');
+  if(direction===1){await page.locator('.case:first-child .thumb[data-label="Menu"]').click();await expect.poll(()=>pressedLabel(page,0)).toBe('Menu');}
+  const a=direction<0?90:300,z=direction<0?190:200;
+  await page.evaluate(([a,z])=>{
+    const s=document.querySelector('.case .shot');for(const [type,x]of[['touchstart',a],['touchmove',z]]){const t={identifier:1,target:s,clientX:x,clientY:500};const e=new Event(type,{bubbles:true});e.touches=[t];e.changedTouches=[t];s.dispatchEvent(e);}
+  },[a,z]);
+  const state=await page.locator('.case').first().evaluate(el=>{
+    const ind=el.querySelector('.thumb-ind'),wrap=el.querySelector('.thumb-ind-wrap');
+    return{left:parseFloat(ind.style.left),entry:parseFloat(wrap.style.left),hidden:wrap.hidden,width:el.querySelector('.thumbs').clientWidth};
+  });
+  expect(state.hidden).toBe(false);
+  if(direction<0){expect(state.left).toBeLessThan(12);expect(state.entry).toBeGreaterThan(state.width-80);}
+  else{expect(state.left).toBeGreaterThan(state.width-80);expect(state.entry).toBeLessThan(12);}
+});
+
+test('each committed capture has its own explanation, including Biography',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.goto('/');
+  for(const card of await page.locator('.case').all())for(const button of await card.locator('.thumb:visible').all()){
+    await button.click();await expect(button).toHaveAttribute('aria-pressed','true');
+    await expect(card.locator('.shot-description')).toHaveText(await button.getAttribute('data-description'));
+  }
+  await expect(page.locator('.case').nth(1).locator('.shot-mob')).toHaveAttribute('src',/sam-bio/);
+});

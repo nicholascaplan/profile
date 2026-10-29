@@ -711,7 +711,7 @@ test('showcase: composed overviews have a single readable set of controls at eve
     // the visitor's own device shows alone at every width.
     assert.equal(state.shots, 2, `only the capture matching the visitor's device is visible at ${width}px`);
     assert.equal(state.duplicateControls, 0, 'no competing arrows, thumbnail images or enlargement affordance');
-    assert.equal(state.sizes.length, width <= 960 ? 7 : 6);
+    assert.equal(state.sizes.length, width <= 960 ? 8 : 7);
     for (const size of state.sizes) {
       assert.ok(size.height >= 44, `44px touch target at ${width}px`);
       assert.ok(size.font >= 12, `readable label at ${width}px`);

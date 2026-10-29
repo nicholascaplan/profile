@@ -193,6 +193,26 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       "600": "sam-watch-mob-dark-600w.webp",
       "960": "sam-watch-mob-dark-960w.webp"
     }
+  },
+  "sam-bio-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-160w.webp",
+      "320": "sam-bio-mob-320w.webp",
+      "600": "sam-bio-mob-600w.webp",
+      "960": "sam-bio-mob-960w.webp"
+    }
+  },
+  "sam-bio-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-dark-160w.webp",
+      "320": "sam-bio-mob-dark-320w.webp",
+      "600": "sam-bio-mob-dark-600w.webp",
+      "960": "sam-bio-mob-dark-960w.webp"
+    }
   }
 };
   const sources = (src, kind) => {
@@ -239,6 +259,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       thumb.setAttribute('aria-pressed', String(j === visibleIndex));
     });
     pillLabel.textContent = thumbs[visibleIndex].dataset.label;
+    const description = caseEl.querySelector('.shot-description');
+    if (description && thumbs[visibleIndex].dataset.description) description.textContent = thumbs[visibleIndex].dataset.description;
   };
   const shotEl = caseEl.querySelector('.shot');
   // Capture paging (Nick, 29 October 2026): the swap must read as one
@@ -329,6 +351,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     ]).then((pair) => pair.every(Boolean));
     stage.appendChild(layer);
     stage.classList.add('sliding');
+    followIndicator(dragOffset);
     layer.style.transform = `translateX(${layerSign * stageWidth() + dragOffset}px)`;
   };
   // A cancelled gesture returns both captures to rest with the same paired
@@ -347,7 +370,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         { transform: `translateX(${layerSign * width}px)` },
       ], { duration: 200, easing: 'ease-out' }));
     }
-    anims.push(animateIndicator(current));
+    anims.push(...animateIndicator(current));
     trackAnims = anims;
     const settling = ++settleSeq;
     Promise.all(anims.map((animation) => animation.finished)).then(() => {
@@ -421,7 +444,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         { transform: `translateX(${direction * width + startOffset}px)` },
         { transform: 'translateX(0px)' },
       ], { duration: 200, easing: 'ease-out', fill: 'forwards' });
-      trackAnims = [animOut, animIn, animateIndicator(slideChoice)];
+      trackAnims = [animOut, animIn, ...animateIndicator(slideChoice)];
       Promise.all(trackAnims.map((animation) => animation.finished)).then(() => {
         if (mySeq !== swapSeq) return;
         current = slideChoice;
@@ -553,33 +576,66 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   indicator.className = 'thumb-ind';
   indicator.setAttribute('aria-hidden', 'true');
   thumbsEl.classList.add('thumbs-anim');
-  thumbsEl.appendChild(indicator);
+  const indicatorClip = document.createElement('span');
+  indicatorClip.className = 'thumb-ind-clip';
+  const wrapIndicator = indicator.cloneNode();
+  wrapIndicator.className = 'thumb-ind-wrap';
+  wrapIndicator.hidden = true;
+  indicatorClip.append(indicator, wrapIndicator);
+  thumbsEl.appendChild(indicatorClip);
   const indicatorBox = (index) => {
     const button = thumbs[index];
     return {left: button.offsetLeft + 12, top: button.offsetTop + button.offsetHeight - 2,
       width: Math.max(0, button.offsetWidth - 24)};
   };
-  const paintIndicator = (box) => {
-    for (const key of ['left', 'top', 'width']) indicator.style[key] = `${box[key]}px`;
+  const paintIndicator = (box, element = indicator) => {
+    for (const key of ['left', 'top', 'width']) element.style[key] = `${box[key]}px`;
   };
   const moveIndicator = () => {
-    if (!layer && !trackAnims.length) paintIndicator(indicatorBox(current));
+    if (!layer && !trackAnims.length) {
+      wrapIndicator.hidden = true;
+      paintIndicator(indicatorBox(current));
+    }
+  };
+  const wrapsIndicator = () => {
+    const order = visibleIndexes();
+    return layer && order.length > 1 && ((current === order[0] && layerChoice === order.at(-1) && layerSign < 0)
+      || (current === order.at(-1) && layerChoice === order[0] && layerSign > 0));
+  };
+  const indicatorJourney = (fraction) => {
+    const from = indicatorBox(current);
+    const to = indicatorBox(layerChoice);
+    if (!wrapsIndicator()) {
+      wrapIndicator.hidden = true;
+      return [Object.fromEntries(['left', 'top', 'width'].map(key =>
+        [key, from[key] + (to[key] - from[key]) * fraction]))];
+    }
+    const width = thumbsEl.clientWidth;
+    const exit = layerSign < 0 ? -from.width : width;
+    const entry = layerSign < 0 ? width : -to.width;
+    wrapIndicator.hidden = false;
+    return [{...from, left: from.left + (exit - from.left) * fraction},
+      {...to, left: entry + (to.left - entry) * fraction}];
   };
   const followIndicator = (offset) => {
     if (!layer) return;
     const fraction = Math.min(1, Math.max(0, -layerSign * offset / stageWidth()));
-    const from = indicatorBox(current);
-    const to = indicatorBox(layerChoice);
-    paintIndicator(Object.fromEntries(['left', 'top', 'width'].map(key =>
-      [key, from[key] + (to[key] - from[key]) * fraction])));
+    indicatorJourney(fraction).forEach((box, index) => paintIndicator(box, index ? wrapIndicator : indicator));
   };
   const animateIndicator = (index) => {
-    const style = getComputedStyle(indicator);
-    const from = {left: style.left, top: style.top, width: style.width};
-    const to = Object.fromEntries(Object.entries(indicatorBox(index)).map(([key, value]) => [key, `${value}px`]));
-    return indicator.animate([from, to], {duration: 200, easing: 'ease-out', fill: 'forwards'});
+    const targetFraction = index === current ? 0 : 1;
+    const boxes = layer ? indicatorJourney(targetFraction) : [indicatorBox(index)];
+    return boxes.map((box, i) => {
+      const element = i ? wrapIndicator : indicator;
+      const style = getComputedStyle(element);
+      const from = {left: style.left, top: style.top, width: style.width};
+      const to = Object.fromEntries(Object.entries(box).map(([key, value]) => [key, `${value}px`]));
+      return element.animate([from, to], {duration: 200, easing: 'ease-out', fill: 'forwards'});
+    });
   };
-  new MutationObserver(moveIndicator).observe(thumbsEl, { attributes: true, subtree: true, attributeFilter: ['class', 'hidden'] });
+  new MutationObserver(records => {
+    if (records.some(record => record.target.classList.contains('thumb'))) moveIndicator();
+  }).observe(thumbsEl, { attributes: true, subtree: true, attributeFilter: ['class', 'hidden'] });
   window.addEventListener('resize', moveIndicator);
   if (document.fonts?.ready) document.fonts.ready.then(moveIndicator).catch(() => {});
   moveIndicator();
