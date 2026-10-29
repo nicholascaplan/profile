@@ -142,6 +142,25 @@ for (const page of pages) {
       assert.ok(existsSync(join(dir, src)), `${src} exists in the repo`);
     }
   });
+
+  test(`${page}: favicon set is linked and every referenced file exists`, () => {
+    const head = html.match(/<head>[\s\S]*?<\/head>/)[0];
+    const tags = [...head.matchAll(/<link\b[^>]*>/g)].map((m) => m[0]);
+    const byRel = (rel) => tags.filter((t) => (attr(t, 'rel') || '').split(/\s+/).includes(rel));
+    const svg = byRel('icon').find((t) => (attr(t, 'href') || '').endsWith('.svg'));
+    const ico = byRel('icon').find((t) => (attr(t, 'href') || '').endsWith('.ico'));
+    const touch = byRel('apple-touch-icon')[0];
+    const manifest = byRel('manifest')[0];
+    assert.ok(svg, 'svg favicon linked');
+    assert.ok(ico, 'ico fallback linked');
+    assert.ok(touch, 'apple-touch-icon linked');
+    assert.ok(manifest, 'web manifest linked');
+    for (const tag of [svg, ico, touch, manifest]) {
+      const href = attr(tag, 'href');
+      assert.ok(existsSync(join(dir, href)), `${href} exists in the repo`);
+    }
+    assert.match(html, /<meta name="theme-color" content="#18211d">/, 'theme-color matches the atelier dark background');
+  });
 }
 
 test('home page carries the showcase imagery', () => {
@@ -219,4 +238,12 @@ test('experience page: pre-NatWest roles foreground website delivery', () => {
   assert.match(byTitle('Moogsoft'), /web platform/);
   assert.match(byTitle('Alfa'), /enterprise web platform/);
   assert.match(byTitle('NatWest Boxed'), /Core banking platforms, customer onboarding and account services/);
+});
+
+test('web manifest icons exist in the repo', () => {
+  const manifest = JSON.parse(read('site.webmanifest'));
+  assert.ok(manifest.icons.length >= 2, '192 and 512 icons declared');
+  for (const icon of manifest.icons) {
+    assert.ok(existsSync(join(root, icon.src)), `${icon.src} exists in the repo`);
+  }
 });

@@ -2,6 +2,10 @@
 
 Important decisions, newest first. This is not a changelog: small fixes and implementation details belong in the pull request. Add an entry only when a choice would otherwise be questioned or reversed later. Requirements are in [PROJECT-BRIEF.md](PROJECT-BRIEF.md).
 
+## 29 October 2026: NC favicon in the atelier colours
+
+Chosen by Nick from labelled visual options. The mark is an NC monogram set in the site's own DM Sans: a terracotta N and cream C on the atelier dark green tile, letters nearly edge to edge so the pair stays readable at tab size. The SVG is built from the font's actual glyph outlines, with an ICO fallback, an apple-touch-icon and a small web manifest. Content tests assert the links and files on every page.
+
 ## 26 October 2026: Desktop screenshots sit side by side (in progress)
 
 Chosen by Nick for build; pull request #24, not yet merged when this was written. At desktop widths each project shows the phone capture beside the desktop capture at the same height instead of overlaying it. Phone, tablet and enlarged-text widths keep the overlay.
