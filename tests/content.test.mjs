@@ -145,7 +145,7 @@ for (const page of pages) {
 
   test(`${page}: favicon set is linked and every referenced file exists`, () => {
     const head = html.match(/<head>[\s\S]*?<\/head>/)[0];
-    const tags = [...head.matchAll(/<(?:link|meta)\b[^>]*>/g)].map((m) => m[0]);
+    const tags = [...head.matchAll(/<link\b[^>]*>/g)].map((m) => m[0]);
     const byRel = (rel) => tags.filter((t) => (attr(t, 'rel') || '').split(/\s+/).includes(rel));
     const svg = byRel('icon').find((t) => (attr(t, 'href') || '').endsWith('.svg'));
     const ico = byRel('icon').find((t) => (attr(t, 'href') || '').endsWith('.ico'));
