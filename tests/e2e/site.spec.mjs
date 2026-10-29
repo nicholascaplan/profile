@@ -761,7 +761,7 @@ test('showcase: on mobile widths the phone capture stands alone, large and reada
         return { card: rectOf('.shot'), mob: rectOf('.shot-mob'),
                  barVisible: visible('.shotbar'), deskVisible: visible('.shot-desk'), mobVisible: visible('.shot-mob'),
                  mobPosition: mobStyle.position, mobDisplay: mobStyle.display, mobRadius: parseFloat(mobStyle.borderTopLeftRadius),
-                 mobHasBezel: mobStyle.outlineStyle === 'solid' && mobStyle.outlineWidth === '4px',
+                 mobHasBezel: mobStyle.outlineStyle === 'solid' && mobStyle.outlineWidth === '3px',
                  cropFit: mobStyle.objectFit, cropPosition: mobStyle.objectPosition,
                  outerBorder: getComputedStyle(document.querySelector(`${cs} .shot`)).borderTopWidth,
                  outerBackground: getComputedStyle(document.querySelector(`${cs} .shot`)).backgroundColor,
@@ -1220,7 +1220,7 @@ test('phone frame paints all four edges without changing capture geometry', asyn
         const c=document.createElement('canvas');c.width=i.width;c.height=i.height;const x=c.getContext('2d');x.drawImage(i,0,0);
         return [[1,i.height/2],[i.width-2,i.height/2],[i.width/2,1],[i.width/2,i.height-2]].map(([a,b])=>Array.from(x.getImageData(Math.floor(a),Math.floor(b),1,1).data));
       },screenshot.toString('base64'));
-      for(const edge of edges)assert.deepEqual(edge,[23,25,28,255],`actual painted frame ${width}px preview=${preview}`);
+      for(const edge of edges)assert.deepEqual(edge,[11,13,16,255],`actual painted frame ${width}px preview=${preview}`);
       await image.evaluate(i=>i.style.outline='none');
       assert.deepEqual(await geometry(),before,'frame must not change capture geometry');
     }

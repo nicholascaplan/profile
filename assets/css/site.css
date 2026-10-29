@@ -1,5 +1,7 @@
 /* Nick Caplan - shared site styles (home / experience / contact) */
 :root {
+  --phone-ring: #b45e3f;
+  --phone-glow: rgba(180, 94, 63, .3);
   --bg: #f4f0e8;
   --surface: #fbfaf6;
   --surface-strong: #e8e1d5;
@@ -331,6 +333,8 @@ body[data-style="atelier"] {
   --radius: 4px;
 }
 body[data-style="atelier"][data-theme="dark"] {
+  --phone-ring: #f09a7c;
+  --phone-glow: rgba(240, 154, 124, .45);
   --accent-ink: #e0805f;
   --bg: #18211d;
   --surface: #212b25;
@@ -376,7 +380,7 @@ body[data-style="atelier"][data-theme="dark"] .credstrip { background: #101711; 
   .shot { background: transparent; border: 0; box-shadow: none; overflow: visible; }
   .shotbar, .shot-desk { display: none; }
   .shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: none; }
-  .shot-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border-radius: 16px; outline: 4px solid #17191c; outline-offset: -4px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
+  .shot-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border: solid #0b0d10; border-width: 22px 8px 8px; box-sizing: border-box; border-radius: 36px; outline: 3px solid var(--phone-ring); outline-offset: 0; box-shadow: 0 0 34px var(--phone-glow); }
   /* Reserve the phone block before its template is activated, so activation
      does not shift the thumbnails and copy below. */
   .shot:not(:has(noscript .shot-img)) .shot-template:last-of-type { display: block; aspect-ratio: 5 / 9; width: min(85%, 300px); margin: 0 auto; }
@@ -444,13 +448,13 @@ body[data-mobile="true"] .shotbar { padding: 8px 10px; }
 body[data-mobile="true"] .shotbar .t { font-size: 9.5px; max-width: 170px; }
 body[data-mobile="true"] .shotbar .pill { font-size: 8.5px; letter-spacing: .1em; padding: 2px 7px; }
 body[data-mobile="true"] .shot-mob { border-radius: 8px; }
-  body[data-mobile="true"] .shot-mob { border-radius: 16px; } /* Solo presentation: full device corner. */
+  body[data-mobile="true"] .shot-mob { border-radius: 36px; } /* Solo presentation: full device corner. */
 /* The desktop mobile preview mirrors the small-screen presentation: the
    phone capture stands alone there too. */
 body[data-mobile="true"] .shot { background: transparent; border: 0; box-shadow: none; overflow: visible; }
 body[data-mobile="true"] .shotbar, body[data-mobile="true"] .shot-desk { display: none; }
 body[data-mobile="true"] .shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: none; }
-body[data-mobile="true"] .shot-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border-radius: 16px; outline: 4px solid #17191c; outline-offset: -4px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
+body[data-mobile="true"] .shot-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border: solid #0b0d10; border-width: 22px 8px 8px; box-sizing: border-box; border-radius: 36px; outline: 3px solid var(--phone-ring); outline-offset: 0; box-shadow: 0 0 34px var(--phone-glow); }
 body[data-mobile="true"] .shot:not(:has(noscript .shot-img)) .shot-template:last-of-type { display: block; aspect-ratio: 5 / 9; width: min(85%, 300px); margin: 0 auto; }
 body[data-mobile="true"] .thumb { padding: 10px 8px; }
 body[data-mobile="true"] .case-heading h2 { font-size: 26px; margin: 8px 0 0; }
@@ -555,3 +559,10 @@ body[data-theme] .privacy-details [data-cookie-preferences] { background: var(--
 
 /* Viewport-specific examples never enter the desktop keyboard order. */
 .thumb[hidden] { display: none !important; }
+
+/* Phone frame (Nick, 29 October 2026): the dark bezel vanished against the dark
+   theme, so the device carries a coral ring and a speaker slot in the bezel. */
+@media (max-width: 960px) {
+  .shot::before { content: ""; position: absolute; z-index: 2; left: 50%; top: 8px; transform: translateX(-50%); width: 54px; height: 7px; border-radius: 99px; background: #2a2f36; pointer-events: none; }
+}
+body[data-mobile="true"] .shot::before { content: ""; position: absolute; z-index: 2; left: 50%; top: 8px; transform: translateX(-50%); width: 54px; height: 7px; border-radius: 99px; background: #2a2f36; pointer-events: none; }
