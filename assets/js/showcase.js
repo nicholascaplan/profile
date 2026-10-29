@@ -622,7 +622,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         cancelTrack();
         paintIndicator(box);
       }
-      drag = { x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: wanted, resume: wanted };
+      drag = { x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: held ? current : wanted, resume: wanted };
       if (held) setTrack(held);
       else dragOffset = 0;
     }, { passive: true });
@@ -655,6 +655,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       const dx = event.changedTouches[0].clientX - drag.x;
       const dy = event.changedTouches[0].clientY - drag.y;
       const { lock, base, resume } = drag;
+      // A flick with no move events queues from the requested choice. A
+      // real drag takes over the visible pair and keeps its incoming page.
+      if (!lock) drag.origin = resume;
       const target = dragTarget(dx < 0 ? 1 : -1);
       clearDrag();
       expireSuppress();

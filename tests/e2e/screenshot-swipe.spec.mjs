@@ -357,3 +357,25 @@ test('a short drag cancels a pending selection without a late slide or skipped c
   await page.evaluate(() => window.delayedDecodes.splice(0).forEach(resolve => resolve()));
   await expect.poll(() => pressedLabel(page,0)).toBe('Fireworks');
 });
+
+test('grabbing a moving capture keeps its incoming choice instead of skipping it', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  // Pin only the test clock mid-slide, to make this race reproducible.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this,args);
+      if (this.matches('.shot, .thumb-ind')) { animation.pause(); animation.currentTime = 80; }
+      return animation;
+    };
+    window.originalAnimate = animate;
+  });
+  await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+  await page.waitForFunction(() => document.querySelector('.case .shot').getAnimations().length > 0);
+  await page.evaluate(() => { Element.prototype.animate = window.originalAnimate; });
+  // A further left drag takes over A->B. B must stay the incoming page.
+  await swipe(page,'.case .shot',{x:300,y:500},{x:210,y:503},3);
+  await expect.poll(() => pressedLabel(page,0)).toBe('Fireworks');
+  await expect(page.locator('.case:first-child .shot-layer')).toHaveCount(0);
+});
