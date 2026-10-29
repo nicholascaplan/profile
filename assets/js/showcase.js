@@ -593,7 +593,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   // committed choice (or the direction flips), page the neighbour instead.
   const dragTarget = (direction) => {
     if (drag) {
-      if (drag.base && direction === drag.heldSign && drag.heldChoice >= 0) return drag.heldChoice;
+      if (drag.lock === 'h' && drag.base && direction === drag.heldSign && drag.heldChoice >= 0) return drag.heldChoice;
       const visible = visibleIndexes();
       const position = Math.max(0, visible.indexOf(drag.origin));
       return visible[(position + direction + visible.length) % visible.length];

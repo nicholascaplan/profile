@@ -421,3 +421,17 @@ for (const reverse of [false,true]) test(`a held pair remains coherent across di
   await expect.poll(()=>pressedLabel(page,0)).toBe(reverse?'What’s On':'Menu');
   await expect(page.locator('.case:first-child .shot-layer')).toHaveCount(0);
 });
+
+test('no-move flicks queue ahead even while the preceding pair is visibly held', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await page.evaluate(() => {
+    window.originalAnimate=Element.prototype.animate;
+    Element.prototype.animate=function(...args){const a=window.originalAnimate.apply(this,args);if(this.matches('.shot, .thumb-ind')){a.pause();a.currentTime=80;}return a;};
+  });
+  await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+  await page.waitForFunction(()=>document.querySelector('.case .shot').getAnimations().length>0);
+  await page.evaluate(()=>{Element.prototype.animate=window.originalAnimate;});
+  await swipe(page,'.case .shot',{x:300,y:500},{x:90,y:503});
+  await expect.poll(()=>pressedLabel(page,0)).toBe('What’s On');
+});
