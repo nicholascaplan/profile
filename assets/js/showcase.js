@@ -260,6 +260,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   let layerSign = 0;
   let layerChoice = -1;
   let layerReady = null;
+  let queuedChoice = null;
   let dragOffset = 0;
   const setTrack = (offset) => {
     dragOffset = offset;
@@ -383,7 +384,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   // blank states - the outgoing capture stays fully visible until the
   // incoming one covers it.
   const runSlide = (chosen, srcD, srcM, direction, fromOffset, mySeq, patient) => {
-    buildLayer(direction, wanted);
+    const slideChoice = wanted;
+    buildLayer(direction, slideChoice);
     const startOffset = fromOffset || dragOffset || visualOffset();
     setTrack(startOffset);
     // A deliberate selection (thumbnail click, wheel step) waits for the
@@ -419,10 +421,10 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         { transform: `translateX(${direction * width + startOffset}px)` },
         { transform: 'translateX(0px)' },
       ], { duration: 200, easing: 'ease-out', fill: 'forwards' });
-      trackAnims = [animOut, animIn, animateIndicator(wanted)];
+      trackAnims = [animOut, animIn, animateIndicator(slideChoice)];
       Promise.all(trackAnims.map((animation) => animation.finished)).then(() => {
         if (mySeq !== swapSeq) return;
-        current = wanted;
+        current = slideChoice;
         apply(desk, srcD, 'Desk');
         desk.alt = chosen.dataset.altDesk;
         apply(mob, srcM, 'Mob');
@@ -430,10 +432,26 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         syncPresentedChoice();
         restoreShot();
         preloadNeighbors();
+        const queued = queuedChoice;
+        queuedChoice = null;
+        if (queued && queued.index !== current) select(queued.index, queued.direction, 0, true);
+        else wanted = current;
       }, () => {});
     });
   };
-  function select(index, direction = 0, fromOffset = 0, patient = false) {
+  function select(index, direction = 0, fromOffset = 0, patient = false, continuing = false) {
+    const requested = (index + thumbs.length) % thumbs.length;
+    const held = motionOk() ? visualOffset() : 0;
+    if (!continuing && direction && held && layer && requested !== layerChoice) {
+      // An occupied track belongs to its visible pair. Finish it before
+      // loading another page; never replace a half-visible image with an
+      // undecoded one. Repeated flicks update only the queued destination.
+      queuedChoice = {index: requested, direction};
+      select(layerChoice, layerSign, held, true, true);
+      wanted = requested;
+      return;
+    }
+    if (!continuing) queuedChoice = null;
     wanted = (index + thumbs.length) % thumbs.length;
     if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) wanted = 0;
     const chosen = thumbs[wanted];
@@ -587,7 +605,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const gestureAreas = [shotEl, thumbsEl].filter(Boolean);
   let drag = null;
   const clearDrag = () => { drag = null; };
-  const invalidateSlide = () => { swapSeq++; wanted = current; };
+  const invalidateSlide = () => { swapSeq++; queuedChoice = null; wanted = current; };
   // The drag target: continuing the direction of an incoming layer the
   // gesture itself brought on stage keeps that capture; once it is the
   // committed choice (or the direction flips), page the neighbour instead.

@@ -435,3 +435,29 @@ test('no-move flicks queue ahead even while the preceding pair is visibly held',
   await swipe(page,'.case .shot',{x:300,y:500},{x:90,y:503});
   await expect.poll(()=>pressedLabel(page,0)).toBe('What’s On');
 });
+
+test('a queued flick finishes the visible pair before waiting for the next decode', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await page.evaluate(() => {
+    window.originalAnimate=Element.prototype.animate;
+    Element.prototype.animate=function(...args){const a=window.originalAnimate.apply(this,args);if(this.matches('.shot, .thumb-ind')){a.pause();a.currentTime=80;}return a;};
+  });
+  await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+  await page.waitForFunction(()=>document.querySelector('.case .shot').getAnimations().length>0);
+  await page.evaluate(()=>{
+    Element.prototype.animate=window.originalAnimate;
+    const decode=HTMLImageElement.prototype.decode;
+    window.nextDecodeReleases=[];
+    HTMLImageElement.prototype.decode=function(){return decode.call(this).then(()=>this.src.includes('whatson')?new Promise(r=>window.nextDecodeReleases.push(r)):undefined);};
+  });
+  await swipe(page,'.case .shot',{x:300,y:500},{x:90,y:503});
+  await page.waitForFunction(()=>window.nextDecodeReleases.length>=2);
+  // The occupied incoming Fireworks pair has finished, not disappeared while
+  // waiting for What's On. Labels and committed captures agree in between.
+  expect(await pressedLabel(page,0)).toBe('Fireworks');
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src',/fireworks/);
+  await expect(page.locator('.case:first-child .shot:not(.shot-layer)')).toHaveCSS('transform','none');
+  await page.evaluate(()=>window.nextDecodeReleases.splice(0).forEach(r=>r()));
+  await expect.poll(()=>pressedLabel(page,0)).toBe('What’s On');
+});
