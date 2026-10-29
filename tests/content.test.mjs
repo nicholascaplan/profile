@@ -162,6 +162,7 @@ for (const page of pages) {
       const offset = 6 + i * 16;
       return `${iconData[offset] || 256}x${iconData[offset + 1] || 256}`;
     });
+    assert.deepEqual(sizes.sort(), ['16x16', '32x32', '48x48'], 'ICO contains the required fixed image sizes');
     assert.deepEqual((attr(ico, 'sizes') || '').split(/\s+/).sort(), sizes.sort(), 'ICO size hints match its fixed image entries');
     assert.ok(touch, 'apple-touch-icon linked');
     assert.ok(manifest, 'web manifest linked');
