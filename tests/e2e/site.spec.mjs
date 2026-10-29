@@ -654,7 +654,14 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
   assert.match(before.src, /foa-fundraising-desk-dark\.webp$/, 'Fundraising screenshot shown by default (page opens dark)');
   assert.equal(before.pill, 'Fundraising', 'pill labels the default shot');
   await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
-  await page.waitForTimeout(200);
+  // The choice slides in (capture motion): wait for the swap to settle
+  // rather than a fixed beat.
+  await page.waitForFunction(() => {
+    const d = document.querySelector('.case:first-child .shot-desk');
+    const m = document.querySelector('.case:first-child .shot-mob');
+    return d.src.includes('foa-whatson-desk') && m.src.includes('foa-whatson-mob')
+      && !document.querySelector('.case:first-child .shot-layer');
+  });
   const after = await page.evaluate(() => ({
     src: document.querySelector('.case:first-child .shot-desk').src,
     mobSrc: document.querySelector('.case:first-child .shot-mob').src,

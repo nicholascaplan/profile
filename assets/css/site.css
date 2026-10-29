@@ -175,18 +175,18 @@ button { color: inherit; font: inherit; }
 /* Reserve screenshot space before its theme-aware template is activated. */
 .shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: block; aspect-ratio: 1280 / 713; width: 100%; }
 .shot-img { display: block; object-fit: cover; width: 100%; }
-.shot-desk { aspect-ratio: 1280 / 713; }
-.shot-mob { aspect-ratio: 390 / 844; }
+.shot-desk, .shotlay-desk { aspect-ratio: 1280 / 713; }
+.shot-mob, .shotlay-mob { aspect-ratio: 390 / 844; }
 .shot { position: relative; }
 /* The composed shot is an overview, not a miniature interactive website.
    Keep a single, readable set of page selectors and let visitors explore live. */
-.shot-mob { position: absolute; right: 7%; bottom: 2%; display: block; height: 80%; width: auto; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
+.shot-mob, .shotlay-mob { position: absolute; right: 7%; bottom: 2%; display: block; height: 80%; width: auto; object-fit: cover; object-position: center top; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .38); }
 
 /* Exploration (Nick, 27 October 2026): one capture per viewport. Desktop
    widths show the desktop capture alone, framed by its address bar - the
    phone capture no longer overlays it. */
 @media (min-width: 961px) {
-  .shot-mob { display: none; }
+  .shot-mob, .shotlay-mob { display: none; }
 }
 .shot-tag { display: none; }
 .thumbs { display: flex; flex-wrap: wrap; gap: 0; margin-top: 12px; }
@@ -196,6 +196,20 @@ button { color: inherit; font: inherit; }
 .thumb:hover span { color: var(--ink); }
 .thumb.sel::after { content: ""; position: absolute; bottom: 0; left: 12px; right: 12px; height: 2px; background: var(--accent); }
 .thumb.sel span { color: var(--accent-ink); font-weight: 600; }
+/* Gesture feedback: horizontal drags are handled in JS, vertical swipes keep
+   scrolling the page natively. */
+.shot, .thumbs { touch-action: pan-y; }
+/* Capture paging: the incoming capture slides across the stage while the
+   outgoing one leaves. The stage clips only mid-slide, so the phone's glow
+   and the page layout are untouched at rest. */
+.shot-stage { position: relative; }
+.shot-stage.sliding { overflow: clip; }
+.shot-layer { inset: 0; pointer-events: none; position: absolute; z-index: 1; }
+/* The selected choice's underline is a single indicator that slides between
+   buttons; with JS off the per-button ::after underline remains. */
+.thumbs { position: relative; }
+.thumb-ind { background: var(--accent); height: 2px; pointer-events: none; position: absolute; transition: left .18s ease, top .18s ease, width .18s ease; }
+.thumbs-anim .thumb.sel::after { content: none; }
 .case-copy .kicker, .kicker { color: var(--accent-ink); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .case-heading h2 { font-family: var(--display); font-size: 32px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: 10px 0 0; }
 .case-copy p { color: var(--muted); font-size: 16.5px; line-height: 1.55; margin: 8px 0 0; }
@@ -378,9 +392,9 @@ body[data-style="atelier"][data-theme="dark"] .credstrip { background: #101711; 
   /* No redundant panel around the solo phone. A 5:9 top crop keeps the
      capture readable without making each project a screen and a half long. */
   .shot { background: transparent; border: 0; box-shadow: none; overflow: visible; }
-  .shotbar, .shot-desk { display: none; }
+  .shotbar, .shot-desk, .shotlay-desk { display: none; }
   .shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: none; }
-  .shot-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border: solid #0b0d10; border-width: 22px 8px 8px; box-sizing: border-box; border-radius: 36px; outline: 3px solid var(--phone-ring); outline-offset: 0; box-shadow: 0 0 34px var(--phone-glow); }
+  .shot-mob, .shotlay-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border: solid #0b0d10; border-width: 22px 8px 8px; box-sizing: border-box; border-radius: 36px; outline: 3px solid var(--phone-ring); outline-offset: 0; box-shadow: 0 0 34px var(--phone-glow); }
   /* Reserve the phone block before its template is activated, so activation
      does not shift the thumbnails and copy below. */
   .shot:not(:has(noscript .shot-img)) .shot-template:last-of-type { display: block; aspect-ratio: 5 / 9; width: min(85%, 300px); margin: 0 auto; }
@@ -447,14 +461,14 @@ body[data-mobile="true"] .shot { border-radius: 12px; }
 body[data-mobile="true"] .shotbar { padding: 8px 10px; }
 body[data-mobile="true"] .shotbar .t { font-size: 9.5px; max-width: 170px; }
 body[data-mobile="true"] .shotbar .pill { font-size: 8.5px; letter-spacing: .1em; padding: 2px 7px; }
-body[data-mobile="true"] .shot-mob { border-radius: 8px; }
-  body[data-mobile="true"] .shot-mob { border-radius: 36px; } /* Solo presentation: full device corner. */
+body[data-mobile="true"] .shot-mob, body[data-mobile="true"] .shotlay-mob { border-radius: 8px; }
+  body[data-mobile="true"] .shot-mob, body[data-mobile="true"] .shotlay-mob { border-radius: 36px; } /* Solo presentation: full device corner. */
 /* The desktop mobile preview mirrors the small-screen presentation: the
    phone capture stands alone there too. */
 body[data-mobile="true"] .shot { background: transparent; border: 0; box-shadow: none; overflow: visible; }
-body[data-mobile="true"] .shotbar, body[data-mobile="true"] .shot-desk { display: none; }
+body[data-mobile="true"] .shotbar, body[data-mobile="true"] .shot-desk, body[data-mobile="true"] .shotlay-desk { display: none; }
 body[data-mobile="true"] .shot:not(:has(noscript .shot-img)) .shot-template:first-of-type { display: none; }
-body[data-mobile="true"] .shot-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border: solid #0b0d10; border-width: 22px 8px 8px; box-sizing: border-box; border-radius: 36px; outline: 3px solid var(--phone-ring); outline-offset: 0; box-shadow: 0 0 34px var(--phone-glow); }
+body[data-mobile="true"] .shot-mob, body[data-mobile="true"] .shotlay-mob { display: block; position: static; height: auto; aspect-ratio: 5 / 9; object-fit: cover; object-position: center top; width: min(85%, 300px); margin: 0 auto; border: solid #0b0d10; border-width: 22px 8px 8px; box-sizing: border-box; border-radius: 36px; outline: 3px solid var(--phone-ring); outline-offset: 0; box-shadow: 0 0 34px var(--phone-glow); }
 body[data-mobile="true"] .shot:not(:has(noscript .shot-img)) .shot-template:last-of-type { display: block; aspect-ratio: 5 / 9; width: min(85%, 300px); margin: 0 auto; }
 body[data-mobile="true"] .thumb { padding: 10px 8px; }
 body[data-mobile="true"] .case-heading h2 { font-size: 26px; margin: 8px 0 0; }

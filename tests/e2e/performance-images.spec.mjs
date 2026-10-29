@@ -28,7 +28,11 @@ for (const theme of ['dark', 'light']) {
     await page.goto('/');
     await expect(page.locator('.shot-img')).toHaveCount(4);
     await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
-    expect(requests).toHaveLength(4);
+    // Exactly the four initial captures, plus at most the bounded
+    // same-theme neighbour preloads (one step either side per case, current
+    // form factor only): the guard stays that no other capture SET loads.
+    expect(requests.length).toBeGreaterThanOrEqual(4);
+    expect(requests.length).toBeLessThanOrEqual(8);
     for (const url of requests) expect(/-dark(?:-\d+w)?\.webp$/.test(url)).toBe(theme === 'dark');
     // Width-appropriateness (user-approved replacement for the variant-picked
     // proxy): the sizes hint must track the rendered width, and the requested
