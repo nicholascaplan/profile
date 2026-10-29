@@ -153,6 +153,16 @@ for (const page of pages) {
     const manifest = byRel('manifest')[0];
     assert.ok(svg, 'svg favicon linked');
     assert.ok(ico, 'ico fallback linked');
+    const iconData = readFileSync(join(dir, attr(ico, 'href')));
+    assert.equal(iconData.readUInt16LE(0), 0, 'ICO reserved header');
+    assert.equal(iconData.readUInt16LE(2), 1, 'ICO image type');
+    const count = iconData.readUInt16LE(4);
+    assert.ok(count > 0, 'ICO has images');
+    const sizes = Array.from({ length: count }, (_, i) => {
+      const offset = 6 + i * 16;
+      return `${iconData[offset] || 256}x${iconData[offset + 1] || 256}`;
+    });
+    assert.deepEqual((attr(ico, 'sizes') || '').split(/\s+/).sort(), sizes.sort(), 'ICO size hints match its fixed image entries');
     assert.ok(touch, 'apple-touch-icon linked');
     assert.ok(manifest, 'web manifest linked');
     for (const tag of [svg, ico, touch, manifest]) {
