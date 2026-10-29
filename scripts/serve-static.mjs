@@ -9,7 +9,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portFlag = process.argv.indexOf('--port');
 const port = portFlag >= 0 ? Number(process.argv[portFlag + 1]) : Number(process.env.PORT) || 8080;
 
-const types = { '.html': 'text/html', '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.css': 'text/css', '.js': 'text/javascript' };
+const types = { '.html': 'text/html', '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.ico': 'image/vnd.microsoft.icon', '.webmanifest': 'application/manifest+json', '.css': 'text/css', '.js': 'text/javascript' };
 
 createServer((req, res) => {
   const rel = normalize(decodeURIComponent(req.url.split('?')[0])).replace(/^([/\\])+/, '');
