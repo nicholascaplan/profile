@@ -593,6 +593,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   // committed choice (or the direction flips), page the neighbour instead.
   const dragTarget = (direction) => {
     if (drag) {
+      if (drag.base && direction === drag.heldSign && drag.heldChoice >= 0) return drag.heldChoice;
       const visible = visibleIndexes();
       const position = Math.max(0, visible.indexOf(drag.origin));
       return visible[(position + direction + visible.length) % visible.length];
@@ -617,12 +618,13 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       // captures never jump when a new touch lands.
       const held = motionOk() ? visualOffset() : 0;
       if (held) {
+        swapSeq++;
         const style = getComputedStyle(indicator);
         const box = {left: parseFloat(style.left), top: parseFloat(style.top), width: parseFloat(style.width)};
         cancelTrack();
         paintIndicator(box);
       }
-      drag = { x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: held ? current : wanted, resume: wanted };
+      drag = { x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: held ? current : wanted, resume: wanted, heldChoice: layerChoice, heldSign: layerSign };
       if (held) setTrack(held);
       else dragOffset = 0;
     }, { passive: true });
@@ -643,7 +645,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       if (drag.lock !== 'h') return;
       if (Math.abs(dx) > 10) suppressClick = true;
       if (!motionOk()) return;
-      const direction = dx < 0 ? 1 : -1;
+      const offset = drag.base + dx;
+      const direction = offset < 0 ? 1 : -1;
       // Bring the incoming capture to the trailing edge so it tracks the
       // finger; its pair starts loading the moment the drag turns horizontal.
       if (visibleIndexes().length > 1) buildLayer(direction, dragTarget(direction));
@@ -666,6 +669,13 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       const horizontal = Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5;
       if (lock === 'h' && !horizontal) { invalidateSlide(); settleBack(dragOffset); return; }
       if (horizontal) {
+        // Reversing a held slide first returns to the displayed page. Only
+        // after crossing its resting position can it reveal the other side.
+        if (lock === 'h' && base && Math.sign(dx) !== Math.sign(base) && (Math.sign(base + dx) === Math.sign(base) || base + dx === 0)) {
+          invalidateSlide();
+          settleBack(base + dx);
+          return;
+        }
         const direction = dx < 0 ? 1 : -1;
         // The slide continues from where the finger left the track: a locked
         // drag leaves it at base + dx, an untouched grab still holds base.
@@ -674,7 +684,10 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       }
       // A tap that grabbed a mid-slide track (no drag) resumes the
       // interrupted slide rather than leaving the pair frozen.
-      if (base) select(resume, base < 0 ? 1 : -1, base);
+      if (base) {
+        if (resume === current) settleBack(base);
+        else select(resume, base < 0 ? 1 : -1, base);
+      }
     }, { passive: true });
     area.addEventListener('touchcancel', () => {
       if (!drag) return;

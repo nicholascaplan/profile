@@ -379,3 +379,45 @@ test('grabbing a moving capture keeps its incoming choice instead of skipping it
   await expect.poll(() => pressedLabel(page,0)).toBe('Fireworks');
   await expect(page.locator('.case:first-child .shot-layer')).toHaveCount(0);
 });
+
+test('reversing a moving pair returns to the displayed page before paging past it', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this,args);
+      if (this.matches('.shot, .thumb-ind')) { animation.pause(); animation.currentTime=100; }
+      return animation;
+    };
+    window.originalAnimate=animate;
+  });
+  await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+  await page.waitForFunction(() => document.querySelector('.case .shot').getAnimations().length>0);
+  await page.evaluate(() => { Element.prototype.animate=window.originalAnimate; });
+  await swipe(page,'.case .shot',{x:90,y:500},{x:150,y:503},3);
+  await expect(page.locator('.case:first-child .shot-layer')).toHaveCount(0);
+  expect(await pressedLabel(page,0)).toBe('Fundraising');
+  await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src',/fundraising/);
+});
+
+for (const reverse of [false,true]) test(`a held pair remains coherent across direction and zero crossing ${reverse}`, async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  if (reverse) {
+    await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+    await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
+  }
+  await page.evaluate(() => {
+    window.originalAnimate=Element.prototype.animate;
+    Element.prototype.animate=function(...args){const a=window.originalAnimate.apply(this,args);if(this.matches('.shot, .thumb-ind')){a.pause();a.currentTime=70;}return a;};
+  });
+  await page.locator(`.case:first-child .thumb[data-label="${reverse?'Fundraising':'Fireworks'}"]`).click();
+  await page.waitForFunction(()=>document.querySelector('.case .shot').getAnimations().length>0);
+  await page.evaluate(()=>{Element.prototype.animate=window.originalAnimate;});
+  // Reverse far enough to cross the original position, revealing the other
+  // neighbour. Both polarities use the same current/layer/track invariant.
+  await swipe(page,'.case .shot',reverse?{x:320,y:500}:{x:30,y:500},reverse?{x:30,y:503}:{x:320,y:503},8);
+  await expect.poll(()=>pressedLabel(page,0)).toBe(reverse?'What’s On':'Menu');
+  await expect(page.locator('.case:first-child .shot-layer')).toHaveCount(0);
+});
