@@ -486,3 +486,30 @@ test('each committed capture has its own explanation, including Biography',async
   }
   await expect(page.locator('.case').nth(1).locator('.shot-mob')).toHaveAttribute('src',/sam-bio/);
 });
+
+for (const direction of [-1, 1]) test(`overlong drag releases from its displayed stage bound ${direction}`, async ({page}) => {
+  await page.setViewportSize({width:320,height:844});
+  await page.goto('/');
+  const state = await page.evaluate(direction => {
+    const shot = document.querySelector('.case .shot');
+    const width = shot.parentElement.clientWidth;
+    const point = x => ({identifier:7,target:shot,clientX:x,clientY:500});
+    const send = (type,x,end=false) => {const e=new Event(type,{bubbles:true,cancelable:true});e.touches=end?[]:[point(x)];e.changedTouches=[point(x)];shot.dispatchEvent(e);};
+    const animate = Element.prototype.animate;
+    window.releaseFrames = [];
+    Element.prototype.animate = function(frames,options) {
+      if(this===shot) window.releaseFrames.push(frames);
+      return animate.call(this,frames,options);
+    };
+    send('touchstart',160);
+    send('touchmove',160+direction*width*1.5);
+    const before = getComputedStyle(shot).transform;
+    send('touchend',160+direction*width*1.5,true);
+    return {width,before};
+  },direction);
+  await page.waitForFunction(()=>window.releaseFrames.length>0);
+  const frames=await page.evaluate(()=>window.releaseFrames[0]);
+  const start=Number(frames[0].transform.match(/translateX\(([-.\d]+)px\)/)[1]);
+  expect(Math.abs(start)).toBeLessThanOrEqual(state.width);
+  expect(start).toBe(direction*state.width);
+});

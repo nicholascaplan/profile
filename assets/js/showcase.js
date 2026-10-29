@@ -743,17 +743,20 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       const horizontal = Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5;
       if (lock === 'h' && !horizontal) { invalidateSlide(); settleBack(dragOffset); return; }
       if (horizontal) {
+        // Release from the same bounded position last displayed by touchmove.
+        const width = stageWidth();
+        const release = Math.max(-width, Math.min(width, base + dx));
         // Reversing a held slide first returns to the displayed page. Only
         // after crossing its resting position can it reveal the other side.
         if (lock === 'h' && base && Math.sign(dx) !== Math.sign(base) && (Math.sign(base + dx) === Math.sign(base) || base + dx === 0)) {
           invalidateSlide();
-          settleBack(base + dx);
+          settleBack(release);
           return;
         }
         const direction = dx < 0 ? 1 : -1;
         // The slide continues from where the finger left the track: a locked
         // drag leaves it at base + dx, an untouched grab still holds base.
-        select(target, direction, lock === 'h' ? base + dx : base);
+        select(target, direction, lock === 'h' ? release : base);
         return;
       }
       // A tap that grabbed a mid-slide track (no drag) resumes the
