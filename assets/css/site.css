@@ -533,6 +533,13 @@ body[data-mobile="true"][data-style="atelier"] .role { display: block; }
   .hero-actions .button { min-width: 0; width: 100%; }
 }
 
+/* Keep the page-name track continuous on narrow phones, including four Sam views. */
+@media (max-width: 400px) {
+  .thumbs { flex-wrap: nowrap; }
+  .thumb { flex: 1 1 auto; min-width: 0; padding-inline: 3px; }
+  .thumb span { font-size: 12px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

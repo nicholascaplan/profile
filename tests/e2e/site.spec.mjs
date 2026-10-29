@@ -712,6 +712,13 @@ test('showcase: composed overviews have a single readable set of controls at eve
     assert.equal(state.shots, 2, `only the capture matching the visitor's device is visible at ${width}px`);
     assert.equal(state.duplicateControls, 0, 'no competing arrows, thumbnail images or enlargement affordance');
     assert.equal(state.sizes.length, width <= 960 ? 8 : 7);
+    if (width <= 400) {
+      for (const row of await page.locator('.thumbs').all()) {
+        const layout = await row.evaluate(el => ({width: el.clientWidth, scroll: el.scrollWidth, tops: [...el.querySelectorAll('.thumb:not([hidden])')].map(button => button.offsetTop)}));
+        assert.equal(new Set(layout.tops).size, 1, 'all choices share one horizontal track');
+        assert.ok(layout.scroll <= layout.width, 'the track fits without overflow');
+      }
+    }
     for (const size of state.sizes) {
       assert.ok(size.height >= 44, `44px touch target at ${width}px`);
       assert.ok(size.font >= 12, `readable label at ${width}px`);
