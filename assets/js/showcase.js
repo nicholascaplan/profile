@@ -410,12 +410,24 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   };
   // Start only the two same-form/theme neighbours after the visible initial
   // capture can paint. Do not wait for unrelated page resources or idle time.
-  const firstVisible = phoneLayout() ? mob : desk;
   let initialPaintable = false;
-  const initialReady = () => { initialPaintable = true; preloadNeighbors(); };
-  if (typeof firstVisible.decode === 'function') firstVisible.decode().then(initialReady, () => {});
-  else if (firstVisible.complete && firstVisible.naturalWidth) initialReady();
-  else firstVisible.addEventListener('load', initialReady, {once: true});
+  let initialCheck = 0;
+  const checkInitial = () => {
+    const image = phoneLayout() ? mob : desk;
+    const source = image.src;
+    const check = ++initialCheck;
+    const done = () => {
+      if (check !== initialCheck || image.src !== source || !image.complete || !image.naturalWidth) return;
+      initialPaintable = true;
+      preloadNeighbors();
+    };
+    if (typeof image.decode === 'function') image.decode().then(done, () => {});
+    else done();
+  };
+  // A source/theme change can reject decode(). A later load retries the
+  // current visible source instead of blocking gestures for the session.
+  [desk, mob].forEach(image => image.addEventListener('load', checkInitial));
+  checkInitial();
   // The paired slide: the incoming capture chases the outgoing one across
   // the stage, continuing the gesture's direction. No opacity fades and no
   // blank states - the outgoing capture stays fully visible until the
@@ -468,6 +480,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         mob.alt = chosen.dataset.altMob;
         syncPresentedChoice();
         restoreShot();
+        initialPaintable = true;
         preloadNeighbors();
         const queued = queuedChoice;
         queuedChoice = null;
@@ -532,6 +545,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       desk.alt = chosen.dataset.altDesk;
       apply(mob, srcM, 'Mob');
       mob.alt = chosen.dataset.altMob;
+      initialPaintable = true;
       preloadNeighbors();
     });
   }

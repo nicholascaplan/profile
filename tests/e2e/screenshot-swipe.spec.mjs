@@ -588,3 +588,20 @@ test('swipe while the initial visible capture is loading does not animate an emp
   await swipe(page,'.case .shot',{x:310,y:500},{x:130,y:500},3);
   await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
 });
+
+test('a rejected first decode does not permanently block gestures after a successful swap',async({page})=>{
+  await page.setViewportSize({width:412,height:915});
+  await page.addInitScript(()=>{
+    const decode=HTMLImageElement.prototype.decode;
+    let rejected=false;
+    HTMLImageElement.prototype.decode=function(){
+      if(!rejected && this.matches('.case:first-child .shot-mob')){rejected=true;return Promise.reject(new Error('source changed during first decode'));}
+      return decode.call(this);
+    };
+  });
+  await page.goto('/');
+  await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
+  await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
+  await swipe(page,'.case .shot',{x:310,y:500},{x:130,y:500},3);
+  await expect.poll(()=>pressedLabel(page,0)).toBe('What’s On');
+});
