@@ -99,6 +99,16 @@ async function main() {
   if (!page.url().startsWith(SITE_URL)) await page.goto(SITE_URL, { waitUntil: 'load' });
   await page.waitForSelector('.thumbs .thumb.sel', { timeout: 30000 });
 
+  // Match the e2e setup: dismiss the consent banner and pick a theme via
+  // localStorage, then reload so the banner is gone and nothing overlays the
+  // screenshot choices (run 1 failure: the banner covered the tap target).
+  await page.evaluate(() => {
+    localStorage.setItem('nick-theme', 'dark');
+    localStorage.setItem('websites-by-nick-cookie-preferences', 'essential');
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForSelector('.thumbs .thumb.sel', { timeout: 30000 });
+
   const group = page.locator('.thumbs').first();
   const buttons = group.locator('.thumb:visible');
   const before = {
@@ -191,6 +201,21 @@ async function main() {
 
 main().catch(async err => {
   console.error('ANDROID CHROME POC FAILED:', err.message);
+  // Save a screenshot and the selected state to make CI failures diagnosable.
+  try {
+    const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
+    const pages = browser.contexts()[0].pages();
+    if (pages[0]) {
+      await pages[0].screenshot({ path: `${ARTIFACTS}/failure.png` });
+      const state = await pages[0].evaluate(() => ({
+        url: location.href,
+        selected: [...document.querySelectorAll('.thumbs')].map(g => g.querySelector('.thumb.sel')?.textContent?.trim()),
+        banner: !!document.querySelector('[class*="cookie"], [id*="cookie"]'),
+      }));
+      writeFileSync(`${ARTIFACTS}/failure-state.json`, JSON.stringify(state, null, 2));
+    }
+    await browser.close();
+  } catch (e) { console.log('failure capture skipped:', e.message); }
   try { await adb('shell', 'pkill', '-INT', 'screenrecord'); await sleep(2500); await adb('pull', '/sdcard/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`); } catch {}
   process.exit(1);
 });
