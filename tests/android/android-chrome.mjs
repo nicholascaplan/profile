@@ -51,6 +51,18 @@ async function tapIfPresent(patterns) {
 }
 
 
+// Poll until the remote screenrecord process exits - SIGINT lets it finalize
+// the MP4. Bounded and non-throwing so a stuck recorder can never hang or
+// fail cleanup; callers log and pull whatever is there.
+const waitRemoteRecorderExit = async (tries = 40) => {
+  for (let i = 0; i < tries; i++) {
+    const pids = await adbText('shell', 'pidof', 'screenrecord').catch(() => '');
+    if (!pids.trim()) return true;
+    await sleep(250);
+  }
+  return false;
+};
+
 // Wait until the visible capture is committed to the selected thumb: fully
 // loaded, its currentSrc changed from before the gesture, the source belongs
 // to the selected thumb (the page's own data-src-mob(-dark) mapping), and the
@@ -222,7 +234,7 @@ async function main() {
   console.log(`right swipe committed capture: "${nextLabel}" -> "${after.label}"`);
 
   await adb('shell', 'pkill', '-INT', 'screenrecord').catch(() => {});
-  await sleep(2500);
+  if (!(await waitRemoteRecorderExit())) console.log('screenrecord still running 10s after SIGINT; pulling anyway');
   recorder.kill();
   closeSync(recFd);
   await adb('pull', '/data/local/tmp/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`).catch(e => console.log('video pull failed:', e.message));
@@ -252,6 +264,8 @@ main().catch(async err => {
     }
     await browser.close();
   } catch (e) { console.log('failure capture skipped:', e.message); }
-  try { await adb('shell', 'pkill', '-INT', 'screenrecord'); await sleep(2500); await adb('pull', '/data/local/tmp/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`); } catch {}
+  try { await adb('shell', 'pkill', '-INT', 'screenrecord'); } catch {}
+  await waitRemoteRecorderExit();
+  try { await adb('pull', '/data/local/tmp/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`); } catch {}
   process.exit(1);
 });
