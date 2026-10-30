@@ -99,15 +99,20 @@ async function main() {
   if (!page.url().startsWith(SITE_URL)) await page.goto(SITE_URL, { waitUntil: 'load' });
   await page.waitForSelector('.thumbs .thumb.sel', { timeout: 30000 });
 
-  // Match the e2e setup: dismiss the consent banner and pick a theme via
-  // localStorage, then reload so the banner is gone and nothing overlays the
-  // screenshot choices (run 1 failure: the banner covered the tap target).
-  await page.evaluate(() => {
-    localStorage.setItem('nick-theme', 'dark');
-    localStorage.setItem('websites-by-nick-cookie-preferences', 'essential');
-  });
-  await page.reload({ waitUntil: 'load' });
-  await page.waitForSelector('.thumbs .thumb.sel', { timeout: 30000 });
+  const session = await context.newCDPSession(page);
+
+  // Dismiss the consent banner the way a visitor does - a real touch tap on
+  // Reject analytics - and check it actually hides. (Run 1 failed because the
+  // banner overlays the screenshot choices on a fresh profile.)
+  const reject = page.locator('[data-cookie-choice="essential"]');
+  await reject.waitFor({ timeout: 15000 });
+  {
+    const box = await reject.boundingBox();
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  }
+  await page.waitForSelector('.cookie-banner', { state: 'hidden', timeout: 10000 });
+  console.log('consent banner dismissed with a touch tap');
 
   const group = page.locator('.thumbs').first();
   const buttons = group.locator('.thumb:visible');
@@ -120,8 +125,12 @@ async function main() {
   // Real touch tap on the second choice, at its on-screen coordinates.
   const target = buttons.nth(1);
   const targetLabel = (await target.textContent()).trim();
+  // Unlike Playwright's click, raw CDP touch input does not scroll: bring the
+  // target into the viewport first or the coordinates land off-screen.
+  await target.scrollIntoViewIfNeeded();
+  await sleep(300);
   const box = await target.boundingBox();
-  const session = await context.newCDPSession(page);
+  console.log(`tapping choice "${targetLabel}" at ${Math.round(box.x + box.width / 2)},${Math.round(box.y + box.height / 2)}`);
   const x = box.x + box.width / 2, y = box.y + box.height / 2;
   await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
   await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
@@ -153,6 +162,11 @@ async function main() {
   // A real touch swipe across the visible capture: left swipe pages to the
   // next choice, right swipe pages back (showcase.js gesture handling).
   const swipe = async (fromRight) => {
+    await page.evaluate(() => {
+      const img = [...document.querySelectorAll('.shot-img')].find(i => i.offsetParent !== null);
+      img.scrollIntoView({ block: 'center' });
+    });
+    await sleep(300);
     const imgBox = await page.evaluate(() => {
       const img = [...document.querySelectorAll('.shot-img')].find(i => i.offsetParent !== null);
       const r = img.getBoundingClientRect();
@@ -210,7 +224,8 @@ main().catch(async err => {
       const state = await pages[0].evaluate(() => ({
         url: location.href,
         selected: [...document.querySelectorAll('.thumbs')].map(g => g.querySelector('.thumb.sel')?.textContent?.trim()),
-        banner: !!document.querySelector('[class*="cookie"], [id*="cookie"]'),
+        bannerVisible: (() => { const b = document.querySelector('.cookie-banner'); return !!b && getComputedStyle(b).display !== 'none'; })(),
+        scrollY: window.scrollY, innerHeight: window.innerHeight,
       }));
       writeFileSync(`${ARTIFACTS}/failure-state.json`, JSON.stringify(state, null, 2));
     }
