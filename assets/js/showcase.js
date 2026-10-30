@@ -648,7 +648,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const moveIndicator = () => {
     if (!layer && !trackAnims.length) {
       wrapIndicator.hidden = true;
-      paintIndicator(indicatorBox(current));
+      const presented = thumbs.findIndex(thumb => thumb.classList.contains('sel'));
+      paintIndicator(indicatorBox(presented >= 0 ? presented : current));
     }
   };
   const wrapsIndicator = () => {

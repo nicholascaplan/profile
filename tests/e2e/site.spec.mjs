@@ -1140,6 +1140,11 @@ test('showcase: failed Menu desktop fallback keeps a visible selection and resto
   await expect(first.locator('.pill-label')).toHaveText('Fundraising');
   assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
   assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await expect.poll(()=>first.locator('.thumb-ind').evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(20);
+  const indicator=await first.locator('.thumb-ind').boundingBox();
+  const button=await homepage.boundingBox();
+  expect(indicator.x).toBeGreaterThanOrEqual(button.x);
+  expect(indicator.x+indicator.width).toBeLessThanOrEqual(button.x+button.width+1);
   await page.setViewportSize({ width: 390, height: 900 });
   await expect(menu).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');
@@ -1172,6 +1177,11 @@ test('showcase: failed Menu preview-toggle fallback keeps a visible selection an
   await expect(first.locator('.pill-label')).toHaveText('Fundraising');
   assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
   assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await expect.poll(()=>first.locator('.thumb-ind').evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(20);
+  const indicator=await first.locator('.thumb-ind').boundingBox();
+  const button=await homepage.boundingBox();
+  expect(indicator.x).toBeGreaterThanOrEqual(button.x);
+  expect(indicator.x+indicator.width).toBeLessThanOrEqual(button.x+button.width+1);
   await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
   await expect(menu).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');
