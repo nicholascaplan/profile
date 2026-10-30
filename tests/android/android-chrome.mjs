@@ -89,7 +89,7 @@ async function main() {
   if (!chromePath.includes('package:')) throw new Error('Chrome for Android is not installed on this system image');
 
   const recFd = openSync(`${ARTIFACTS}/screenrecord.log`, 'w');
-  const recorder = spawn('adb', ['shell', 'screenrecord', '--time-limit', '150', '/sdcard/android-chrome-poc.mp4'], { stdio: ['ignore', 'ignore', recFd] });
+  const recorder = spawn('adb', ['shell', 'screenrecord', '--time-limit', '150', '/data/local/tmp/android-chrome-poc.mp4'], { stdio: ['ignore', 'ignore', recFd] });
   await sleep(1500);
   if (recorder.exitCode !== null) console.log(`screenrecord exited early (code ${recorder.exitCode}); see screenrecord.log artifact`);
 
@@ -225,7 +225,7 @@ async function main() {
   await sleep(2500);
   recorder.kill();
   closeSync(recFd);
-  await adb('pull', '/sdcard/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`).catch(e => console.log('video pull failed:', e.message));
+  await adb('pull', '/data/local/tmp/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`).catch(e => console.log('video pull failed:', e.message));
   info.video = existsSync(`${ARTIFACTS}/android-chrome-poc.mp4`);
 
   info.result = `tap "${before.label.trim()}" -> "${after.label}"; left swipe -> "${nextLabel}"; right swipe -> back; capture swapped, no horizontal overflow`;
@@ -252,6 +252,6 @@ main().catch(async err => {
     }
     await browser.close();
   } catch (e) { console.log('failure capture skipped:', e.message); }
-  try { await adb('shell', 'pkill', '-INT', 'screenrecord'); await sleep(2500); await adb('pull', '/sdcard/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`); } catch {}
+  try { await adb('shell', 'pkill', '-INT', 'screenrecord'); await sleep(2500); await adb('pull', '/data/local/tmp/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`); } catch {}
   process.exit(1);
 });
