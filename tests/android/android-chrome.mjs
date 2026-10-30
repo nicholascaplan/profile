@@ -4,7 +4,7 @@
 import { chromium } from '@playwright/test';
 import { execFile as execFileCb, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { createWriteStream, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 
 const execFile = promisify(execFileCb);
 const SITE_URL = 'http://10.0.2.2:8080/'; // 10.0.2.2 is the host loopback from the emulator
@@ -50,6 +50,26 @@ async function tapIfPresent(patterns) {
   return false;
 }
 
+
+// Wait until the visible capture is committed to the selected thumb: fully
+// loaded, its currentSrc changed from before the gesture, the source belongs
+// to the selected thumb (the page's own data-src-mob(-dark) mapping), and the
+// image is actually inside the viewport - the thumb label alone can move
+// before the image does.
+const waitCommittedCapture = (page, { groupIdx, label, prevSrc, timeout = 15000 }) =>
+  page.waitForFunction(({ groupIdx, label, prevSrc }) => {
+    const g = document.querySelectorAll('.thumbs')[groupIdx];
+    const sel = g && g.querySelector('.thumb.sel');
+    if (!sel || sel.textContent.trim() !== label) return false;
+    const stem = src => (src || '').split('/').pop().replace(/\.[a-z0-9]+$/i, '');
+    const stems = [sel.dataset.srcMob, sel.dataset.srcMobDark].filter(Boolean).map(stem);
+    const img = [...document.querySelectorAll('.shot-img')].find(i => i.offsetParent !== null);
+    if (!img || !img.complete || !img.naturalWidth || !img.currentSrc || img.currentSrc === prevSrc) return false;
+    if (!stems.some(st => img.currentSrc.includes(st))) return false;
+    const r = img.getBoundingClientRect();
+    return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+  }, { groupIdx, label, prevSrc }, { timeout });
+
 const DISMISS = [/^accept & continue$/i, /^use without an account$/i, /^no thanks$/i, /^got it$/i, /^skip$/i, /^next$/i, /^turn on sync\?/i];
 
 async function getTargets() {
@@ -68,8 +88,8 @@ async function main() {
   const chromePath = await adbText('shell', 'pm', 'path', 'com.android.chrome').catch(() => '');
   if (!chromePath.includes('package:')) throw new Error('Chrome for Android is not installed on this system image');
 
-  const recErr = createWriteStream(`${ARTIFACTS}/screenrecord.log`);
-  const recorder = spawn('adb', ['shell', 'screenrecord', '--time-limit', '150', '/sdcard/android-chrome-poc.mp4'], { stdio: ['ignore', 'ignore', recErr] });
+  const recFd = openSync(`${ARTIFACTS}/screenrecord.log`, 'w');
+  const recorder = spawn('adb', ['shell', 'screenrecord', '--time-limit', '150', '/sdcard/android-chrome-poc.mp4'], { stdio: ['ignore', 'ignore', recFd] });
   await sleep(1500);
   if (recorder.exitCode !== null) console.log(`screenrecord exited early (code ${recorder.exitCode}); see screenrecord.log artifact`);
 
@@ -122,15 +142,17 @@ async function main() {
     label: await group.locator('.thumb.sel').textContent(),
     src: await page.locator('.shot-img:visible').first().getAttribute('src'),
   };
-  await page.screenshot({ path: `${ARTIFACTS}/before-tap.png` });
 
   // Real touch tap on the second choice, at its on-screen coordinates.
   const target = buttons.nth(1);
   const targetLabel = (await target.textContent()).trim();
   // Unlike Playwright's click, raw CDP touch input does not scroll: bring the
-  // target into the viewport first or the coordinates land off-screen.
+  // target into the viewport first or the coordinates land off-screen. Do it
+  // before the first screenshot so before-tap.png and after-tap.png frame the
+  // same area and stay directly comparable.
   await target.scrollIntoViewIfNeeded();
   await sleep(300);
+  await page.screenshot({ path: `${ARTIFACTS}/before-tap.png` });
   const box = await target.boundingBox();
   console.log(`tapping choice "${targetLabel}" at ${Math.round(box.x + box.width / 2)},${Math.round(box.y + box.height / 2)}`);
   const x = box.x + box.width / 2, y = box.y + box.height / 2;
@@ -143,10 +165,7 @@ async function main() {
     const sel = g && g.querySelector('.thumb.sel');
     return sel && sel.textContent.trim() === label && g.querySelectorAll('[aria-pressed="true"]').length === 1;
   }, { groupIdx: 0, label: targetLabel }, { timeout: 10000 });
-  await page.waitForFunction(prev => {
-    const img = [...document.querySelectorAll('.shot-img')].find(i => i.offsetParent !== null);
-    return img && img.currentSrc && img.currentSrc !== prev;
-  }, before.src, { timeout: 10000 });
+  await waitCommittedCapture(page, { groupIdx: 0, label: targetLabel, prevSrc: before.src, timeout: 10000 });
 
   const after = {
     label: (await group.locator('.thumb.sel').textContent()).trim(),
@@ -187,26 +206,25 @@ async function main() {
   const selectedLabel = () => group.locator('.thumb.sel').textContent().then(t => t.trim());
   const nextLabel = (await buttons.nth(2).textContent()).trim();
 
+  const visibleSrc = () => page.evaluate(() => {
+    const img = [...document.querySelectorAll('.shot-img')].find(i => i.offsetParent !== null);
+    return img && img.currentSrc;
+  });
+
   await swipe(true); // left swipe -> next choice
-  await page.waitForFunction(({ groupIdx, label }) => {
-    const g = document.querySelectorAll('.thumbs')[groupIdx];
-    const sel = g && g.querySelector('.thumb.sel');
-    return sel && sel.textContent.trim() === label;
-  }, { groupIdx: 0, label: nextLabel }, { timeout: 15000 });
+  await waitCommittedCapture(page, { groupIdx: 0, label: nextLabel, prevSrc: after.src });
+  const swipedSrc = await visibleSrc();
   await page.screenshot({ path: `${ARTIFACTS}/after-swipe.png` });
-  console.log(`left swipe changed selection: "${after.label}" -> "${nextLabel}"`);
+  console.log(`left swipe committed capture: "${after.label}" -> "${nextLabel}" (${swipedSrc})`);
 
   await swipe(false); // right swipe -> back
-  await page.waitForFunction(({ groupIdx, label }) => {
-    const g = document.querySelectorAll('.thumbs')[groupIdx];
-    const sel = g && g.querySelector('.thumb.sel');
-    return sel && sel.textContent.trim() === label;
-  }, { groupIdx: 0, label: after.label }, { timeout: 15000 });
-  console.log(`right swipe changed selection back: "${nextLabel}" -> "${after.label}"`);
+  await waitCommittedCapture(page, { groupIdx: 0, label: after.label, prevSrc: swipedSrc });
+  console.log(`right swipe committed capture: "${nextLabel}" -> "${after.label}"`);
 
   await adb('shell', 'pkill', '-INT', 'screenrecord').catch(() => {});
   await sleep(2500);
   recorder.kill();
+  closeSync(recFd);
   await adb('pull', '/sdcard/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`).catch(e => console.log('video pull failed:', e.message));
   info.video = existsSync(`${ARTIFACTS}/android-chrome-poc.mp4`);
 
