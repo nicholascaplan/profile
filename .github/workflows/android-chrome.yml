@@ -1,0 +1,49 @@
+name: Android Chrome proof of concept
+
+# Proof of concept for running checks in real Chrome for Android on an emulator.
+# Scoped to its own files so it adds no time to unrelated pull requests; widen
+# the paths (or drop the filter) only if the concept is adopted.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/android-chrome.yml'
+      - 'tests/android/**'
+  workflow_dispatch:
+
+jobs:
+  android-chrome:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Allow KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Serve the site locally
+        run: |
+          node scripts/serve-static.mjs --port 8080 > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/ >/dev/null && exit 0; sleep 1; done
+          echo "site server did not start"; exit 1
+      - name: Boot the emulator and run the Chrome checks
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis_playstore
+          arch: x86_64
+          profile: pixel_7_pro
+          script: node tests/android/android-chrome.mjs
+      - name: Upload Android Chrome evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-chrome-poc
+          path: test-results/android/
+          if-no-files-found: ignore
+          retention-days: 14
