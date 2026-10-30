@@ -46,6 +46,7 @@ test('horizontal swipe steps through the visible screenshots and wraps', async (
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const firstCase = page.locator('.case').first();
   await expect(firstCase.locator('.thumb[aria-pressed="true"]')).toHaveAttribute('data-label', 'Fundraising');
 
@@ -84,6 +85,7 @@ test('rapid repeated swipes queue ahead instead of repeating a choice', async ({
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await expect(page.locator('.case').first().locator('.thumb[aria-pressed="true"]')).toHaveAttribute('data-label', 'Fundraising');
   // Two swipes back to back, before the first swap finishes loading.
   await swipe(page, '.case .shot', {x: 300, y: 500}, {x: 80, y: 508});
@@ -100,6 +102,7 @@ test('the capture follows a horizontal drag and springs back under the threshold
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const shot = page.locator('.case .shot').first();
   await expect.poll(() => pressedLabel(page, 0)).toBe('Fundraising');
   // Full drag with moves commits and animates.
@@ -119,6 +122,7 @@ test('a horizontal drag brings the incoming capture in from the edge', async ({p
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const caseEl = page.locator('.case').first();
   await caseEl.locator('.thumb[data-label="Fireworks"]').click();
   await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
@@ -190,6 +194,7 @@ test('a theme change during an animated swap never leaves the capture hidden', a
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await page.locator('.case .thumbs .thumb').nth(1).click();
   // Flip the theme while the swap is still in flight.
   await page.evaluate(() => { document.body.dataset.theme = 'light'; });
@@ -216,6 +221,7 @@ test('a swipe on the capture does not swallow the next tap on a choice', async (
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await swipe(page, '.case .shot', {x: 300, y: 500}, {x: 80, y: 506}, 3);
   await expect.poll(() => pressedLabel(page, 0)).toBe('Fireworks');
   // The drag set the click guard but no click followed on the row; the guard
@@ -229,6 +235,7 @@ test('a second finger cancels the drag and settles the capture back', async ({pa
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const shot = page.locator('.case .shot').first();
   await page.evaluate(() => {
     const area = document.querySelector('.case .shot');
@@ -259,6 +266,7 @@ test('reduced motion keeps the swipe instant with no lingering transform', async
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const shot = page.locator('.case .shot').first();
   await swipe(page, '.case .shot', {x: 300, y: 500}, {x: 80, y: 506}, 3);
   await expect.poll(() => pressedLabel(page, 0)).toBe('Fireworks');
@@ -271,6 +279,7 @@ test('the underline indicator slides to the selected choice', async ({page}) => 
   await page.setViewportSize({width: 390, height: 844});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const group = page.locator('.case .thumbs').first();
   const indicator = group.locator('.thumb-ind');
   const boxWithin = async () => {
@@ -289,6 +298,7 @@ test('horizontal wheel scroll steps one screenshot per gesture', async ({page}) 
   await page.setViewportSize({width: 1280, height: 900});
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const wheel = (selector, deltaX, deltaY, deltaMode = 0) => page.evaluate(([selector, deltaX, deltaY, deltaMode]) => {
     document.querySelector(selector).dispatchEvent(new WheelEvent('wheel', {deltaX, deltaY, deltaMode, bubbles: true, cancelable: true}));
   }, [selector, deltaX, deltaY, deltaMode]);
@@ -322,6 +332,7 @@ test('horizontal wheel scroll steps one screenshot per gesture', async ({page}) 
 test('underline and capture release share one animation clock', async ({page}) => {
   await page.setViewportSize({width: 390, height: 844});
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
   await page.waitForFunction(() => document.querySelector('.case .thumb-ind').getAnimations().length > 0);
   const clocks = await page.evaluate(() => {
@@ -341,6 +352,7 @@ test('a short drag cancels a pending selection without a late slide or skipped c
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await page.evaluate(() => {
     window.delayedDecodes = [];
     const decode = HTMLImageElement.prototype.decode;
@@ -365,6 +377,7 @@ test('a short drag cancels a pending selection without a late slide or skipped c
 test('grabbing a moving capture keeps its incoming choice instead of skipping it', async ({page}) => {
   await page.setViewportSize({width:390,height:844});
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   // Pin only the test clock mid-slide, to make this race reproducible.
   await page.evaluate(() => {
     const animate = Element.prototype.animate;
@@ -387,6 +400,7 @@ test('grabbing a moving capture keeps its incoming choice instead of skipping it
 test('reversing a moving pair returns to the displayed page before paging past it', async ({page}) => {
   await page.setViewportSize({width:390,height:844});
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await page.evaluate(() => {
     const animate = Element.prototype.animate;
     Element.prototype.animate = function (...args) {
@@ -408,6 +422,7 @@ test('reversing a moving pair returns to the displayed page before paging past i
 for (const reverse of [false,true]) test(`a held pair remains coherent across direction and zero crossing ${reverse}`, async ({page}) => {
   await page.setViewportSize({width:390,height:844});
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   if (reverse) {
     await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
     await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
@@ -429,6 +444,7 @@ for (const reverse of [false,true]) test(`a held pair remains coherent across di
 test('no-move flicks queue ahead even while the preceding pair is visibly held', async ({page}) => {
   await page.setViewportSize({width:390,height:844});
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await page.evaluate(() => {
     window.originalAnimate=Element.prototype.animate;
     Element.prototype.animate=function(...args){const a=window.originalAnimate.apply(this,args);if(this.matches('.shot, .thumb-ind')){a.pause();a.currentTime=80;}return a;};
@@ -443,6 +459,7 @@ test('no-move flicks queue ahead even while the preceding pair is visibly held',
 test('a queued flick finishes the visible pair before waiting for the next decode', async ({page}) => {
   await page.setViewportSize({width:390,height:844});
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await page.evaluate(() => {
     window.originalAnimate=Element.prototype.animate;
     Element.prototype.animate=function(...args){const a=window.originalAnimate.apply(this,args);if(this.matches('.shot, .thumb-ind')){a.pause();a.currentTime=80;}return a;};
@@ -501,6 +518,7 @@ test('each committed capture has its own explanation, including Biography',async
 for (const direction of [-1, 1]) test(`overlong drag releases from its displayed stage bound ${direction}`, async ({page}) => {
   await page.setViewportSize({width:320,height:844});
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   const target=direction<0?'Fireworks':'Menu';
   await page.locator(`.case:first-child .thumb[data-label="${target}"]`).click();
   await expect.poll(()=>pressedLabel(page,0)).toBe(target);
@@ -535,9 +553,10 @@ for (const outcome of ['commit','cancel','timeout']) test(`cold first drag never
   await page.addInitScript(()=>{
     const decode=HTMLImageElement.prototype.decode;
     window.coldDecodeReleases=[];
-    HTMLImageElement.prototype.decode=function(){return decode.call(this).then(()=>this.src.includes('fireworks')?new Promise(r=>window.coldDecodeReleases.push(r)):undefined)};
+    HTMLImageElement.prototype.decode=function(){return decode.call(this).then(()=>this.src.includes('fireworks')?new Promise(r=>window.coldDecodeReleases.push({release:r,speculative:!!this.dataset.speculative})):undefined)};
   });
   await page.goto('/');
+  await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
   await page.evaluate(()=>document.querySelector('.case .shot-mob').decode());
   await page.evaluate(()=>{
     const el=document.querySelector('.case .shot');
@@ -547,9 +566,9 @@ for (const outcome of ['commit','cancel','timeout']) test(`cold first drag never
   await expect(page.locator('.case .shot:not(.shot-layer)').first()).toHaveCSS('transform','none');
   expect(await pressedLabel(page,0)).toBe('Fundraising');
   await page.evaluate(outcome=>window.coldTouch(outcome==='cancel'?'touchcancel':'touchend',150,true),outcome);
-  await page.waitForFunction(()=>window.coldDecodeReleases.length>=2);
+  await page.waitForFunction(()=>window.coldDecodeReleases.filter(r=>!r.speculative).length===2);
   if(outcome==='timeout')await page.waitForTimeout(850);
-  await page.evaluate(()=>window.coldDecodeReleases.splice(0).forEach(r=>r()));
+  await page.evaluate(()=>window.coldDecodeReleases.splice(0).forEach(r=>r.release()));
   await expect.poll(()=>pressedLabel(page,0)).toBe(outcome==='commit'?'Fireworks':'Fundraising');
   await expect(page.locator('.case .shot:not(.shot-layer)').first()).toHaveCSS('transform','none');
 });
