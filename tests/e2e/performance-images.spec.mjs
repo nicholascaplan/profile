@@ -69,7 +69,7 @@ for (const theme of ['dark', 'light']) {
       expect(pickedIndex, `${current} vs optimal ${optimal.url} for ${need.toFixed(0)}px need`).toBeGreaterThanOrEqual(optimalIndex);
       expect(pickedIndex, `${current} vs optimal ${optimal.url} for ${need.toFixed(0)}px need`).toBeLessThanOrEqual(Math.min(optimalIndex + 1, candidates.length - 1));
     }
-    expect(await page.locator('.case:first-child .shot-desk').getAttribute('fetchpriority')).toBe('high');
+    expect(await page.locator(`.case:first-child .shot-${viewportWidth <= 960 ? 'mob' : 'desk'}`).getAttribute('fetchpriority')).toBe('high');
   });
 }
 
@@ -190,7 +190,7 @@ test('screenshot activation preserves the reserved layout before scripts run', a
 });
 
 
-test('first desktop capture has high priority before sources are assigned', async ({ page }) => {
+test('first visible capture has high priority before sources are assigned', async ({ page }) => {
   await page.addInitScript(() => {
     window.initialCapturePriority = [];
     for (const property of ['srcset', 'src']) {
@@ -198,7 +198,7 @@ test('first desktop capture has high priority before sources are assigned', asyn
       Object.defineProperty(HTMLImageElement.prototype, property, {
         ...descriptor,
         set(value) {
-          if (this.matches('.case:first-child .shot-desk')) {
+          if (this.matches(`.case:first-child .shot-${innerWidth <= 960 ? 'mob' : 'desk'}`)) {
             window.initialCapturePriority.push({ property, priority: this.fetchPriority });
           }
           descriptor.set.call(this, value);

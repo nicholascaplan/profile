@@ -239,7 +239,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const phoneLayout = () => phoneQuery.matches || document.body.dataset.mobile === 'true';
   // Populate initial sources in one pass, already matching the saved theme.
   const initial = thumbs[0];
-  if (caseEl === document.querySelector('.case')) desk.fetchPriority = 'high';
+  if (caseEl === document.querySelector('.case')) (phoneLayout() ? mob : desk).fetchPriority = 'high';
   apply(desk, variant(initial, 'Desk'), 'Desk');
   apply(mob, variant(initial, 'Mob'), 'Mob');
   let current = 0;
@@ -411,8 +411,11 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   // Start only the two same-form/theme neighbours after the visible initial
   // capture can paint. Do not wait for unrelated page resources or idle time.
   const firstVisible = phoneLayout() ? mob : desk;
-  if (typeof firstVisible.decode === 'function') firstVisible.decode().then(preloadNeighbors, () => {});
-  else firstVisible.addEventListener('load', preloadNeighbors, {once: true});
+  let initialPaintable = false;
+  const initialReady = () => { initialPaintable = true; preloadNeighbors(); };
+  if (typeof firstVisible.decode === 'function') firstVisible.decode().then(initialReady, () => {});
+  else if (firstVisible.complete && firstVisible.naturalWidth) initialReady();
+  else firstVisible.addEventListener('load', initialReady, {once: true});
   // The paired slide: the incoming capture chases the outgoing one across
   // the stage, continuing the gesture's direction. No opacity fades and no
   // blank states - the outgoing capture stays fully visible until the
@@ -701,6 +704,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       }
       // Grabbing mid-slide takes over from the on-screen position, so the
       // captures never jump when a new touch lands.
+      const presented = phoneLayout() ? mob : desk;
+      const initialPending = !initialPaintable || !presented.complete || !presented.naturalWidth;
       const held = motionOk() ? visualOffset() : 0;
       if (held) {
         swapSeq++;
@@ -709,12 +714,12 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         cancelTrack();
         paintIndicator(box);
       }
-      drag = { x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: held ? current : wanted, resume: wanted, heldChoice: layerChoice, heldSign: layerSign };
+      drag = { initialPending, x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: held ? current : wanted, resume: wanted, heldChoice: layerChoice, heldSign: layerSign };
       if (held) setTrack(held);
       else dragOffset = 0;
     }, { passive: true });
     area.addEventListener('touchmove', (event) => {
-      if (!drag) return;
+      if (!drag || drag.initialPending) return;
       // The finger's travel is measured from the grab point; drag.base is the
       // track position the grab took over, so the pair moves to base + travel
       // and a mid-slide grab continues without a jump.
@@ -744,6 +749,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     }, { passive: true });
     area.addEventListener('touchend', (event) => {
       if (!drag) return;
+      if (drag.initialPending) { clearDrag(); return; }
       const dx = event.changedTouches[0].clientX - drag.x;
       const dy = event.changedTouches[0].clientY - drag.y;
       const { lock, base, resume, cold } = drag;

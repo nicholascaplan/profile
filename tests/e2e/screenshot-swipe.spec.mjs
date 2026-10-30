@@ -538,6 +538,7 @@ for (const outcome of ['commit','cancel','timeout']) test(`cold first drag never
     HTMLImageElement.prototype.decode=function(){return decode.call(this).then(()=>this.src.includes('fireworks')?new Promise(r=>window.coldDecodeReleases.push(r)):undefined)};
   });
   await page.goto('/');
+  await page.evaluate(()=>document.querySelector('.case .shot-mob').decode());
   await page.evaluate(()=>{
     const el=document.querySelector('.case .shot');
     window.coldTouch=(type,x,end=false)=>{const e=new Event(type,{bubbles:true,cancelable:true});const q={identifier:7,target:el,clientX:x,clientY:500};e.touches=end?[]:[q];e.changedTouches=[q];el.dispatchEvent(e)};
@@ -551,4 +552,20 @@ for (const outcome of ['commit','cancel','timeout']) test(`cold first drag never
   await page.evaluate(()=>window.coldDecodeReleases.splice(0).forEach(r=>r()));
   await expect.poll(()=>pressedLabel(page,0)).toBe(outcome==='commit'?'Fireworks':'Fundraising');
   await expect(page.locator('.case .shot:not(.shot-layer)').first()).toHaveCSS('transform','none');
+});
+
+test('swipe while the initial visible capture is loading does not animate an empty phone',async({page})=>{
+  await page.setViewportSize({width:412,height:915});
+  let release;
+  const pending=new Promise(r=>release=r);
+  await page.route('**/*fundraising-mob*',async route=>{await pending;await route.continue()});
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await swipe(page,'.case .shot',{x:310,y:500},{x:130,y:500},3);
+  await expect(page.locator('.case .shot-layer')).toHaveCount(0);
+  await expect(page.locator('.case .shot').first()).toHaveCSS('transform','none');
+  expect(await pressedLabel(page,0)).toBe('Fundraising');
+  release();
+  await page.evaluate(()=>document.querySelector('.case .shot-mob').decode());
+  await swipe(page,'.case .shot',{x:310,y:500},{x:130,y:500},3);
+  await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
 });
