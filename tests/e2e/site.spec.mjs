@@ -855,7 +855,7 @@ const initialPairLoaded = () => {
   return d && m && d.complete && d.naturalWidth > 0 && m.complete && m.naturalWidth > 0;
 };
 
-test('showcase: screenshot pair swaps atomically under uneven image latency', async ({ page }) => {
+test('showcase: source attributes commit atomically while hidden capture loads independently', async ({ page }) => {
   await page.route('**/assets/images/work/*-desk*.webp', async (route) => { await new Promise((r) => setTimeout(r, 700)); await route.continue(); });
   await page.route('**/assets/images/work/*-mob*.webp', async (route) => { await new Promise((r) => setTimeout(r, 100)); await route.continue(); });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -864,11 +864,12 @@ test('showcase: screenshot pair swaps atomically under uneven image latency', as
   await page.click('.case:first-child .thumb[data-label="What’s On"]');
   const mismatches = [];
   for (let i = 0; i < 12; i++) {
-    const pair = await shotPair(page);
+    const pair = await page.evaluate(() => ({desk:document.querySelector('.case:first-child .shot-desk').src, mob:document.querySelector('.case:first-child .shot-mob').src}));
     if (pageOf(pair.desk) !== pageOf(pair.mob)) mismatches.push(`${pair.desk} vs ${pair.mob}`);
     await page.waitForTimeout(80);
   }
   assert.deepEqual(mismatches, [], `pair changed at different times: ${mismatches.join('; ')}`);
+  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-desk').complete);
   const finalPair = await shotPair(page);
   assert.equal(pageOf(finalPair.desk), 'whatson', 'desktop shot settled on the chosen page');
   assert.equal(pageOf(finalPair.mob), 'whatson', 'mobile shot settled on the chosen page');
@@ -897,12 +898,12 @@ test('showcase: rapid thumbnail changes settle on the latest choice', async ({ p
 
 test('showcase: a failed screenshot preserves the displayed pair and allows retry', async ({ page }) => {
   let fail = true;
-  await page.route('**/assets/images/work/*foa-fireworks-desk-dark*.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
+  await page.route('**/assets/images/work/*foa-fireworks-mob-dark*.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
   const before = await shotPair(page);
-  const failedResponse = page.waitForResponse((response) => response.url().includes('fireworks-desk-dark') && response.status() === 404);
+  const failedResponse = page.waitForResponse((response) => response.url().includes('fireworks-mob-dark') && response.status() === 404);
   await page.evaluate(() => {
     window.failedShowcaseSwap = new Promise((resolve) => {
       document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true });

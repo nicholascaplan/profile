@@ -333,14 +333,21 @@ test('underline and capture release share one animation clock', async ({page}) =
   await page.setViewportSize({width: 390, height: 844});
   await page.goto('/');
   await page.evaluate(()=>Promise.all([...document.querySelectorAll('.case .shot-img')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.decode())));
+  await page.evaluate(() => {
+    window.releaseClocks={};
+    const animate=Element.prototype.animate;
+    Element.prototype.animate=function(...args){
+      const animation=animate.apply(this,args);
+      if(this.matches('.case:first-child .shot:not(.shot-layer)')) window.releaseClocks.shot=animation;
+      if(this.matches('.case:first-child .thumb-ind')) window.releaseClocks.indicator=animation;
+      return animation;
+    };
+  });
   await page.locator('.case:first-child .thumb[data-label="Fireworks"]').click();
-  await page.waitForFunction(() => document.querySelector('.case .thumb-ind').getAnimations().length > 0);
-  const clocks = await page.evaluate(() => {
-    const shot = document.querySelector('.case .shot').getAnimations()[0];
-    const indicator = document.querySelector('.case .thumb-ind').getAnimations()[0];
-    return {shotStart: shot.startTime, indicatorStart: indicator.startTime,
-      shotDuration: shot.effect.getTiming().duration, indicatorDuration: indicator.effect.getTiming().duration,
-      shotEasing: shot.effect.getTiming().easing, indicatorEasing: indicator.effect.getTiming().easing};
+  await page.waitForFunction(()=>window.releaseClocks.shot && window.releaseClocks.indicator);
+  const clocks=await page.evaluate(()=>{
+    const {shot,indicator}=window.releaseClocks;
+    return {shotStart:shot.startTime,indicatorStart:indicator.startTime,shotDuration:shot.effect.getTiming().duration,indicatorDuration:indicator.effect.getTiming().duration,shotEasing:shot.effect.getTiming().easing,indicatorEasing:indicator.effect.getTiming().easing};
   });
   expect(clocks.shotStart).toBe(clocks.indicatorStart);
   expect(clocks.shotDuration).toBe(clocks.indicatorDuration);
@@ -604,4 +611,66 @@ test('a rejected first decode does not permanently block gestures after a succes
   await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
   await swipe(page,'.case .shot',{x:310,y:500},{x:130,y:500},3);
   await expect.poll(()=>pressedLabel(page,0)).toBe('What’s On');
+});
+
+for (const fail of [false, true]) test(`hidden desktop ${fail ? 'failure' : 'delay'} never blocks mobile release; resize guarded`, async ({page}) => {
+  await page.setViewportSize({width:412,height:915});
+  await page.addInitScript(() => {
+    localStorage.setItem('websites-by-nick-cookie-preferences', 'essential');
+    localStorage.setItem('nick-theme', 'light');
+  });
+  let release;
+  const pending = new Promise(resolve => {release = resolve;});
+  await page.route(/foa-fireworks-desk.*\.webp/, async route => {
+    await pending;
+    if (fail) await route.abort(); else await route.continue();
+  });
+  await page.goto('/', {waitUntil:'domcontentloaded'});
+  await page.evaluate(async () => {
+    const box=document.querySelector('.case');
+    await box.querySelector('.shot-mob').decode();
+    const choice=box.querySelectorAll('.thumb')[1];
+    const img=new Image(); img.src=choice.dataset.srcMob; await img.decode();
+    const old=Element.prototype.animate;
+    window.motionStart=null;
+    Element.prototype.animate=function(...args){if(this.matches('.case:first-of-type .shot:not(.shot-layer)'))window.motionStart=performance.now(); return old.apply(this,args);};
+  });
+  const releaseAt=await page.evaluate(()=>performance.now());
+  await swipe(page,'.case .shot',{x:300,y:500},{x:100,y:500},3);
+  // The server deliberately never answers the desktop request until after
+  // these assertions. Old both-form gating would time out and spring back.
+  await expect.poll(()=>pressedLabel(page,0),{timeout:1500}).toBe('Fireworks');
+  const elapsed=await page.evaluate(t=>window.motionStart-t,releaseAt);
+  expect(elapsed).toBeLessThan(250);
+  const first=page.locator('.case').first();
+  await expect(first.locator('.shot-mob')).toHaveAttribute('src',/foa-fireworks-mob.webp/);
+  await expect(first.locator('.shot-desk')).toHaveAttribute('src',/foa-fireworks-desk.webp/);
+  await page.setViewportSize({width:1280,height:900});
+  await expect(first).toHaveClass(/capture-loading/);
+  await expect(first.locator('.shot').first()).toHaveCSS('visibility','hidden');
+  release();
+  if(fail) {
+    await expect(first).toHaveAttribute('data-capture-error','true');
+    // Returning to a warm form must recover even after hidden-form failure.
+    await page.setViewportSize({width:412,height:915});
+  }
+  await expect(first).not.toHaveClass(/capture-loading/);
+  await expect(first.locator('.shot').first()).toHaveCSS('visibility','visible');
+  await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
+});
+
+test('layout change during a held drag cancels its stale release',async({page})=>{
+  await page.setViewportSize({width:412,height:915});
+  await page.goto('/');
+  await page.evaluate(async()=>{
+    const image=document.querySelector('.case .shot-mob');await image.decode();
+    const area=document.querySelector('.case .shot');
+    const dispatch=(type,x)=>{const event=new Event(type,{bubbles:true,cancelable:true});const p={clientX:x,clientY:400};event.touches=[p];event.changedTouches=[p];area.dispatchEvent(event);};
+    dispatch('touchstart',300);dispatch('touchmove',180);
+  });
+  await page.setViewportSize({width:1280,height:900});
+  await page.evaluate(()=>{const area=document.querySelector('.case .shot');const e=new Event('touchend',{bubbles:true});e.touches=[];e.changedTouches=[{clientX:100,clientY:400}];area.dispatchEvent(e);});
+  await expect.poll(()=>pressedLabel(page,0)).toBe('Fundraising');
+  await expect(page.locator('.case .shot-layer')).toHaveCount(0);
+  await expect(page.locator('.case .shot').first()).toHaveCSS('transform','none');
 });

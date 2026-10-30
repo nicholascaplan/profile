@@ -281,7 +281,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   let layer = null;
   let layerSign = 0;
   let layerChoice = -1;
-  let layerReady = null;
+  let layerVisibleReady = null;
   let layerPaintable = false;
   const decodedSources = new Set();
   const sourceKey = (source, kind) => `${source}|${kind}|${kind === 'Mob' ? mobSizes() : sizes.Desk}|${innerWidth}|${devicePixelRatio}`;
@@ -296,7 +296,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     }
   };
   const cancelTrack = () => { settleSeq++; trackAnims.forEach((animation) => animation.cancel()); trackAnims = []; };
-  const removeLayer = () => { if (layer) layer.remove(); layer = null; layerReady = null; layerChoice = -1; };
+  const removeLayer = () => { if (layer) layer.remove(); layer = null; layerVisibleReady = null; layerChoice = -1; };
   const restoreShot = () => {
     cancelTrack();
     removeLayer();
@@ -312,12 +312,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const match = transform && transform !== 'none' && transform.match(/matrix\(([^)]+)\)/);
     return match ? parseFloat(match[1].split(',')[4]) || 0 : 0;
   };
-  // Load a capture pair into the layer. BOTH form factors must be decoded
-  // before the slide runs, so the pair can never paint mismatched - the same
-  // atomic guarantee the instant swap has always given. Decoding goes
-  // through a detached preloader (the old swap's proven path: an
-  // in-document display:none image's decode() can stall); the layer image
-  // paints from the same fetch.
+  // Load both sources, but decode only the currently visible form as the
+  // motion gate. The hidden capture must not stall an already paintable
+  // swipe. A form change cancels motion and guards that form independently.
   const loadInto = (img, source, kind) => {
     apply(img, source, kind);
     const pre = new Image();
@@ -351,10 +348,10 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     layerChoice = j;
     layerPaintable = decodedSources.has(sourceKey(variant(chosen, phoneLayout() ? 'Mob' : 'Desk'), phoneLayout() ? 'Mob' : 'Desk'));
     const incoming = layer;
-    layerReady = Promise.all([
-      loadInto(deskImg, variant(chosen, 'Desk'), 'Desk'),
-      loadInto(mobImg, variant(chosen, 'Mob'), 'Mob'),
-    ]).then((pair) => { if (layer === incoming) layerPaintable = pair.every(Boolean); return pair.every(Boolean); });
+    const desktopReady = loadInto(deskImg, variant(chosen, 'Desk'), 'Desk');
+    const mobileReady = loadInto(mobImg, variant(chosen, 'Mob'), 'Mob');
+    layerVisibleReady = phoneLayout() ? mobileReady : desktopReady;
+    layerVisibleReady.then(ready => { if (layer === incoming) layerPaintable = ready; });
     stage.appendChild(layer);
     stage.classList.add('sliding');
     followIndicator(dragOffset);
@@ -419,9 +416,13 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const done = () => {
       if (check !== initialCheck || image.src !== source || !image.complete || !image.naturalWidth) return;
       initialPaintable = true;
+      caseEl.classList.remove('capture-loading');
+      delete caseEl.dataset.captureError;
       preloadNeighbors();
     };
-    if (typeof image.decode === 'function') image.decode().then(done, () => {});
+    if (typeof image.decode === 'function') image.decode().then(done, () => {
+      if (check === initialCheck && image.src === source && caseEl.classList.contains('capture-loading')) caseEl.dataset.captureError = 'true';
+    });
     else done();
   };
   // A source/theme change can reject decode(). A later load retries the
@@ -438,13 +439,13 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const startOffset = fromOffset || dragOffset || visualOffset();
     setTrack(startOffset);
     // A deliberate selection (thumbnail click, wheel step) waits for the
-    // pair however long it takes, exactly as the instant swap always has -
+    // visible capture however long it takes -
     // the current capture stays on screen meanwhile. A gesture commit gives
-    // the pair a brief window instead, so a slow network settles the
+    // visible capture a brief window instead, so a slow network settles the
     // gesture back rather than leaving the finger's release hanging.
     const gate = patient
-      ? layerReady
-      : Promise.race([layerReady, new Promise((resolve) => setTimeout(() => resolve('slow'), 600))]);
+      ? layerVisibleReady
+      : Promise.race([layerVisibleReady, new Promise((resolve) => setTimeout(() => resolve('slow'), 600))]);
     gate.then((readiness) => {
       if (mySeq !== swapSeq) return;
       if (readiness !== true) {
@@ -481,6 +482,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         syncPresentedChoice();
         restoreShot();
         initialPaintable = true;
+        caseEl.classList.remove('capture-loading');
+        delete caseEl.dataset.captureError;
         preloadNeighbors();
         const queued = queuedChoice;
         queuedChoice = null;
@@ -546,6 +549,8 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       apply(mob, srcM, 'Mob');
       mob.alt = chosen.dataset.altMob;
       initialPaintable = true;
+      caseEl.classList.remove('capture-loading');
+      delete caseEl.dataset.captureError;
       preloadNeighbors();
     });
   }
@@ -575,6 +580,27 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       visibleChoice.focus();
     }
   };
+  let presentedPhone = phoneLayout();
+  const guardFormChange = () => {
+    if (presentedPhone === phoneLayout()) return;
+    presentedPhone = phoneLayout();
+    clearDrag();
+    swapSeq++;
+    queuedChoice = null;
+    wanted = current;
+    restoreShot();
+    // Source/label commits stay atomic. Until the newly shown current
+    // source decodes, keep its geometry with a loading/error placeholder.
+    caseEl.classList.add('capture-loading');
+    delete caseEl.dataset.captureError;
+    initialPaintable = false;
+    checkInitial();
+  };
+  [desk, mob].forEach(image => image.addEventListener('error', () => {
+    if (image === (phoneLayout() ? mob : desk) && caseEl.classList.contains('capture-loading')) caseEl.dataset.captureError = 'true';
+  }));
+  phoneQuery.addEventListener('change', guardFormChange);
+  new MutationObserver(guardFormChange).observe(document.body, {attributes:true,attributeFilter:['data-mobile']});
   phoneQuery.addEventListener('change', syncChoices);
   new MutationObserver(syncChoices).observe(document.body, { attributes: true, attributeFilter: ['data-mobile'] });
   syncChoices();

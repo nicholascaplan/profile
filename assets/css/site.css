@@ -590,3 +590,9 @@ body[data-theme] .privacy-details [data-cookie-preferences] { background: var(--
   .shot::before { content: ""; position: absolute; z-index: 2; left: 50%; top: 8px; transform: translateX(-50%); width: 54px; height: 7px; border-radius: 99px; background: #2a2f36; pointer-events: none; }
 }
 body[data-mobile="true"] .shot::before { content: ""; position: absolute; z-index: 2; left: 50%; top: 8px; transform: translateX(-50%); width: 54px; height: 7px; border-radius: 99px; background: #2a2f36; pointer-events: none; }
+
+/* A newly visible form factor waits for its own capture, never a wrong or
+   undecoded frame. Visibility preserves the screenshot geometry. */
+.capture-loading .shot { visibility: hidden; }
+.capture-loading .shot-stage::after { content: "Loading screenshot..."; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+.capture-loading[data-capture-error="true"] .shot-stage::after { content: "Screenshot unavailable. Try the live site below."; }

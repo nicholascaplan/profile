@@ -123,27 +123,27 @@ test('static no-JavaScript small screen shows the phone capture alone', async ({
   await context.close();
 });
 
-test('paired screenshot changes wait for both decoded candidates', async ({ page }) => {
+test('paired source commit waits for visible decode, never the hidden decode', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
   await page.evaluate(() => {
-    window.decodeReleases = [];
+    window.decodeReleases = {};
     const decode = HTMLImageElement.prototype.decode;
     HTMLImageElement.prototype.decode = function () {
       if (this.dataset.speculative) return decode.call(this);
-      return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
+      const kind=this.src.includes('-mob')?'Mob':'Desk';
+      return decode.call(this).then(() => new Promise(resolve => {window.decodeReleases[kind]=resolve;}));
     };
   });
   await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
-  await page.waitForFunction(() => window.decodeReleases.length === 2);
+  await page.waitForFunction(() => window.decodeReleases.Desk && window.decodeReleases.Mob);
   expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-fundraising-desk');
   expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-fundraising-mob');
-  await page.evaluate(() => window.decodeReleases[0]());
-  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-fundraising-desk');
-  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-fundraising-mob');
-  await page.evaluate(() => window.decodeReleases[1]());
+  // Leave the invisible form unresolved and release only the shown capture.
+  await page.evaluate(() => window.decodeReleases[matchMedia('(max-width:960px)').matches?'Mob':'Desk']());
   await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-whatson-desk/);
   await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-whatson-mob/);
+  await page.evaluate(() => window.decodeReleases[matchMedia('(max-width:960px)').matches?'Desk':'Mob']());
 });
 
 
@@ -224,7 +224,8 @@ test('a rejected decode retains both displayed images and selected label', async
     HTMLImageElement.prototype.decode = function () {
       if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => {
-        if (!rejected) { rejected = true; throw new Error('synthetic decode failure'); }
+        const visibleKind = matchMedia('(max-width:960px)').matches || document.body.dataset.mobile === 'true' ? '-mob' : '-desk';
+        if (!rejected && this.src.includes(visibleKind)) { rejected = true; throw new Error('synthetic visible decode failure'); }
       });
     };
     window.failedDecodeSwap = new Promise((resolve) => document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true }));
