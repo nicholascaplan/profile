@@ -120,6 +120,10 @@ test('a horizontal drag brings the incoming capture in from the edge', async ({p
   await page.addInitScript(() => localStorage.setItem('websites-by-nick-cookie-preferences', 'essential'));
   await page.goto('/');
   const caseEl = page.locator('.case').first();
+  await caseEl.locator('.thumb[data-label="Fireworks"]').click();
+  await expect.poll(()=>pressedLabel(page,0)).toBe('Fireworks');
+  await caseEl.locator('.thumb[data-label="Fundraising"]').click();
+  await expect.poll(()=>pressedLabel(page,0)).toBe('Fundraising');
   const fire = (type, x) => page.evaluate(([type, x]) => {
     const shot = document.querySelector('.case .shot');
     const rect = shot.getBoundingClientRect();
@@ -465,6 +469,13 @@ test('a queued flick finishes the visible pair before waiting for the next decod
 for (const direction of [-1,1]) test(`underline wraps through opposite edges without traversing names ${direction}`,async({page})=>{
   await page.setViewportSize({width:390,height:844});await page.goto('/');
   if(direction===1){await page.locator('.case:first-child .thumb[data-label="Menu"]').click();await expect.poll(()=>pressedLabel(page,0)).toBe('Menu');}
+  // This checks warmed drag motion; cold readiness is covered separately.
+  const target=direction<0?'Menu':'Fundraising';
+  await page.locator(`.case:first-child .thumb[data-label="${target}"]`).click();
+  await expect.poll(()=>pressedLabel(page,0)).toBe(target);
+  const origin=direction<0?'Fundraising':'Menu';
+  await page.locator(`.case:first-child .thumb[data-label="${origin}"]`).click();
+  await expect.poll(()=>pressedLabel(page,0)).toBe(origin);
   const a=direction<0?90:300,z=direction<0?190:200;
   await page.evaluate(([a,z])=>{
     const s=document.querySelector('.case .shot');for(const [type,x]of[['touchstart',a],['touchmove',z]]){const t={identifier:1,target:s,clientX:x,clientY:500};const e=new Event(type,{bubbles:true});e.touches=[t];e.changedTouches=[t];s.dispatchEvent(e);}
@@ -490,6 +501,11 @@ test('each committed capture has its own explanation, including Biography',async
 for (const direction of [-1, 1]) test(`overlong drag releases from its displayed stage bound ${direction}`, async ({page}) => {
   await page.setViewportSize({width:320,height:844});
   await page.goto('/');
+  const target=direction<0?'Fireworks':'Menu';
+  await page.locator(`.case:first-child .thumb[data-label="${target}"]`).click();
+  await expect.poll(()=>pressedLabel(page,0)).toBe(target);
+  await page.locator('.case:first-child .thumb[data-label="Fundraising"]').click();
+  await expect.poll(()=>pressedLabel(page,0)).toBe('Fundraising');
   const state = await page.evaluate(direction => {
     const shot = document.querySelector('.case .shot');
     const width = shot.parentElement.clientWidth;
@@ -512,4 +528,27 @@ for (const direction of [-1, 1]) test(`overlong drag releases from its displayed
   const start=Number(frames[0].transform.match(/translateX\(([-.\d]+)px\)/)[1]);
   expect(Math.abs(start)).toBeLessThanOrEqual(state.width);
   expect(start).toBe(direction*state.width);
+});
+
+for (const outcome of ['commit','cancel','timeout']) test(`cold first drag never reveals an undecoded capture: ${outcome}`,async({page})=>{
+  await page.setViewportSize({width:412,height:915});
+  await page.addInitScript(()=>{
+    const decode=HTMLImageElement.prototype.decode;
+    window.coldDecodeReleases=[];
+    HTMLImageElement.prototype.decode=function(){return decode.call(this).then(()=>this.src.includes('fireworks')?new Promise(r=>window.coldDecodeReleases.push(r)):undefined)};
+  });
+  await page.goto('/');
+  await page.evaluate(()=>{
+    const el=document.querySelector('.case .shot');
+    window.coldTouch=(type,x,end=false)=>{const e=new Event(type,{bubbles:true,cancelable:true});const q={identifier:7,target:el,clientX:x,clientY:500};e.touches=end?[]:[q];e.changedTouches=[q];el.dispatchEvent(e)};
+    window.coldTouch('touchstart',310);window.coldTouch('touchmove',150);
+  });
+  await expect(page.locator('.case .shot:not(.shot-layer)').first()).toHaveCSS('transform','none');
+  expect(await pressedLabel(page,0)).toBe('Fundraising');
+  await page.evaluate(outcome=>window.coldTouch(outcome==='cancel'?'touchcancel':'touchend',150,true),outcome);
+  await page.waitForFunction(()=>window.coldDecodeReleases.length>=2);
+  if(outcome==='timeout')await page.waitForTimeout(850);
+  await page.evaluate(()=>window.coldDecodeReleases.splice(0).forEach(r=>r()));
+  await expect.poll(()=>pressedLabel(page,0)).toBe(outcome==='commit'?'Fireworks':'Fundraising');
+  await expect(page.locator('.case .shot:not(.shot-layer)').first()).toHaveCSS('transform','none');
 });

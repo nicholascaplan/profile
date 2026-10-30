@@ -130,6 +130,7 @@ test('paired screenshot changes wait for both decoded candidates', async ({ page
     window.decodeReleases = [];
     const decode = HTMLImageElement.prototype.decode;
     HTMLImageElement.prototype.decode = function () {
+      if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
     };
   });
@@ -153,6 +154,7 @@ test('theme change during a pending selection keeps the requested screenshots', 
     window.decodeReleases = [];
     const decode = HTMLImageElement.prototype.decode;
     HTMLImageElement.prototype.decode = function () {
+      if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
     };
   });
@@ -220,6 +222,7 @@ test('a rejected decode retains both displayed images and selected label', async
     const decode = HTMLImageElement.prototype.decode;
     let rejected = false;
     HTMLImageElement.prototype.decode = function () {
+      if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => {
         if (!rejected) { rejected = true; throw new Error('synthetic decode failure'); }
       });
@@ -241,6 +244,7 @@ test('an older decoded pair cannot overwrite a newer selection', async ({ page }
     window.olderDecodeReleases = [];
     window.olderDecodesCompleted = 0;
     HTMLImageElement.prototype.decode = function () {
+      if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => {
         if (this.src.includes('foa-whatson-')) return new Promise((resolve) => window.olderDecodeReleases.push(resolve)).then(() => { window.olderDecodesCompleted++; });
       });
@@ -355,4 +359,18 @@ test('each desktop capture candidate keeps its master pixels and theme', async (
     expect(result.master).toBe(2560);
     for(const e of result.errors){expect(e.pixels).toBe(e.w);expect(e.diff,`${src} ${e.w}w agrees with actual master pixels`).toBeLessThan(12)}
   }
+});
+
+test('visible-capture readiness preloads neighbours before unrelated page load',async({page})=>{
+  await page.setViewportSize({width:412,height:915});
+  let release;
+  const blocked=new Promise(r=>release=r);
+  await page.route('**/*profile-burgundy*',async route=>{await blocked;await route.continue()});
+  const requests=[];
+  page.on('request',r=>{if(r.url().includes('fireworks'))requests.push(r.url())});
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect.poll(()=>requests.length).toBeGreaterThan(0);
+  expect(await page.evaluate(()=>document.readyState)).not.toBe('complete');
+  expect(requests.every(url=>url.includes('-mob'))).toBe(true);
+  release();
 });

@@ -282,6 +282,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   let layerSign = 0;
   let layerChoice = -1;
   let layerReady = null;
+  let layerPaintable = false;
+  const decodedSources = new Set();
+  const sourceKey = (source, kind) => `${source}|${kind}|${kind === 'Mob' ? mobSizes() : sizes.Desk}|${innerWidth}|${devicePixelRatio}`;
   let queuedChoice = null;
   let dragOffset = 0;
   const setTrack = (offset) => {
@@ -318,8 +321,9 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const loadInto = (img, source, kind) => {
     apply(img, source, kind);
     const pre = new Image();
+    const key = sourceKey(source, kind);
     apply(pre, source, kind);
-    if (typeof pre.decode === 'function') return pre.decode().then(() => true, () => false);
+    if (typeof pre.decode === 'function') return pre.decode().then(() => { decodedSources.add(key); return true; }, () => false);
     return new Promise((resolve) => { pre.onload = () => resolve(true); pre.onerror = () => resolve(false); });
   };
   const buildLayer = (sign, j) => {
@@ -345,10 +349,12 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     layer.append(deskImg, mobImg);
     layerSign = sign;
     layerChoice = j;
+    layerPaintable = decodedSources.has(sourceKey(variant(chosen, phoneLayout() ? 'Mob' : 'Desk'), phoneLayout() ? 'Mob' : 'Desk'));
+    const incoming = layer;
     layerReady = Promise.all([
       loadInto(deskImg, variant(chosen, 'Desk'), 'Desk'),
       loadInto(mobImg, variant(chosen, 'Mob'), 'Mob'),
-    ]).then((pair) => pair.every(Boolean));
+    ]).then((pair) => { if (layer === incoming) layerPaintable = pair.every(Boolean); return pair.every(Boolean); });
     stage.appendChild(layer);
     stage.classList.add('sliding');
     followIndicator(dragOffset);
@@ -394,14 +400,19 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         const source = variant(thumbs[j], kind);
         if (preloaded.has(source)) return;
         preloaded.add(source);
-        apply(new Image(), source, kind);
+        const pre = new Image();
+        pre.dataset.speculative = 'true';
+        const key = sourceKey(source, kind);
+        apply(pre, source, kind);
+        if (typeof pre.decode === 'function') pre.decode().then(() => decodedSources.add(key), () => {});
       });
     });
   };
-  window.addEventListener('load', () => {
-    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
-    idle(preloadNeighbors);
-  });
+  // Start only the two same-form/theme neighbours after the visible initial
+  // capture can paint. Do not wait for unrelated page resources or idle time.
+  const firstVisible = phoneLayout() ? mob : desk;
+  if (typeof firstVisible.decode === 'function') firstVisible.decode().then(preloadNeighbors, () => {});
+  else firstVisible.addEventListener('load', preloadNeighbors, {once: true});
   // The paired slide: the incoming capture chases the outgoing one across
   // the stage, continuing the gesture's direction. No opacity fades and no
   // blank states - the outgoing capture stays fully visible until the
@@ -495,7 +506,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const ready = (source, kind) => new Promise((resolve) => {
       const pre = new Image();
       pre.onload = () => {
-        if (typeof pre.decode === 'function') pre.decode().then(() => resolve(true), () => resolve(false));
+        if (typeof pre.decode === 'function') pre.decode().then(() => { decodedSources.add(sourceKey(source, kind)); resolve(true); }, () => resolve(false));
         else resolve(true);
       };
       pre.onerror = () => resolve(false);
@@ -724,6 +735,10 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       // Bring the incoming capture to the trailing edge so it tracks the
       // finger; its pair starts loading the moment the drag turns horizontal.
       if (visibleIndexes().length > 1) buildLayer(direction, dragTarget(direction));
+      // On a genuinely cold gesture keep the current capture intact. Commit
+      // from rest after decoding instead of revealing a blank incoming layer.
+      if (!layerPaintable) drag.cold = true;
+      if (drag.cold) return;
       const width = stageWidth();
       setTrack(Math.max(-width, Math.min(width, drag.base + dx)));
     }, { passive: true });
@@ -731,7 +746,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       if (!drag) return;
       const dx = event.changedTouches[0].clientX - drag.x;
       const dy = event.changedTouches[0].clientY - drag.y;
-      const { lock, base, resume } = drag;
+      const { lock, base, resume, cold } = drag;
       // A flick with no move events queues from the requested choice. A
       // real drag takes over the visible pair and keeps its incoming page.
       if (!lock) drag.origin = resume;
@@ -756,7 +771,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
         const direction = dx < 0 ? 1 : -1;
         // The slide continues from where the finger left the track: a locked
         // drag leaves it at base + dx, an untouched grab still holds base.
-        select(target, direction, lock === 'h' ? release : base);
+        select(target, direction, lock === 'h' && !cold ? release : base);
         return;
       }
       // A tap that grabbed a mid-slide track (no drag) resumes the
