@@ -4,7 +4,7 @@
 import { chromium } from '@playwright/test';
 import { execFile as execFileCb, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const execFile = promisify(execFileCb);
 const SITE_URL = 'http://10.0.2.2:8080/'; // 10.0.2.2 is the host loopback from the emulator
@@ -68,8 +68,10 @@ async function main() {
   const chromePath = await adbText('shell', 'pm', 'path', 'com.android.chrome').catch(() => '');
   if (!chromePath.includes('package:')) throw new Error('Chrome for Android is not installed on this system image');
 
-  const recorder = spawn('adb', ['shell', 'screenrecord', '--time-limit', '150', '/sdcard/android-chrome-poc.mp4'], { stdio: 'ignore' });
-  await sleep(1000);
+  const recErr = createWriteStream(`${ARTIFACTS}/screenrecord.log`);
+  const recorder = spawn('adb', ['shell', 'screenrecord', '--time-limit', '150', '/sdcard/android-chrome-poc.mp4'], { stdio: ['ignore', 'ignore', recErr] });
+  await sleep(1500);
+  if (recorder.exitCode !== null) console.log(`screenrecord exited early (code ${recorder.exitCode}); see screenrecord.log artifact`);
 
   await adb('forward', 'tcp:9222', 'localabstract:chrome_devtools_remote');
   await adb('shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-d', SITE_URL, 'com.android.chrome');
@@ -206,6 +208,7 @@ async function main() {
   await sleep(2500);
   recorder.kill();
   await adb('pull', '/sdcard/android-chrome-poc.mp4', `${ARTIFACTS}/android-chrome-poc.mp4`).catch(e => console.log('video pull failed:', e.message));
+  info.video = existsSync(`${ARTIFACTS}/android-chrome-poc.mp4`);
 
   info.result = `tap "${before.label.trim()}" -> "${after.label}"; left swipe -> "${nextLabel}"; right swipe -> back; capture swapped, no horizontal overflow`;
   writeFileSync(`${ARTIFACTS}/summary.json`, JSON.stringify(info, null, 2));
