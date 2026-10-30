@@ -28,7 +28,11 @@ for (const theme of ['dark', 'light']) {
     await page.goto('/');
     await expect(page.locator('.shot-img')).toHaveCount(4);
     await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
-    expect(requests).toHaveLength(4);
+    // Exactly the four initial captures, plus at most the bounded
+    // same-theme neighbour preloads (one step either side per case, current
+    // form factor only): the guard stays that no other capture SET loads.
+    expect(requests.length).toBeGreaterThanOrEqual(4);
+    expect(requests.length).toBeLessThanOrEqual(8);
     for (const url of requests) expect(/-dark(?:-\d+w)?\.webp$/.test(url)).toBe(theme === 'dark');
     // Width-appropriateness (user-approved replacement for the variant-picked
     // proxy): the sizes hint must track the rendered width, and the requested
@@ -65,7 +69,7 @@ for (const theme of ['dark', 'light']) {
       expect(pickedIndex, `${current} vs optimal ${optimal.url} for ${need.toFixed(0)}px need`).toBeGreaterThanOrEqual(optimalIndex);
       expect(pickedIndex, `${current} vs optimal ${optimal.url} for ${need.toFixed(0)}px need`).toBeLessThanOrEqual(Math.min(optimalIndex + 1, candidates.length - 1));
     }
-    expect(await page.locator('.case:first-child .shot-desk').getAttribute('fetchpriority')).toBe('high');
+    expect(await page.locator(`.case:first-child .shot-${viewportWidth <= 960 ? 'mob' : 'desk'}`).getAttribute('fetchpriority')).toBe('high');
   });
 }
 
@@ -119,26 +123,27 @@ test('static no-JavaScript small screen shows the phone capture alone', async ({
   await context.close();
 });
 
-test('paired screenshot changes wait for both decoded candidates', async ({ page }) => {
+test('paired source commit waits for visible decode, never the hidden decode', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => [...document.querySelectorAll('.shot-img')].every((i) => i.complete && i.naturalWidth > 0));
   await page.evaluate(() => {
-    window.decodeReleases = [];
+    window.decodeReleases = {};
     const decode = HTMLImageElement.prototype.decode;
     HTMLImageElement.prototype.decode = function () {
-      return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
+      if (this.dataset.speculative) return decode.call(this);
+      const kind=this.src.includes('-mob')?'Mob':'Desk';
+      return decode.call(this).then(() => new Promise(resolve => {window.decodeReleases[kind]=resolve;}));
     };
   });
   await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
-  await page.waitForFunction(() => window.decodeReleases.length === 2);
+  await page.waitForFunction(() => window.decodeReleases.Desk && window.decodeReleases.Mob);
   expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-fundraising-desk');
   expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-fundraising-mob');
-  await page.evaluate(() => window.decodeReleases[0]());
-  expect(await page.locator('.case:first-child .shot-desk').getAttribute('src')).toContain('foa-fundraising-desk');
-  expect(await page.locator('.case:first-child .shot-mob').getAttribute('src')).toContain('foa-fundraising-mob');
-  await page.evaluate(() => window.decodeReleases[1]());
+  // Leave the invisible form unresolved and release only the shown capture.
+  await page.evaluate(() => window.decodeReleases[matchMedia('(max-width:960px)').matches?'Mob':'Desk']());
   await expect(page.locator('.case:first-child .shot-desk')).toHaveAttribute('src', /foa-whatson-desk/);
   await expect(page.locator('.case:first-child .shot-mob')).toHaveAttribute('src', /foa-whatson-mob/);
+  await page.evaluate(() => window.decodeReleases[matchMedia('(max-width:960px)').matches?'Desk':'Mob']());
 });
 
 
@@ -149,6 +154,7 @@ test('theme change during a pending selection keeps the requested screenshots', 
     window.decodeReleases = [];
     const decode = HTMLImageElement.prototype.decode;
     HTMLImageElement.prototype.decode = function () {
+      if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => new Promise((resolve) => window.decodeReleases.push(resolve)));
     };
   });
@@ -184,7 +190,7 @@ test('screenshot activation preserves the reserved layout before scripts run', a
 });
 
 
-test('first desktop capture has high priority before sources are assigned', async ({ page }) => {
+test('first visible capture has high priority before sources are assigned', async ({ page }) => {
   await page.addInitScript(() => {
     window.initialCapturePriority = [];
     for (const property of ['srcset', 'src']) {
@@ -192,7 +198,7 @@ test('first desktop capture has high priority before sources are assigned', asyn
       Object.defineProperty(HTMLImageElement.prototype, property, {
         ...descriptor,
         set(value) {
-          if (this.matches('.case:first-child .shot-desk')) {
+          if (this.matches(`.case:first-child .shot-${innerWidth <= 960 ? 'mob' : 'desk'}`)) {
             window.initialCapturePriority.push({ property, priority: this.fetchPriority });
           }
           descriptor.set.call(this, value);
@@ -216,8 +222,10 @@ test('a rejected decode retains both displayed images and selected label', async
     const decode = HTMLImageElement.prototype.decode;
     let rejected = false;
     HTMLImageElement.prototype.decode = function () {
+      if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => {
-        if (!rejected) { rejected = true; throw new Error('synthetic decode failure'); }
+        const visibleKind = matchMedia('(max-width:960px)').matches || document.body.dataset.mobile === 'true' ? '-mob' : '-desk';
+        if (!rejected && this.src.includes(visibleKind)) { rejected = true; throw new Error('synthetic visible decode failure'); }
       });
     };
     window.failedDecodeSwap = new Promise((resolve) => document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true }));
@@ -237,6 +245,7 @@ test('an older decoded pair cannot overwrite a newer selection', async ({ page }
     window.olderDecodeReleases = [];
     window.olderDecodesCompleted = 0;
     HTMLImageElement.prototype.decode = function () {
+      if (this.dataset.speculative) return decode.call(this);
       return decode.call(this).then(() => {
         if (this.src.includes('foa-whatson-')) return new Promise((resolve) => window.olderDecodeReleases.push(resolve)).then(() => { window.olderDecodesCompleted++; });
       });
@@ -351,4 +360,18 @@ test('each desktop capture candidate keeps its master pixels and theme', async (
     expect(result.master).toBe(2560);
     for(const e of result.errors){expect(e.pixels).toBe(e.w);expect(e.diff,`${src} ${e.w}w agrees with actual master pixels`).toBeLessThan(12)}
   }
+});
+
+test('visible-capture readiness preloads neighbours before unrelated page load',async({page})=>{
+  await page.setViewportSize({width:412,height:915});
+  let release;
+  const blocked=new Promise(r=>release=r);
+  await page.route('**/*profile-burgundy*',async route=>{await blocked;await route.continue()});
+  const requests=[];
+  page.on('request',r=>{if(r.url().includes('fireworks'))requests.push(r.url())});
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect.poll(()=>requests.length).toBeGreaterThan(0);
+  expect(await page.evaluate(()=>document.readyState)).not.toBe('complete');
+  expect(requests.every(url=>url.includes('-mob'))).toBe(true);
+  release();
 });

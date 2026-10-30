@@ -10,7 +10,8 @@ const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'as
 
 test('phone frame uses a ring colour, not the old near-background outline', () => {
   assert.ok(!css.includes('#17191c'));
-  const frames = css.match(/\.shot-mob \{[^}]*outline: 3px solid var\(--phone-ring\)[^}]*\}/g) || [];
+  // Selector lists may carry the slide-layer variant alongside .shot-mob.
+  const frames = css.match(/\.shot-mob[^{]*\{[^}]*outline: 3px solid var\(--phone-ring\)[^}]*\}/g) || [];
   assert.equal(frames.length, 2, 'small screens and the desktop preview both use the ring');
   for (const frame of frames) assert.match(frame, /border-width: 22px 8px 8px/);
 });

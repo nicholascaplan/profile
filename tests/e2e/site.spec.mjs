@@ -654,7 +654,14 @@ test('showcase: thumbnails choose the screenshot, desktop', async ({ page, isMob
   assert.match(before.src, /foa-fundraising-desk-dark\.webp$/, 'Fundraising screenshot shown by default (page opens dark)');
   assert.equal(before.pill, 'Fundraising', 'pill labels the default shot');
   await page.locator('.case:first-child .thumb[data-label="What’s On"]').click();
-  await page.waitForTimeout(200);
+  // The choice slides in (capture motion): wait for the swap to settle
+  // rather than a fixed beat.
+  await page.waitForFunction(() => {
+    const d = document.querySelector('.case:first-child .shot-desk');
+    const m = document.querySelector('.case:first-child .shot-mob');
+    return d.src.includes('foa-whatson-desk') && m.src.includes('foa-whatson-mob')
+      && !document.querySelector('.case:first-child .shot-layer');
+  });
   const after = await page.evaluate(() => ({
     src: document.querySelector('.case:first-child .shot-desk').src,
     mobSrc: document.querySelector('.case:first-child .shot-mob').src,
@@ -704,7 +711,14 @@ test('showcase: composed overviews have a single readable set of controls at eve
     // the visitor's own device shows alone at every width.
     assert.equal(state.shots, 2, `only the capture matching the visitor's device is visible at ${width}px`);
     assert.equal(state.duplicateControls, 0, 'no competing arrows, thumbnail images or enlargement affordance');
-    assert.equal(state.sizes.length, width <= 960 ? 7 : 6);
+    assert.equal(state.sizes.length, width <= 960 ? 8 : 7);
+    if (width <= 400) {
+      for (const row of await page.locator('.thumbs').all()) {
+        const layout = await row.evaluate(el => ({width: el.clientWidth, scroll: el.scrollWidth, tops: [...el.querySelectorAll('.thumb:not([hidden])')].map(button => button.offsetTop)}));
+        assert.equal(new Set(layout.tops).size, 1, 'all choices share one horizontal track');
+        assert.ok(layout.scroll <= layout.width, 'the track fits without overflow');
+      }
+    }
     for (const size of state.sizes) {
       assert.ok(size.height >= 44, `44px touch target at ${width}px`);
       assert.ok(size.font >= 12, `readable label at ${width}px`);
@@ -841,7 +855,7 @@ const initialPairLoaded = () => {
   return d && m && d.complete && d.naturalWidth > 0 && m.complete && m.naturalWidth > 0;
 };
 
-test('showcase: screenshot pair swaps atomically under uneven image latency', async ({ page }) => {
+test('showcase: source attributes commit atomically while hidden capture loads independently', async ({ page }) => {
   await page.route('**/assets/images/work/*-desk*.webp', async (route) => { await new Promise((r) => setTimeout(r, 700)); await route.continue(); });
   await page.route('**/assets/images/work/*-mob*.webp', async (route) => { await new Promise((r) => setTimeout(r, 100)); await route.continue(); });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -850,11 +864,12 @@ test('showcase: screenshot pair swaps atomically under uneven image latency', as
   await page.click('.case:first-child .thumb[data-label="What’s On"]');
   const mismatches = [];
   for (let i = 0; i < 12; i++) {
-    const pair = await shotPair(page);
+    const pair = await page.evaluate(() => ({desk:document.querySelector('.case:first-child .shot-desk').src, mob:document.querySelector('.case:first-child .shot-mob').src}));
     if (pageOf(pair.desk) !== pageOf(pair.mob)) mismatches.push(`${pair.desk} vs ${pair.mob}`);
     await page.waitForTimeout(80);
   }
   assert.deepEqual(mismatches, [], `pair changed at different times: ${mismatches.join('; ')}`);
+  await page.waitForFunction(() => document.querySelector('.case:first-child .shot-desk').complete);
   const finalPair = await shotPair(page);
   assert.equal(pageOf(finalPair.desk), 'whatson', 'desktop shot settled on the chosen page');
   assert.equal(pageOf(finalPair.mob), 'whatson', 'mobile shot settled on the chosen page');
@@ -883,12 +898,12 @@ test('showcase: rapid thumbnail changes settle on the latest choice', async ({ p
 
 test('showcase: a failed screenshot preserves the displayed pair and allows retry', async ({ page }) => {
   let fail = true;
-  await page.route('**/assets/images/work/*foa-fireworks-desk-dark*.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
+  await page.route('**/assets/images/work/*foa-fireworks-mob-dark*.webp', (route) => fail ? route.fulfill({ status: 404, body: '' }) : route.continue());
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.waitForFunction(initialPairLoaded);
   const before = await shotPair(page);
-  const failedResponse = page.waitForResponse((response) => response.url().includes('fireworks-desk-dark') && response.status() === 404);
+  const failedResponse = page.waitForResponse((response) => response.url().includes('fireworks-mob-dark') && response.status() === 404);
   await page.evaluate(() => {
     window.failedShowcaseSwap = new Promise((resolve) => {
       document.querySelector('.case:first-child').addEventListener('showcase:swap-failed', resolve, { once: true });
@@ -1125,6 +1140,11 @@ test('showcase: failed Menu desktop fallback keeps a visible selection and resto
   await expect(first.locator('.pill-label')).toHaveText('Fundraising');
   assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
   assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await expect.poll(()=>first.locator('.thumb-ind').evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(20);
+  const indicator=await first.locator('.thumb-ind').boundingBox();
+  const button=await homepage.boundingBox();
+  expect(indicator.x).toBeGreaterThanOrEqual(button.x);
+  expect(indicator.x+indicator.width).toBeLessThanOrEqual(button.x+button.width+1);
   await page.setViewportSize({ width: 390, height: 900 });
   await expect(menu).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');
@@ -1157,6 +1177,11 @@ test('showcase: failed Menu preview-toggle fallback keeps a visible selection an
   await expect(first.locator('.pill-label')).toHaveText('Fundraising');
   assert.deepEqual(await shotPair(page), pair, 'working captures survive the failed fallback');
   assert.equal(await first.locator('.shot-desk').getAttribute('src'), await homepage.getAttribute('data-src-desk-dark'), 'selected label matches the displayed desktop asset');
+  await expect.poll(()=>first.locator('.thumb-ind').evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(20);
+  const indicator=await first.locator('.thumb-ind').boundingBox();
+  const button=await homepage.boundingBox();
+  expect(indicator.x).toBeGreaterThanOrEqual(button.x);
+  expect(indicator.x+indicator.width).toBeLessThanOrEqual(button.x+button.width+1);
   await page.evaluate(() => { document.body.dataset.mobile = 'true'; });
   await expect(menu).toHaveAttribute('aria-pressed', 'true');
   await expect(first.locator('.pill-label')).toHaveText('Menu');

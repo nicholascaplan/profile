@@ -193,6 +193,26 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       "600": "sam-watch-mob-dark-600w.webp",
       "960": "sam-watch-mob-dark-960w.webp"
     }
+  },
+  "sam-bio-mob.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-160w.webp",
+      "320": "sam-bio-mob-320w.webp",
+      "600": "sam-bio-mob-600w.webp",
+      "960": "sam-bio-mob-960w.webp"
+    }
+  },
+  "sam-bio-mob-dark.webp": {
+    "width": 1170,
+    "height": 2106,
+    "variants": {
+      "160": "sam-bio-mob-dark-160w.webp",
+      "320": "sam-bio-mob-dark-320w.webp",
+      "600": "sam-bio-mob-dark-600w.webp",
+      "960": "sam-bio-mob-dark-960w.webp"
+    }
   }
 };
   const sources = (src, kind) => {
@@ -219,7 +239,7 @@ document.querySelectorAll('.case').forEach((caseEl) => {
   const phoneLayout = () => phoneQuery.matches || document.body.dataset.mobile === 'true';
   // Populate initial sources in one pass, already matching the saved theme.
   const initial = thumbs[0];
-  if (caseEl === document.querySelector('.case')) desk.fetchPriority = 'high';
+  if (caseEl === document.querySelector('.case')) (phoneLayout() ? mob : desk).fetchPriority = 'high';
   apply(desk, variant(initial, 'Desk'), 'Desk');
   apply(mob, variant(initial, 'Mob'), 'Mob');
   let current = 0;
@@ -239,8 +259,252 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       thumb.setAttribute('aria-pressed', String(j === visibleIndex));
     });
     pillLabel.textContent = thumbs[visibleIndex].dataset.label;
+    const description = caseEl.querySelector('.shot-description');
+    if (description && thumbs[visibleIndex].dataset.description) description.textContent = thumbs[visibleIndex].dataset.description;
   };
-  function select(index) {
+  const shotEl = caseEl.querySelector('.shot');
+  // Capture paging (Nick, 29 October 2026): the swap must read as one
+  // continuous slide, not a fade to blank. The incoming capture lives on
+  // its own layer and chases the outgoing one across a clipping stage; both
+  // captures keep their own frame/bezel styles, and the stage clips only
+  // mid-slide so the phone glow and the page layout are untouched at rest.
+  // All motion is skipped under prefers-reduced-motion or without WAAPI,
+  // keeping the plain instant swap.
+  const stage = document.createElement('div');
+  stage.className = 'shot-stage';
+  shotEl.parentNode.insertBefore(stage, shotEl);
+  stage.appendChild(shotEl);
+  const motionOk = () => !matchMedia('(prefers-reduced-motion: reduce)').matches && typeof shotEl.animate === 'function';
+  const stageWidth = () => stage.clientWidth || 1;
+  let trackAnims = [];
+  let settleSeq = 0;
+  let layer = null;
+  let layerSign = 0;
+  let layerChoice = -1;
+  let layerVisibleReady = null;
+  let layerPaintable = false;
+  const decodedSources = new Set();
+  const sourceKey = (source, kind) => `${source}|${kind}|${kind === 'Mob' ? mobSizes() : sizes.Desk}|${innerWidth}|${devicePixelRatio}`;
+  let queuedChoice = null;
+  let dragOffset = 0;
+  const setTrack = (offset) => {
+    dragOffset = offset;
+    shotEl.style.transform = offset ? `translateX(${offset}px)` : '';
+    if (layer) {
+      layer.style.transform = `translateX(${layerSign * stageWidth() + offset}px)`;
+      followIndicator(offset);
+    }
+  };
+  const cancelTrack = () => { settleSeq++; trackAnims.forEach((animation) => animation.cancel()); trackAnims = []; };
+  const removeLayer = () => { if (layer) layer.remove(); layer = null; layerVisibleReady = null; layerChoice = -1; };
+  const restoreShot = () => {
+    cancelTrack();
+    removeLayer();
+    dragOffset = 0;
+    shotEl.style.transform = '';
+    stage.classList.remove('sliding');
+    moveIndicator();
+  };
+  // The on-screen position while an animation holds it (a grab mid-slide
+  // continues from exactly where the captures are).
+  const visualOffset = () => {
+    const transform = getComputedStyle(shotEl).transform;
+    const match = transform && transform !== 'none' && transform.match(/matrix\(([^)]+)\)/);
+    return match ? parseFloat(match[1].split(',')[4]) || 0 : 0;
+  };
+  // Load both sources, but decode only the currently visible form as the
+  // motion gate. The hidden capture must not stall an already paintable
+  // swipe. A form change cancels motion and guards that form independently.
+  const loadInto = (img, source, kind) => {
+    apply(img, source, kind);
+    const pre = new Image();
+    const key = sourceKey(source, kind);
+    apply(pre, source, kind);
+    if (typeof pre.decode === 'function') return pre.decode().then(() => { decodedSources.add(key); return true; }, () => false);
+    return new Promise((resolve) => { pre.onload = () => resolve(true); pre.onerror = () => resolve(false); });
+  };
+  const buildLayer = (sign, j) => {
+    if (layer && layerSign === sign && layerChoice === j) return;
+    removeLayer();
+    const chosen = thumbs[j];
+    layer = document.createElement('div');
+    layer.className = 'shot shot-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    const bar = shotEl.querySelector('.shotbar');
+    if (bar) {
+      const barClone = bar.cloneNode(true);
+      const pill = barClone.querySelector('.pill-label');
+      if (pill) pill.textContent = chosen.dataset.label;
+      layer.appendChild(barClone);
+    }
+    const deskImg = document.createElement('img');
+    deskImg.className = 'shot-img shotlay-desk';
+    deskImg.alt = chosen.dataset.altDesk;
+    const mobImg = document.createElement('img');
+    mobImg.className = 'shot-img shotlay-mob';
+    mobImg.alt = chosen.dataset.altMob;
+    layer.append(deskImg, mobImg);
+    layerSign = sign;
+    layerChoice = j;
+    layerPaintable = decodedSources.has(sourceKey(variant(chosen, phoneLayout() ? 'Mob' : 'Desk'), phoneLayout() ? 'Mob' : 'Desk'));
+    const incoming = layer;
+    const desktopReady = loadInto(deskImg, variant(chosen, 'Desk'), 'Desk');
+    const mobileReady = loadInto(mobImg, variant(chosen, 'Mob'), 'Mob');
+    layerVisibleReady = phoneLayout() ? mobileReady : desktopReady;
+    layerVisibleReady.then(ready => { if (layer === incoming) layerPaintable = ready; });
+    stage.appendChild(layer);
+    stage.classList.add('sliding');
+    followIndicator(dragOffset);
+    layer.style.transform = `translateX(${layerSign * stageWidth() + dragOffset}px)`;
+  };
+  // A cancelled gesture returns both captures to rest with the same paired
+  // motion, then clears all track state.
+  const settleBack = (offset) => {
+    if (!motionOk()) { restoreShot(); return; }
+    cancelTrack();
+    const width = stageWidth();
+    const anims = [shotEl.animate([
+      { transform: `translateX(${offset}px)` },
+      { transform: 'translateX(0px)' },
+    ], { duration: 200, easing: 'ease-out' })];
+    if (layer) {
+      anims.push(layer.animate([
+        { transform: `translateX(${layerSign * width + offset}px)` },
+        { transform: `translateX(${layerSign * width}px)` },
+      ], { duration: 200, easing: 'ease-out' }));
+    }
+    anims.push(...animateIndicator(current));
+    trackAnims = anims;
+    const settling = ++settleSeq;
+    Promise.all(anims.map((animation) => animation.finished)).then(() => {
+      if (settling === settleSeq) restoreShot();
+    }, () => {});
+  };
+  // Preload the neighbouring captures (current theme and form factor only)
+  // so the first swipe can slide immediately. Bounded to two captures and
+  // skipped entirely under Save-Data.
+  const preloaded = new Set();
+  const preloadNeighbors = () => {
+    if (navigator.connection && navigator.connection.saveData) return;
+    const order = visibleIndexes();
+    const position = order.indexOf(wanted);
+    if (position < 0) return;
+    const kinds = phoneLayout() ? ['Mob'] : ['Desk'];
+    [position - 1, position + 1].forEach((p) => {
+      const j = order[(p + order.length) % order.length];
+      if (j === undefined) return;
+      kinds.forEach((kind) => {
+        const source = variant(thumbs[j], kind);
+        if (preloaded.has(source)) return;
+        preloaded.add(source);
+        const pre = new Image();
+        pre.dataset.speculative = 'true';
+        const key = sourceKey(source, kind);
+        apply(pre, source, kind);
+        if (typeof pre.decode === 'function') pre.decode().then(() => decodedSources.add(key), () => {});
+      });
+    });
+  };
+  // Start only the two same-form/theme neighbours after the visible initial
+  // capture can paint. Do not wait for unrelated page resources or idle time.
+  let initialPaintable = false;
+  let initialCheck = 0;
+  const checkInitial = () => {
+    const image = phoneLayout() ? mob : desk;
+    const source = image.src;
+    const check = ++initialCheck;
+    const done = () => {
+      if (check !== initialCheck || image.src !== source || !image.complete || !image.naturalWidth) return;
+      initialPaintable = true;
+      caseEl.classList.remove('capture-loading');
+      delete caseEl.dataset.captureError;
+      preloadNeighbors();
+    };
+    if (typeof image.decode === 'function') image.decode().then(done, () => {
+      if (check === initialCheck && image.src === source && caseEl.classList.contains('capture-loading')) caseEl.dataset.captureError = 'true';
+    });
+    else done();
+  };
+  // A source/theme change can reject decode(). A later load retries the
+  // current visible source instead of blocking gestures for the session.
+  [desk, mob].forEach(image => image.addEventListener('load', checkInitial));
+  checkInitial();
+  // The paired slide: the incoming capture chases the outgoing one across
+  // the stage, continuing the gesture's direction. No opacity fades and no
+  // blank states - the outgoing capture stays fully visible until the
+  // incoming one covers it.
+  const runSlide = (chosen, srcD, srcM, direction, fromOffset, mySeq, patient) => {
+    const slideChoice = wanted;
+    buildLayer(direction, slideChoice);
+    const startOffset = fromOffset || dragOffset || visualOffset();
+    setTrack(startOffset);
+    // A deliberate selection (thumbnail click, wheel step) waits for the
+    // visible capture however long it takes -
+    // the current capture stays on screen meanwhile. A gesture commit gives
+    // visible capture a brief window instead, so a slow network settles the
+    // gesture back rather than leaving the finger's release hanging.
+    const gate = patient
+      ? layerVisibleReady
+      : Promise.race([layerVisibleReady, new Promise((resolve) => setTimeout(() => resolve('slow'), 600))]);
+    gate.then((readiness) => {
+      if (mySeq !== swapSeq) return;
+      if (readiness !== true) {
+        // The incoming capture is not paintable: settle back to the current
+        // choice and treat the gesture as not taken, so requested and
+        // displayed never drift apart.
+        settleBack(dragOffset || visualOffset());
+        wanted = current;
+        syncPresentedChoice();
+        if (readiness === false) {
+          restoreShot();
+          caseEl.dispatchEvent(new Event('showcase:swap-failed'));
+        }
+        return;
+      }
+      cancelTrack();
+      const width = stageWidth();
+      const animOut = shotEl.animate([
+        { transform: `translateX(${startOffset}px)` },
+        { transform: `translateX(${-direction * width}px)` },
+      ], { duration: 200, easing: 'ease-out', fill: 'forwards' });
+      const animIn = layer.animate([
+        { transform: `translateX(${direction * width + startOffset}px)` },
+        { transform: 'translateX(0px)' },
+      ], { duration: 200, easing: 'ease-out', fill: 'forwards' });
+      trackAnims = [animOut, animIn, ...animateIndicator(slideChoice)];
+      Promise.all(trackAnims.map((animation) => animation.finished)).then(() => {
+        if (mySeq !== swapSeq) return;
+        current = slideChoice;
+        apply(desk, srcD, 'Desk');
+        desk.alt = chosen.dataset.altDesk;
+        apply(mob, srcM, 'Mob');
+        mob.alt = chosen.dataset.altMob;
+        syncPresentedChoice();
+        restoreShot();
+        initialPaintable = true;
+        caseEl.classList.remove('capture-loading');
+        delete caseEl.dataset.captureError;
+        preloadNeighbors();
+        const queued = queuedChoice;
+        queuedChoice = null;
+        if (queued && queued.index !== current) select(queued.index, queued.direction, 0, true);
+        else wanted = current;
+      }, () => {});
+    });
+  };
+  function select(index, direction = 0, fromOffset = 0, patient = false, continuing = false) {
+    const requested = (index + thumbs.length) % thumbs.length;
+    const held = motionOk() ? visualOffset() : 0;
+    if (!continuing && direction && held && layer && requested !== layerChoice) {
+      // An occupied track belongs to its visible pair. Finish it before
+      // loading another page; never replace a half-visible image with an
+      // undecoded one. Repeated flicks update only the queued destination.
+      queuedChoice = {index: requested, direction};
+      select(layerChoice, layerSign, held, true, true);
+      wanted = requested;
+      return;
+    }
+    if (!continuing) queuedChoice = null;
     wanted = (index + thumbs.length) % thumbs.length;
     if (thumbs[wanted].dataset.mobileOnly && !phoneLayout()) wanted = 0;
     const chosen = thumbs[wanted];
@@ -251,34 +515,43 @@ document.querySelectorAll('.case').forEach((caseEl) => {
     const mySeq = ++swapSeq;
     const srcD = variant(chosen, 'Desk');
     const srcM = variant(chosen, 'Mob');
+    if (direction && motionOk()) { runSlide(chosen, srcD, srcM, direction, fromOffset, mySeq, patient); return; }
+    // Instant path: always clear any held track state first so the capture
+    // can never be left mid-slide or invisible (theme toggle, reduced
+    // motion, rapid mixed input).
+    restoreShot();
     // decode() resolves only once the image is actually ready to paint;
     // fall back to load/error events where decode is unavailable.
-    const ready = (img, src, kind) => new Promise((resolve) => {
+    const ready = (source, kind) => new Promise((resolve) => {
       const pre = new Image();
       pre.onload = () => {
-        if (typeof pre.decode === 'function') pre.decode().then(() => resolve(true), () => resolve(false));
+        if (typeof pre.decode === 'function') pre.decode().then(() => { decodedSources.add(sourceKey(source, kind)); resolve(true); }, () => resolve(false));
         else resolve(true);
       };
       pre.onerror = () => resolve(false);
-      apply(pre, src, kind);
+      apply(pre, source, kind);
     });
-    Promise.all([ready(desk, srcD, 'Desk'), ready(mob, srcM, 'Mob')]).then((readyPair) => {
+    Promise.all([ready(srcD, 'Desk'), ready(srcM, 'Mob')]).then((readyPair) => {
       if (mySeq !== swapSeq) return;
       if (!readyPair.every(Boolean)) {
         // Keep the displayed pair as the theme-swap target after a failed
         // swap; an explicit thumbnail click still retries the failed tab.
         wanted = current;
+        restoreShot();
         syncPresentedChoice();
         caseEl.dispatchEvent(new Event('showcase:swap-failed'));
         return;
       }
       current = wanted;
       syncPresentedChoice();
-
       apply(desk, srcD, 'Desk');
       desk.alt = chosen.dataset.altDesk;
       apply(mob, srcM, 'Mob');
       mob.alt = chosen.dataset.altMob;
+      initialPaintable = true;
+      caseEl.classList.remove('capture-loading');
+      delete caseEl.dataset.captureError;
+      preloadNeighbors();
     });
   }
   // Screenshots follow the page theme: a site captured in both modes
@@ -307,8 +580,284 @@ document.querySelectorAll('.case').forEach((caseEl) => {
       visibleChoice.focus();
     }
   };
+  let presentedPhone = phoneLayout();
+  const guardFormChange = () => {
+    if (presentedPhone === phoneLayout()) return;
+    presentedPhone = phoneLayout();
+    clearDrag();
+    swapSeq++;
+    queuedChoice = null;
+    wanted = current;
+    restoreShot();
+    // Source/label commits stay atomic. Until the newly shown current
+    // source decodes, keep its geometry with a loading/error placeholder.
+    caseEl.classList.add('capture-loading');
+    delete caseEl.dataset.captureError;
+    initialPaintable = false;
+    checkInitial();
+  };
+  [desk, mob].forEach(image => image.addEventListener('error', () => {
+    if (image === (phoneLayout() ? mob : desk) && caseEl.classList.contains('capture-loading')) caseEl.dataset.captureError = 'true';
+  }));
+  phoneQuery.addEventListener('change', guardFormChange);
+  new MutationObserver(guardFormChange).observe(document.body, {attributes:true,attributeFilter:['data-mobile']});
   phoneQuery.addEventListener('change', syncChoices);
   new MutationObserver(syncChoices).observe(document.body, { attributes: true, attributeFilter: ['data-mobile'] });
   syncChoices();
-  thumbs.forEach((thumb, j) => thumb.addEventListener('click', () => select(j)));
+  const thumbsEl = caseEl.querySelector('.thumbs');
+  const visibleIndexes = () => thumbs.map((thumb, j) => (thumb.hidden ? -1 : j)).filter((j) => j >= 0);
+  const clickDirection = (j) => {
+    const order = visibleIndexes();
+    return Math.sign(order.indexOf(j) - order.indexOf(wanted));
+  };
+  let suppressClick = false;
+  // A swallowed click may never arrive (a drag on the shot dispatches none),
+  // so the guard also expires shortly after each gesture ends.
+  let suppressTimer = 0;
+  const expireSuppress = () => {
+    clearTimeout(suppressTimer);
+    suppressTimer = setTimeout(() => { suppressClick = false; }, 350);
+  };
+  thumbs.forEach((thumb, j) => thumb.addEventListener('click', () => {
+    // A drag that ends on the row is a swipe, not a tap on a button.
+    if (suppressClick) { suppressClick = false; return; }
+    select(j, clickDirection(j), 0, true);
+  }));
+
+  // The selected choice's underline slides to the newly selected button
+  // instead of jumping, giving the page-name row the same motion feedback.
+  const indicator = document.createElement('span');
+  indicator.className = 'thumb-ind';
+  indicator.setAttribute('aria-hidden', 'true');
+  thumbsEl.classList.add('thumbs-anim');
+  const indicatorClip = document.createElement('span');
+  indicatorClip.className = 'thumb-ind-clip';
+  const wrapIndicator = indicator.cloneNode();
+  wrapIndicator.className = 'thumb-ind-wrap';
+  wrapIndicator.hidden = true;
+  indicatorClip.append(indicator, wrapIndicator);
+  thumbsEl.appendChild(indicatorClip);
+  const indicatorBox = (index) => {
+    const button = thumbs[index];
+    return {left: button.offsetLeft + 12, top: button.offsetTop + button.offsetHeight - 2,
+      width: Math.max(0, button.offsetWidth - 24)};
+  };
+  const paintIndicator = (box, element = indicator) => {
+    for (const key of ['left', 'top', 'width']) element.style[key] = `${box[key]}px`;
+  };
+  const moveIndicator = () => {
+    if (!layer && !trackAnims.length) {
+      wrapIndicator.hidden = true;
+      const presented = thumbs.findIndex(thumb => thumb.classList.contains('sel'));
+      paintIndicator(indicatorBox(presented >= 0 ? presented : current));
+    }
+  };
+  const wrapsIndicator = () => {
+    const order = visibleIndexes();
+    return layer && order.length > 1 && ((current === order[0] && layerChoice === order.at(-1) && layerSign < 0)
+      || (current === order.at(-1) && layerChoice === order[0] && layerSign > 0));
+  };
+  const indicatorJourney = (fraction) => {
+    const from = indicatorBox(current);
+    const to = indicatorBox(layerChoice);
+    if (!wrapsIndicator()) {
+      wrapIndicator.hidden = true;
+      return [Object.fromEntries(['left', 'top', 'width'].map(key =>
+        [key, from[key] + (to[key] - from[key]) * fraction]))];
+    }
+    const width = thumbsEl.clientWidth;
+    const exit = layerSign < 0 ? -from.width : width;
+    const entry = layerSign < 0 ? width : -to.width;
+    wrapIndicator.hidden = false;
+    return [{...from, left: from.left + (exit - from.left) * fraction},
+      {...to, left: entry + (to.left - entry) * fraction}];
+  };
+  const followIndicator = (offset) => {
+    if (!layer) return;
+    const fraction = Math.min(1, Math.max(0, -layerSign * offset / stageWidth()));
+    indicatorJourney(fraction).forEach((box, index) => paintIndicator(box, index ? wrapIndicator : indicator));
+  };
+  const animateIndicator = (index) => {
+    const targetFraction = index === current ? 0 : 1;
+    const boxes = layer ? indicatorJourney(targetFraction) : [indicatorBox(index)];
+    return boxes.map((box, i) => {
+      const element = i ? wrapIndicator : indicator;
+      const style = getComputedStyle(element);
+      const from = {left: style.left, top: style.top, width: style.width};
+      const to = Object.fromEntries(Object.entries(box).map(([key, value]) => [key, `${value}px`]));
+      return element.animate([from, to], {duration: 200, easing: 'ease-out', fill: 'forwards'});
+    });
+  };
+  new MutationObserver(records => {
+    if (records.some(record => record.target.classList.contains('thumb'))) moveIndicator();
+  }).observe(thumbsEl, { attributes: true, subtree: true, attributeFilter: ['class', 'hidden'] });
+  window.addEventListener('resize', moveIndicator);
+  if (document.fonts?.ready) document.fonts.ready.then(moveIndicator).catch(() => {});
+  moveIndicator();
+
+  // Swipe or horizontal-scroll moves between the screenshots too (Nick,
+  // 29 October 2026): a visitor tried scrolling the page-name row and the
+  // shots themselves. The buttons stay the accessible control; gestures
+  // only step through the visible choices and never block page scrolling.
+  const step = (direction, fromOffset = 0) => {
+    const visible = visibleIndexes();
+    if (visible.length < 2) return;
+    // Step from the requested choice, not the displayed one: while a swap
+    // is still loading, rapid swipes must queue ahead instead of repeating
+    // the same next choice.
+    const position = Math.max(0, visible.indexOf(wanted));
+    select(visible[(position + direction + visible.length) % visible.length], direction, fromOffset, fromOffset === 0);
+  };
+  // The captures page like a carousel (Nick, 29 October 2026): during a
+  // horizontal drag the incoming capture's edge tracks the finger, and on
+  // release the pair slides on or settles back together.
+  // touch-action: pan-y (site.css) keeps vertical swipes scrolling the page
+  // natively; listeners stay passive.
+  const gestureAreas = [shotEl, thumbsEl].filter(Boolean);
+  let drag = null;
+  const clearDrag = () => { drag = null; };
+  const invalidateSlide = () => { swapSeq++; queuedChoice = null; wanted = current; };
+  // The drag target: continuing the direction of an incoming layer the
+  // gesture itself brought on stage keeps that capture; once it is the
+  // committed choice (or the direction flips), page the neighbour instead.
+  const dragTarget = (direction) => {
+    if (drag) {
+      if (drag.lock === 'h' && drag.base && direction === drag.heldSign && drag.heldChoice >= 0) return drag.heldChoice;
+      const visible = visibleIndexes();
+      const position = Math.max(0, visible.indexOf(drag.origin));
+      return visible[(position + direction + visible.length) % visible.length];
+    }
+    if (layer && direction === layerSign && layerChoice !== wanted) return layerChoice;
+    const visible = visibleIndexes();
+    const position = Math.max(0, visible.indexOf(wanted));
+    return visible[(position + direction + visible.length) % visible.length];
+  };
+  gestureAreas.forEach((area) => {
+    area.addEventListener('touchstart', (event) => {
+      suppressClick = false;
+      clearTimeout(suppressTimer);
+      // A second finger cancels the drag: settle the pair back first so it
+      // does not stay shifted with no handler left to restore it.
+      if (event.touches.length !== 1) {
+        if (drag) { invalidateSlide(); settleBack(dragOffset); }
+        clearDrag();
+        return;
+      }
+      // Grabbing mid-slide takes over from the on-screen position, so the
+      // captures never jump when a new touch lands.
+      const presented = phoneLayout() ? mob : desk;
+      const initialPending = !initialPaintable || !presented.complete || !presented.naturalWidth;
+      const held = motionOk() ? visualOffset() : 0;
+      if (held) {
+        swapSeq++;
+        const style = getComputedStyle(indicator);
+        const box = {left: parseFloat(style.left), top: parseFloat(style.top), width: parseFloat(style.width)};
+        cancelTrack();
+        paintIndicator(box);
+      }
+      drag = { initialPending, x: event.touches[0].clientX, y: event.touches[0].clientY, base: held, lock: null, origin: held ? current : wanted, resume: wanted, heldChoice: layerChoice, heldSign: layerSign };
+      if (held) setTrack(held);
+      else dragOffset = 0;
+    }, { passive: true });
+    area.addEventListener('touchmove', (event) => {
+      if (!drag || drag.initialPending) return;
+      // The finger's travel is measured from the grab point; drag.base is the
+      // track position the grab took over, so the pair moves to base + travel
+      // and a mid-slide grab continues without a jump.
+      const dx = event.touches[0].clientX - drag.x;
+      const dy = event.touches[0].clientY - drag.y;
+      if (!drag.lock) {
+        if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          drag.lock = 'h';
+          invalidateSlide();
+        }
+        else if (Math.abs(dy) > 8) drag.lock = 'v';
+      }
+      if (drag.lock !== 'h') return;
+      if (Math.abs(dx) > 10) suppressClick = true;
+      if (!motionOk()) return;
+      const offset = drag.base + dx;
+      const direction = offset < 0 ? 1 : -1;
+      // Bring the incoming capture to the trailing edge so it tracks the
+      // finger; its pair starts loading the moment the drag turns horizontal.
+      if (visibleIndexes().length > 1) buildLayer(direction, dragTarget(direction));
+      // On a genuinely cold gesture keep the current capture intact. Commit
+      // from rest after decoding instead of revealing a blank incoming layer.
+      if (!layerPaintable) drag.cold = true;
+      if (drag.cold) return;
+      const width = stageWidth();
+      setTrack(Math.max(-width, Math.min(width, drag.base + dx)));
+    }, { passive: true });
+    area.addEventListener('touchend', (event) => {
+      if (!drag) return;
+      if (drag.initialPending) { clearDrag(); return; }
+      const dx = event.changedTouches[0].clientX - drag.x;
+      const dy = event.changedTouches[0].clientY - drag.y;
+      const { lock, base, resume, cold } = drag;
+      // A flick with no move events queues from the requested choice. A
+      // real drag takes over the visible pair and keeps its incoming page.
+      if (!lock) drag.origin = resume;
+      const target = dragTarget(dx < 0 ? 1 : -1);
+      clearDrag();
+      expireSuppress();
+      // Only a clearly horizontal swipe switches; vertical swipes scroll the
+      // page exactly as before.
+      const horizontal = Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5;
+      if (lock === 'h' && !horizontal) { invalidateSlide(); settleBack(dragOffset); return; }
+      if (horizontal) {
+        // Release from the same bounded position last displayed by touchmove.
+        const width = stageWidth();
+        const release = Math.max(-width, Math.min(width, base + dx));
+        // Reversing a held slide first returns to the displayed page. Only
+        // after crossing its resting position can it reveal the other side.
+        if (lock === 'h' && base && Math.sign(dx) !== Math.sign(base) && (Math.sign(base + dx) === Math.sign(base) || base + dx === 0)) {
+          invalidateSlide();
+          settleBack(release);
+          return;
+        }
+        const direction = dx < 0 ? 1 : -1;
+        // The slide continues from where the finger left the track: a locked
+        // drag leaves it at base + dx, an untouched grab still holds base.
+        select(target, direction, lock === 'h' && !cold ? release : base);
+        return;
+      }
+      // A tap that grabbed a mid-slide track (no drag) resumes the
+      // interrupted slide rather than leaving the pair frozen.
+      if (base) {
+        if (resume === current) settleBack(base);
+        else select(resume, base < 0 ? 1 : -1, base);
+      }
+    }, { passive: true });
+    area.addEventListener('touchcancel', () => {
+      if (!drag) return;
+      invalidateSlide();
+      clearDrag();
+      expireSuppress();
+      settleBack(dragOffset);
+    }, { passive: true });
+    // A trackpad horizontal scroll over a shot or the tab row steps one
+    // screenshot per gesture instead of doing nothing.
+    let wheelDelta = 0;
+    let wheelTimer = 0;
+    // One step per gesture: a trackpad scroll fires many events, so latch
+    // until it goes quiet instead of skipping several screenshots.
+    let wheelLatch = false;
+    area.addEventListener('wheel', (event) => {
+      // deltaMode 1 reports lines and 2 pages, not pixels; normalize so a
+      // line-mode wheel can still reach the threshold.
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? area.clientWidth : 1;
+      const dx = event.deltaX * unit;
+      const dy = event.deltaY * unit;
+      if (Math.abs(dx) <= Math.abs(dy)) return;
+      event.preventDefault();
+      wheelDelta += dx;
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(() => { wheelDelta = 0; wheelLatch = false; }, 150);
+      if (!wheelLatch && Math.abs(wheelDelta) >= 60) {
+        wheelLatch = true;
+        step(wheelDelta > 0 ? 1 : -1);
+        wheelDelta = 0;
+      }
+    }, { passive: false });
+  });
 });
