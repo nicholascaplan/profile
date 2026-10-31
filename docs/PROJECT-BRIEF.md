@@ -14,6 +14,7 @@ Prospective clients who want a modern, responsive website designed, built and ma
 
 - **Home**: leads with the websites Nick has built. Each project shows what it is, Nick's role and a link to the live site.
 - **Experience**: Nick's background, written in terms of what it means for a client. Earlier roles are presented around the website building they involved. Use only facts Nick has approved and never invent projects, responsibilities or results.
+- **Pricing**: guide prices for the three kinds of website project (starter, content & growth, bespoke engineering), what each includes and how a project starts. Prices are starting points; every project is quoted individually before the visitor commits.
 - **Contact**: a short enquiry form ("Have a website in mind?"), sent through Formspree.
 - **Privacy & cookies**: describes what the site actually does.
 

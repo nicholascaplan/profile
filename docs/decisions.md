@@ -2,6 +2,11 @@
 
 Important decisions, newest first. This is not a changelog: small fixes and implementation details belong in the pull request. Add an entry only when a choice would otherwise be questioned or reversed later. Requirements are in [PROJECT-BRIEF.md](PROJECT-BRIEF.md).
 
+## 31 October 2026: Pricing page with proposed guide prices
+
+At Nick's request, a Pricing page presents the three-tier structure from his feedback document (starter, content & growth, bespoke engineering) with what each tier includes and the free 20-minute consultation as the first step. The starting price of £500 is Nick's own suggestion; the tier prices are proposals awaiting his decision, framed on the page as "from" guide prices with every project quoted individually in writing. The page ships only if Nick approves the pull request.
+
+
 ## 29 October 2026: NC favicon in the atelier colours
 
 Chosen by Nick from labelled visual options. The mark is an NC monogram set in the site's own DM Sans: a terracotta N and cream C on the atelier dark green tile, letters nearly edge to edge so the pair stays readable at tab size. The SVG is built from the font's actual glyph outlines, with an ICO fallback, an apple-touch-icon and a small web manifest. Content tests assert the links and files on every page.
