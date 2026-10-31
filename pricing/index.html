@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Guide prices for websites designed, built and maintained by Nick Caplan - from a simple starter site to bespoke engineering, each quoted individually.">
+  <title>Nick Caplan | Pricing</title>
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://websitesbynick.co.uk/pricing/">
+  <meta property="og:title" content="Nick Caplan | Pricing">
+  <meta property="og:description" content="Guide prices for websites designed, built and maintained by Nick Caplan - every project quoted individually before you commit.">
+  <meta property="og:image" content="https://websitesbynick.co.uk/assets/images/profile-burgundy.jpeg">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Nick Caplan | Pricing">
+  <meta name="twitter:description" content="Guide prices for websites designed, built and maintained by Nick Caplan - every project quoted individually before you commit.">
+  <meta name="twitter:image" content="https://websitesbynick.co.uk/assets/images/profile-burgundy.jpeg">
+  <link rel="preload" href="../assets/fonts/dmsans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/dmmono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/dmmono-500.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../assets/css/fonts.css">
+  <link rel="stylesheet" href="../assets/css/site.css">
+  <link rel="stylesheet" href="../assets/css/pricing.css">
+  <link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" href="../assets/images/apple-touch-icon.png">
+  <link rel="manifest" href="../site.webmanifest">
+  <meta name="theme-color" content="#18211d">
+</head>
+<body data-style="atelier" data-theme="dark">
+  <script>
+    // Apply the saved theme and layout before first paint so the page never
+    // flashes the wrong theme or frame.
+    (function () {
+      var body = document.body;
+      var theme = null;
+      try { theme = window.localStorage.getItem('nick-theme'); } catch (error) {}
+      body.dataset.theme = theme === 'light' || theme === 'dark' ? theme : 'dark';
+      var host = window.location.hostname;
+      var allowsPreview = ['localhost', '127.0.0.1', '[::1]', ''].indexOf(host) !== -1 || /^deploy-preview-\d+--[a-z0-9-]+\.netlify\.app$/.test(host);
+      var storedMobile = null;
+      if (allowsPreview) { try { storedMobile = window.localStorage.getItem('nick-mobile'); } catch (error) {} }
+      body.dataset.preview = String(allowsPreview && storedMobile === 'true');
+      body.dataset.mobile = String(storedMobile === null ? window.matchMedia('(max-width: 600px)').matches : storedMobile === 'true');
+    })();
+  </script>
+  <div class="site-shell">
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="wordmark" href="../">Nick <span>Caplan</span></a>
+      <div class="nav-links">
+        <a href="../">Work</a>
+        <a href="../experience/">Experience</a>
+        <a href="./" aria-current="page">Pricing</a>
+        <a href="../contact/">Contact</a>
+        <a class="nav-contact" href="https://www.linkedin.com/in/nick-caplan/" target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
+        <button class="mobile-toggle" type="button" aria-label="Switch to mobile mode" aria-pressed="false" title="Switch to mobile mode"><svg class="mobile-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 18h4"/></svg></button>
+        <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark mode</span></button>
+      </div>
+    </nav>
+    <div class="nav-chips" aria-label="Pages">
+      <a href="../">Work</a>
+      <a href="../experience/">Experience</a>
+      <a href="./" aria-current="page">Pricing</a>
+      <a href="../contact/">Contact</a>
+    </div>
+
+    <main id="top">
+      <section class="page-hero">
+        <div class="eyebrow">Pricing</div>
+        <h1>What a website <em>costs.</em></h1>
+        <p class="intro">You shouldn&rsquo;t have to get in touch just to find out whether a new website is within reach. These guide prices show where each kind of project starts - every site is then quoted individually, in writing, before you commit to anything.</p>
+      </section>
+
+      <section class="content" aria-label="Pricing tiers">
+        <div class="pricing-grid">
+          <article class="tier">
+            <div class="tier-kicker">Starter</div>
+            <p class="tier-price"><span class="tier-from">from</span> £500</p>
+            <p class="tier-audience">For sole traders, consultants and local businesses who need a proper online presence.</p>
+            <h2 class="tier-heading">What&rsquo;s included</h2>
+            <ul class="tier-list">
+              <li>1 to 3 pages, designed around your business</li>
+              <li>Mobile-first, fast-loading build</li>
+              <li>Contact or enquiry form</li>
+              <li>Search engine basics, so local customers can find you</li>
+              <li>Google Analytics set up, with your consent choices respected</li>
+            </ul>
+            <a class="button tier-cta" href="../contact/"><span class="cta-label">Start a <span class="cta-end">project<span class="cta-icon" aria-hidden="true">→</span></span></span></a>
+          </article>
+
+          <article class="tier">
+            <div class="tier-kicker">Content &amp; growth</div>
+            <p class="tier-price"><span class="tier-from">from</span> £2,200</p>
+            <p class="tier-audience">For creatives, schools, non-profits and established businesses with more to say and show.</p>
+            <h2 class="tier-heading">What&rsquo;s included</h2>
+            <ul class="tier-list">
+              <li>A multi-page site built for your content</li>
+              <li>Update it yourself - no developer needed for day-to-day changes</li>
+              <li>Event feeds and filterable catalogues or portfolios</li>
+              <li>Integrations with the tools you already use</li>
+            </ul>
+            <a class="button tier-cta" href="../contact/"><span class="cta-label">Start a <span class="cta-end">project<span class="cta-icon" aria-hidden="true">→</span></span></span></a>
+          </article>
+
+          <article class="tier">
+            <div class="tier-kicker">Bespoke engineering</div>
+            <p class="tier-price">Priced <span class="tier-from">per project</span></p>
+            <p class="tier-audience">For startups, platforms and specialist workflows that need more than a website.</p>
+            <h2 class="tier-heading">What&rsquo;s included</h2>
+            <ul class="tier-list">
+              <li>Full-stack web applications</li>
+              <li>Custom databases and API integrations</li>
+              <li>Migrations from your current platform</li>
+              <li>Built to stay fast under real traffic</li>
+            </ul>
+            <a class="button tier-cta" href="../contact/"><span class="cta-label">Discuss your <span class="cta-end">project<span class="cta-icon" aria-hidden="true">→</span></span></span></a>
+          </article>
+        </div>
+        <p class="pricing-note">Between tiers, or not sure which fits? Every quote is tailored to what you actually need - the guide price simply gives you an honest starting point.</p>
+
+        <section class="included" aria-labelledby="included-heading">
+          <div class="section-heading">
+            <h2 id="included-heading">Every project includes</h2>
+            <p>Whatever the size of the job, the way I build doesn&rsquo;t change.</p>
+          </div>
+          <ul class="included-list">
+            <li><strong>Fast by default</strong>Pages that load quickly on any device, built by hand rather than from a bloated template.</li>
+            <li><strong>Mobile-first</strong>Designed for the phone in your customer&rsquo;s hand first, then scaled up to larger screens.</li>
+            <li><strong>Readable and accessible</strong>Clear type, sensible contrast and a site everyone can use.</li>
+            <li><strong>A written quote first</strong>You approve the scope and price before any work begins, so there are no surprises.</li>
+          </ul>
+        </section>
+
+        <section class="steps" aria-labelledby="steps-heading">
+          <div class="section-heading">
+            <h2 id="steps-heading">How it works</h2>
+          </div>
+          <ol class="steps-list">
+            <li><strong>A free 20-minute chat</strong>We meet in person or on a call. You tell me what you&rsquo;re planning, and it&rsquo;s a chance for us to set expectations on both sides. No obligation.</li>
+            <li><strong>A clear written quote</strong>I send you a quote tailored to exactly what we discussed, so you can decide with the full picture in front of you.</li>
+            <li><strong>The build</strong>I design and build your site, keeping you involved as it takes shape, until it&rsquo;s live and earning its place.</li>
+          </ol>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="section-kicker">Have a website in mind?</div>
+        <h2><a class="footer-cta" href="../contact/">Let&rsquo;s Make It <em><span class="cta-end">Happen.<span class="cta-icon" aria-hidden="true">&rarr;</span></span></em></a></h2>
+        <div class="footer-bottom"><span>Nick Caplan / Senior Engineering Leader</span><span><a class="github-link" href="https://github.com/nickcaplan/websites-by-nick" target="_blank" rel="noreferrer"><span class="cta-label">Check it out on <span class="cta-end">GitHub <svg class="github-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.26c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.83 1.23 1.83 1.23 1.07 1.83 2.8 1.3 3.48 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.94 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.76.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.64-5.49 5.93.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z"/></svg></span></span></a></span><span><a href="../privacy/">Privacy &amp; cookies</a></span><span>Designed for the web / 2026</span></div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js"></script>
+  <script src="../assets/js/analytics.js" defer data-measurement-id="G-J3J3NS19ZS"></script>
+</body>
+</html>
