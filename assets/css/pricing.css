@@ -32,6 +32,7 @@
 .steps-list { border-top: 1px solid var(--line); counter-reset: step; list-style: none; margin: 0; padding: 0; }
 .steps-list li { border-bottom: 1px solid var(--line); color: var(--muted); counter-increment: step; display: grid; font-size: 14px; gap: 20px; grid-template-columns: 100px 1fr; line-height: 1.5; padding: 17px 0 19px; }
 .steps-list li::before { color: var(--accent-ink); content: "0" counter(step); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; padding-top: 5px; text-transform: uppercase; }
+.step-body { display: block; }
 .steps-list strong { color: var(--ink); display: block; font-family: var(--display); font-size: 20px; font-weight: 500; letter-spacing: -.04em; line-height: 1.15; margin-bottom: 8px; }
 
 @media (max-width: 960px) {
