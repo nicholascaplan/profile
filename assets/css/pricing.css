@@ -14,13 +14,13 @@
 }
 .tier-kicker { color: var(--accent-ink); font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
 .tier-price { font-family: var(--display); font-size: 40px; font-weight: 600; letter-spacing: -.045em; line-height: 1.05; margin: 14px 0 10px; }
-.tier-from { color: var(--muted); font-family: var(--body); font-size: 15px; font-weight: 400; letter-spacing: -.01em; }
+.tier-from { color: var(--muted); font-family: var(--body); font-size: 15px; font-weight: 400; letter-spacing: -.01em; white-space: nowrap; }
 .tier-audience { color: var(--muted); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
 .tier-heading { font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: .02em; margin: 0 0 12px; }
 .tier-list { border-top: 1px solid var(--line); display: grid; gap: 11px; list-style: none; margin: 0; padding: 18px 0 0; }
 .tier-list li { color: var(--muted); font-size: 14.5px; line-height: 1.45; padding-left: 18px; position: relative; }
 .tier-list li::before { background: var(--accent-2); border-radius: 50%; content: ""; height: 6px; left: 0; position: absolute; top: 7px; width: 6px; }
-.tier-cta { align-self: flex-start; margin-top: auto; }
+.tier-cta { align-self: flex-start; height: auto; margin-top: auto; min-height: 58px; padding-bottom: 13px; padding-top: 13px; text-align: center; }
 .tier-list { margin-bottom: 26px; }
 .pricing-note { color: var(--muted); font-size: 15px; line-height: 1.55; margin: 26px 0 0; max-width: 640px; }
 
